@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pwd -W)",
+      "Bash(powershell.exe -NoProfile -ExecutionPolicy Bypass -File ./install-v6.ps1)"
+    ]
+  }
+}
