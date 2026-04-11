@@ -57,7 +57,8 @@ sprints:
         title: "Scaffolding monorepo pnpm + structure de packages"
         points: 3
         priority: "must_have"
-        status: "not_started"
+        status: "defined"
+        story_doc: "docs/stories/STORY-INF-001.md"
         depends_on: []
       - id: "STORY-INF-002"
         title: "Backend skeleton FastAPI + uv"
