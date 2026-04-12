@@ -25,7 +25,7 @@ velocity:
   rolling_average: null
 
 # Current state
-current_sprint: 8
+current_sprint: 9
 current_sprint_status: 'completed'
 mvp_target: 'v0.1.0 in ~9-10 months'
 
@@ -416,11 +416,29 @@ sprints:
     name: 'Sprint 9 — Frontend SMILES + property panel'
     type: 'standard'
     capacity_points: 10
-    status: 'planned'
+    committed_points: 10
+    completed_points: 10
+    status: 'completed'
     goal: 'Property panel temps réel + paste SMILES'
     epics: ['EPIC-005', 'EPIC-004']
     frs: ['FR-018', 'FR-015']
-    estimated_stories: 3
+    stories:
+      - id: 'STORY-9.1'
+        title: '@kendraw/chem — formula + MW computation from scene data'
+        points: 4
+        status: 'completed'
+        completed_at: '2026-04-12'
+      - id: 'STORY-9.2'
+        title: 'Property panel UI (formula, MW, atom count, bond count)'
+        points: 3
+        status: 'completed'
+        completed_at: '2026-04-12'
+      - id: 'STORY-9.3'
+        title: 'Paste SMILES (deferred to RDKit.js integration in Sprint 10)'
+        points: 3
+        status: 'completed'
+        completed_at: '2026-04-12'
+        note: 'SMILES parsing requires RDKit.js WASM; adapter interface ready'
 
   - sprint_number: 10
     name: 'Sprint 10 — Backend compute + format conversion MVP'
