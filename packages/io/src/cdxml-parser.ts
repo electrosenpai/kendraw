@@ -195,27 +195,53 @@ export function parseCdxml(xml: string): CdxmlParseResult {
     const attrs = m[1] ?? '';
     const innerHtml = m[2] ?? '';
 
-    // Extract all <s> text content (multi-run: bold, formula, etc.)
-    const sRegex = /<s\b[^>]*>([^<]*)<\/s>/g;
-    let sMatch: RegExpExecArray | null;
-    let fullText = '';
-    while ((sMatch = sRegex.exec(innerHtml)) !== null) {
-      fullText += sMatch[1] ?? '';
+    // Extract all <s> text content preserving newlines
+    const sRegex2 = /<s\b([^>]*)>([^<]*)<\/s>/g;
+    let sMatch2: RegExpExecArray | null;
+    const richText: Array<{ text: string; style?: 'normal' | 'subscript' | 'superscript' }> = [];
+    while ((sMatch2 = sRegex2.exec(innerHtml)) !== null) {
+      const sAttrs = sMatch2[1] ?? '';
+      const sText = decodeXmlEntities(sMatch2[2] ?? '');
+      if (!sText) continue;
+      const face = parseInt(getAttr(sAttrs, 'face') ?? '0', 10);
+      // face=96 → formula mode (digits become subscript), face=97 → bold formula
+      // Apply formula mode: split text into letter/digit segments
+      if (face === 96 || face === 97) {
+        // Formula mode: digits are subscripts
+        let i2 = 0;
+        while (i2 < sText.length) {
+          const ch2 = sText[i2];
+          if (ch2 && ch2 >= '0' && ch2 <= '9') {
+            let num = '';
+            while (i2 < sText.length) {
+              const d = sText[i2];
+              if (!d || d < '0' || d > '9') break;
+              num += d;
+              i2++;
+            }
+            richText.push({ text: num, style: 'subscript' });
+          } else {
+            richText.push({ text: ch2 ?? '', style: 'normal' });
+            i2++;
+          }
+        }
+      } else {
+        richText.push({ text: sText });
+      }
     }
-    fullText = decodeXmlEntities(fullText.trim());
-    if (!fullText) continue;
+    if (richText.length === 0) continue;
 
-    const p = getAttr(attrs, 'p');
-    if (!p) continue;
-    const parts = p.split(/\s+/).map(Number);
-    const px = (parts[0] ?? 0) * SCALE;
-    const py = (parts[1] ?? 0) * SCALE;
+    const p2 = getAttr(attrs, 'p');
+    if (!p2) continue;
+    const parts2 = p2.split(/\s+/).map(Number);
+    const px2 = (parts2[0] ?? 0) * SCALE;
+    const py2 = (parts2[1] ?? 0) * SCALE;
 
     annotations.push({
       id: crypto.randomUUID() as AnnotationId,
-      x: px,
-      y: py,
-      richText: [{ text: fullText }],
+      x: px2,
+      y: py2,
+      richText,
     });
   }
 

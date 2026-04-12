@@ -1,6 +1,7 @@
 import { useRef, useCallback, useState } from 'react';
 import { parseCdxml, parseMolV2000, parseSmiles } from '@kendraw/io';
 import type { SceneStore } from '@kendraw/scene';
+import { setGraphicOverlays } from './graphic-overlays';
 
 interface ImportDialogProps {
   store: SceneStore;
@@ -26,6 +27,7 @@ export function ImportDialog({ store, onClose }: ImportDialogProps) {
           for (const ar of result.arrows) store.dispatch({ type: 'add-arrow', arrow: ar });
           for (const an of result.annotations)
             store.dispatch({ type: 'add-annotation', annotation: an });
+          if (result.graphics.length > 0) setGraphicOverlays(result.graphics);
           atoms = result.atoms.length;
           bonds = result.bonds.length;
         } else if (ext === 'mol' || ext === 'sdf' || content.includes('V2000')) {

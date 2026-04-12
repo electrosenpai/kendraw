@@ -514,19 +514,34 @@ export class CanvasRenderer implements Renderer {
     ann: { x: number; y: number; richText: Array<{ text: string; style?: string }> },
   ): void {
     ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
+    ctx.textBaseline = 'top';
     let x = ann.x;
+    let y = ann.y;
+    const lineHeight = S.labelSize * 1.4;
+
     for (const seg of ann.richText) {
-      const isSubscript = seg.style === 'subscript';
-      const isSuperscript = seg.style === 'superscript';
-      const size = isSubscript || isSuperscript ? S.labelSize * 0.75 : S.labelSize;
-      ctx.font = `${size}px Arial, system-ui, sans-serif`;
-      ctx.fillStyle = '#e0e0e0';
-      let y = ann.y;
-      if (isSubscript) y += S.labelSize * 0.3;
-      if (isSuperscript) y -= S.labelSize * 0.3;
-      ctx.fillText(seg.text, x, y);
-      x += ctx.measureText(seg.text).width;
+      // Handle newlines within text
+      const parts = seg.text.split('\n');
+      for (let pi = 0; pi < parts.length; pi++) {
+        if (pi > 0) {
+          // Newline: reset x, advance y
+          x = ann.x;
+          y += lineHeight;
+        }
+        const text = parts[pi] ?? '';
+        if (!text) continue;
+
+        const isSubscript = seg.style === 'subscript';
+        const isSuperscript = seg.style === 'superscript';
+        const size = isSubscript || isSuperscript ? S.labelSize * 0.75 : S.labelSize;
+        ctx.font = `${size}px Arial, system-ui, sans-serif`;
+        ctx.fillStyle = '#e0e0e0';
+        let drawY = y;
+        if (isSubscript) drawY += S.labelSize * 0.3;
+        if (isSuperscript) drawY -= S.labelSize * 0.3;
+        ctx.fillText(text, x, drawY);
+        x += ctx.measureText(text).width;
+      }
     }
   }
 
