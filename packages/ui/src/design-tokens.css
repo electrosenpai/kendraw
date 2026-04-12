@@ -1,0 +1,105 @@
+/* Glasswerk Design System — CSS Custom Properties */
+/* Kendraw UX Design doc Part 6 */
+
+:root {
+  /* Color palette */
+  --kd-color-bg-primary: #0a0a0a;
+  --kd-color-bg-secondary: #141414;
+  --kd-color-bg-tertiary: #1a1a1a;
+  --kd-color-bg-elevated: #1e1e1e;
+  --kd-color-bg-overlay: rgba(20, 20, 20, 0.85);
+
+  --kd-color-surface: #222222;
+  --kd-color-surface-hover: #2a2a2a;
+  --kd-color-surface-active: #333333;
+
+  --kd-color-border: #333333;
+  --kd-color-border-subtle: #2a2a2a;
+  --kd-color-border-focus: #4dabf7;
+
+  --kd-color-text-primary: #e0e0e0;
+  --kd-color-text-secondary: #a0a0a0;
+  --kd-color-text-muted: #666666;
+  --kd-color-text-inverse: #0a0a0a;
+
+  --kd-color-accent: #4dabf7;
+  --kd-color-accent-hover: #74c0fc;
+  --kd-color-accent-muted: rgba(77, 171, 247, 0.15);
+
+  --kd-color-danger: #ff6b6b;
+  --kd-color-warning: #ffd43b;
+  --kd-color-success: #51cf66;
+
+  /* Typography */
+  --kd-font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  --kd-font-mono: 'IBM Plex Mono', 'Fira Code', monospace;
+  --kd-font-size-xs: 10px;
+  --kd-font-size-sm: 12px;
+  --kd-font-size-md: 14px;
+  --kd-font-size-lg: 16px;
+
+  /* Spacing */
+  --kd-space-xs: 2px;
+  --kd-space-sm: 4px;
+  --kd-space-md: 8px;
+  --kd-space-lg: 12px;
+  --kd-space-xl: 16px;
+  --kd-space-2xl: 24px;
+
+  /* Radius */
+  --kd-radius-sm: 4px;
+  --kd-radius-md: 6px;
+  --kd-radius-lg: 8px;
+  --kd-radius-xl: 12px;
+
+  /* Shadows (glassmorphism) */
+  --kd-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --kd-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --kd-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+
+  /* Glass effects */
+  --kd-glass-bg: rgba(30, 30, 30, 0.75);
+  --kd-glass-border: rgba(255, 255, 255, 0.06);
+  --kd-glass-blur: blur(12px);
+
+  /* Transitions */
+  --kd-transition-fast: 100ms ease;
+  --kd-transition-normal: 200ms ease;
+
+  /* Layout */
+  --kd-toolbar-height: 36px;
+  --kd-tabbar-height: 32px;
+  --kd-panel-width: 240px;
+}
+
+/* Light theme overrides */
+[data-theme='light'] {
+  --kd-color-bg-primary: #f5f5f5;
+  --kd-color-bg-secondary: #eeeeee;
+  --kd-color-bg-tertiary: #e0e0e0;
+  --kd-color-bg-elevated: #ffffff;
+  --kd-color-bg-overlay: rgba(255, 255, 255, 0.85);
+
+  --kd-color-surface: #ffffff;
+  --kd-color-surface-hover: #f5f5f5;
+  --kd-color-surface-active: #e0e0e0;
+
+  --kd-color-border: #d0d0d0;
+  --kd-color-border-subtle: #e0e0e0;
+
+  --kd-color-text-primary: #1a1a1a;
+  --kd-color-text-secondary: #555555;
+  --kd-color-text-muted: #999999;
+  --kd-color-text-inverse: #ffffff;
+
+  --kd-color-accent: #1c7ed6;
+  --kd-color-accent-hover: #1971c2;
+  --kd-color-accent-muted: rgba(28, 126, 214, 0.1);
+
+  --kd-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.08);
+  --kd-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.12);
+  --kd-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.15);
+
+  --kd-glass-bg: rgba(255, 255, 255, 0.75);
+  --kd-glass-border: rgba(0, 0, 0, 0.06);
+}

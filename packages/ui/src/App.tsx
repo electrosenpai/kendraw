@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useSyncExternalStore } from 'react';
 import { Canvas } from './Canvas';
 import { TabBar } from './TabBar';
+import { ShortcutCheatsheet } from './ShortcutCheatsheet';
 import { workspaceStore, type WorkspaceState } from './workspace-store';
 
 function subscribeToWorkspace(onStoreChange: () => void) {
@@ -14,17 +15,33 @@ function getWorkspaceSnapshot(): WorkspaceState {
 export function App() {
   const workspace = useSyncExternalStore(subscribeToWorkspace, getWorkspaceSnapshot);
   const [initialized, setInitialized] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
 
   useEffect(() => {
     async function init() {
       await workspaceStore.restoreFromDB();
-      // If no documents restored, create a blank one
       if (workspaceStore.getState().tabs.length === 0) {
         workspaceStore.createTab();
       }
       setInitialized(true);
     }
     void init();
+  }, []);
+
+  // Global shortcuts: ? for cheatsheet, Ctrl+N for new tab
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === '?') {
+        setShowShortcuts((s) => !s);
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+        e.preventDefault();
+        workspaceStore.createTab();
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
   const handleNewTab = useCallback(() => {
@@ -48,9 +65,8 @@ export function App() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: '#0a0a0a',
-          color: '#888',
-          fontFamily: 'system-ui, sans-serif',
+          backgroundColor: 'var(--kd-color-bg-primary)',
+          color: 'var(--kd-color-text-muted)',
         }}
       >
         Loading...
@@ -77,18 +93,18 @@ export function App() {
             style={{
               width: '100%',
               height: '100%',
-              backgroundColor: '#0a0a0a',
+              backgroundColor: 'var(--kd-color-bg-primary)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#888',
-              fontFamily: 'system-ui, sans-serif',
+              color: 'var(--kd-color-text-muted)',
             }}
           >
             No document open
           </div>
         )}
       </div>
+      {showShortcuts && <ShortcutCheatsheet onClose={() => setShowShortcuts(false)} />}
     </div>
   );
 }
