@@ -13,6 +13,11 @@ export function parseMolV2000(molBlock: string): ParsedMol {
   const atoms: Atom[] = [];
   const bonds: Bond[] = [];
 
+  // Detect V3000 and reject
+  if (lines.some((l) => l?.includes('V3000'))) {
+    throw new Error('MOL V3000 format is not supported. Please use V2000.');
+  }
+
   // Find counts line (line 4, 0-indexed = 3)
   let countsLineIdx = -1;
   for (let i = 0; i < lines.length; i++) {
@@ -37,7 +42,7 @@ export function parseMolV2000(molBlock: string): ParsedMol {
     const y = parseFloat(line.substring(10, 20).trim()) * SCALE;
     const symbol = line.substring(31, 34).trim();
     const element = getElementBySymbol(symbol)?.z ?? 6;
-    const chargeCode = parseInt(line.substring(36, 39).trim(), 10) || 0;
+    const chargeCode = line.length >= 39 ? parseInt(line.substring(36, 39).trim(), 10) || 0 : 0;
     const charge = chargeCode === 0 ? 0 : 4 - chargeCode;
 
     const id = crypto.randomUUID() as AtomId;

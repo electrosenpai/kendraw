@@ -52,6 +52,7 @@ export function Canvas({ store }: CanvasProps) {
   const panStartRef = useRef({ x: 0, y: 0, panX: 0, panY: 0 });
 
   const updateToolState = useCallback((partial: Partial<ToolState>) => {
+    if (partial.tool) bondStartAtomRef.current = null;
     setToolState((s) => ({ ...s, ...partial }));
   }, []);
 
@@ -77,6 +78,16 @@ export function Canvas({ store }: CanvasProps) {
     rendererRef.current?.setSelectedAtoms(new Set(selection.atomIds));
   }, [selection]);
 
+  // Sync zoom/pan to renderer
+  useEffect(() => {
+    rendererRef.current?.setViewport(zoom, pan.x, pan.y);
+  }, [zoom, pan]);
+
+  // Sync valence issues to renderer
+  useEffect(() => {
+    rendererRef.current?.setValenceIssues(valenceIssues);
+  }, [valenceIssues]);
+
   // Attach renderer
   useEffect(() => {
     const container = containerRef.current;
@@ -98,8 +109,10 @@ export function Canvas({ store }: CanvasProps) {
 
   // Convert screen coords to canvas coords (with zoom/pan)
   const toCanvasCoords = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
-      const rect = e.currentTarget.getBoundingClientRect();
+    (e: React.MouseEvent) => {
+      const container = containerRef.current;
+      if (!container) return { x: 0, y: 0 };
+      const rect = container.getBoundingClientRect();
       const sx = e.clientX - rect.left;
       const sy = e.clientY - rect.top;
       return { x: (sx - pan.x) / zoom, y: (sy - pan.y) / zoom };
@@ -224,10 +237,19 @@ export function Canvas({ store }: CanvasProps) {
         return;
       }
 
-      // Delete
+      // Delete (cascade: remove connected bonds first, then atoms)
       if (e.key === 'Delete' || e.key === 'Backspace') {
         if (selection.atomIds.length > 0) {
           e.preventDefault();
+          const page = store.getState().pages[store.getState().activePageIndex];
+          if (page) {
+            const atomSet = new Set(selection.atomIds);
+            for (const bond of Object.values(page.bonds)) {
+              if (atomSet.has(bond.fromAtomId) || atomSet.has(bond.toAtomId)) {
+                store.dispatch({ type: 'remove-bond', id: bond.id });
+              }
+            }
+          }
           for (const id of selection.atomIds) store.dispatch({ type: 'remove-atom', id });
           setSelection(clearSelection(selection));
         }
@@ -249,12 +271,12 @@ export function Canvas({ store }: CanvasProps) {
         }
       }
 
-      // Charge shortcuts (+ / -)
+      // Charge shortcuts (+ / -), clamped to [-4, +4]
       if ((e.key === '+' || e.key === '=') && selection.atomIds.length > 0) {
         for (const id of selection.atomIds) {
-          const page = store.getState().pages[store.getState().activePageIndex];
-          const atom = page?.atoms[id];
-          if (atom) {
+          const pg = store.getState().pages[store.getState().activePageIndex];
+          const atom = pg?.atoms[id];
+          if (atom && atom.charge < 4) {
             store.dispatch({ type: 'update-atom', id, changes: { charge: atom.charge + 1 } });
           }
         }
@@ -262,9 +284,9 @@ export function Canvas({ store }: CanvasProps) {
       }
       if (e.key === '-' && !isMod && selection.atomIds.length > 0) {
         for (const id of selection.atomIds) {
-          const page = store.getState().pages[store.getState().activePageIndex];
-          const atom = page?.atoms[id];
-          if (atom) {
+          const pg = store.getState().pages[store.getState().activePageIndex];
+          const atom = pg?.atoms[id];
+          if (atom && atom.charge > -4) {
             store.dispatch({ type: 'update-atom', id, changes: { charge: atom.charge - 1 } });
           }
         }
@@ -497,6 +519,13 @@ export function Canvas({ store }: CanvasProps) {
           dragStartRef.current = { x, y };
           return;
         }
+        // Skip zero-length arrows
+        const adx = x - dragStartRef.current.x;
+        const ady = y - dragStartRef.current.y;
+        if (Math.sqrt(adx * adx + ady * ady) < 5) {
+          dragStartRef.current = null;
+          return;
+        }
         const arrow = {
           id: crypto.randomUUID() as ArrowId,
           type: toolState.arrowType as 'forward' | 'equilibrium' | 'reversible',
@@ -525,6 +554,12 @@ export function Canvas({ store }: CanvasProps) {
       if (toolState.tool === 'curly-arrow') {
         if (!dragStartRef.current) {
           dragStartRef.current = { x, y };
+          return;
+        }
+        const cdx = x - dragStartRef.current.x;
+        const cdy = y - dragStartRef.current.y;
+        if (Math.sqrt(cdx * cdx + cdy * cdy) < 5) {
+          dragStartRef.current = null;
           return;
         }
         const geom = defaultCurlyGeometry(dragStartRef.current, { x, y });

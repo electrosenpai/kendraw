@@ -18,9 +18,20 @@ export function serializeKdx(doc: Document): string {
 }
 
 export function deserializeKdx(json: string): Document {
-  const envelope = JSON.parse(json) as KdxEnvelope;
+  let envelope: KdxEnvelope;
+  try {
+    envelope = JSON.parse(json) as KdxEnvelope;
+  } catch {
+    throw new Error('Invalid KDX file: malformed JSON');
+  }
+  if (!envelope || typeof envelope !== 'object') {
+    throw new Error('Invalid KDX file: not an object');
+  }
   if (envelope.formatVersion !== KDX_FORMAT_VERSION) {
     throw new Error(`Unsupported KDX format version: ${envelope.formatVersion}`);
+  }
+  if (!envelope.document) {
+    throw new Error('Invalid KDX file: missing document');
   }
   return envelope.document;
 }

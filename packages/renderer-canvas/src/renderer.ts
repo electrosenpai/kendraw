@@ -7,6 +7,8 @@ export interface Renderer {
   render(doc: Document, diff?: SceneDiff): void;
   setSelectedAtoms(ids: Set<AtomId>): void;
   setSelectionRect(rect: { x1: number; y1: number; x2: number; y2: number } | null): void;
+  setViewport(zoom: number, panX: number, panY: number): void;
+  setValenceIssues(ids: Set<AtomId>): void;
 }
 
 const ATOM_RADIUS = 14;
@@ -18,8 +20,12 @@ export class CanvasRenderer implements Renderer {
   private container: HTMLElement | null = null;
   private resizeObserver: ResizeObserver | null = null;
   private selectedAtoms = new Set<AtomId>();
+  private valenceIssues = new Set<AtomId>();
   private selectionRect: { x1: number; y1: number; x2: number; y2: number } | null = null;
   private lastDoc: Document | null = null;
+  private zoom = 1;
+  private panX = 0;
+  private panY = 0;
 
   attach(container: HTMLElement): void {
     this.container = container;
@@ -67,6 +73,18 @@ export class CanvasRenderer implements Renderer {
     if (this.lastDoc) this.render(this.lastDoc);
   }
 
+  setViewport(zoom: number, panX: number, panY: number): void {
+    this.zoom = zoom;
+    this.panX = panX;
+    this.panY = panY;
+    if (this.lastDoc) this.render(this.lastDoc);
+  }
+
+  setValenceIssues(ids: Set<AtomId>): void {
+    this.valenceIssues = ids;
+    if (this.lastDoc) this.render(this.lastDoc);
+  }
+
   render(doc: Document): void {
     const { canvas, ctx } = this;
     if (!canvas || !ctx) return;
@@ -76,14 +94,24 @@ export class CanvasRenderer implements Renderer {
     const width = canvas.width / dpr;
     const height = canvas.height / dpr;
 
-    // Clear
+    // Reset transform and clear
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, width, height);
+
+    // Apply zoom/pan
+    ctx.translate(this.panX, this.panY);
+    ctx.scale(this.zoom, this.zoom);
 
     // Get active page
     const page = doc.pages[doc.activePageIndex];
     if (!page) return;
 
-    // Render bonds first (under atoms)
+    // Render arrows (behind everything)
+    for (const arrow of Object.values(page.arrows)) {
+      this.renderArrow(ctx, arrow);
+    }
+
+    // Render bonds
     for (const bond of Object.values(page.bonds)) {
       const fromAtom = page.atoms[bond.fromAtomId];
       const toAtom = page.atoms[bond.toAtomId];
@@ -97,6 +125,15 @@ export class CanvasRenderer implements Renderer {
       const color = getColor(atom.element);
       const label = atom.label ?? getSymbol(atom.element);
       const selected = this.selectedAtoms.has(atom.id);
+
+      // Valence issue highlight
+      if (this.valenceIssues.has(atom.id)) {
+        ctx.beginPath();
+        ctx.arc(atom.x, atom.y, ATOM_RADIUS + 5, 0, Math.PI * 2);
+        ctx.strokeStyle = '#ffd43b';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
 
       // Selection highlight ring
       if (selected) {
@@ -137,7 +174,10 @@ export class CanvasRenderer implements Renderer {
       }
     }
 
-    // Draw selection rectangle
+    // Reset to screen coords for selection rectangle
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    // Draw selection rectangle (in screen space)
     if (this.selectionRect) {
       const { x1, y1, x2, y2 } = this.selectionRect;
       ctx.strokeStyle = 'rgba(77, 171, 247, 0.8)';
@@ -147,6 +187,58 @@ export class CanvasRenderer implements Renderer {
       ctx.fillStyle = 'rgba(77, 171, 247, 0.1)';
       ctx.fillRect(x1, y1, x2 - x1, y2 - y1);
       ctx.setLineDash([]);
+    }
+  }
+
+  private renderArrow(
+    ctx: CanvasRenderingContext2D,
+    arrow: {
+      type: string;
+      geometry: {
+        start: { x: number; y: number };
+        c1: { x: number; y: number };
+        c2: { x: number; y: number };
+        end: { x: number; y: number };
+      };
+    },
+  ): void {
+    const { start, c1, c2, end } = arrow.geometry;
+    const isCurly = arrow.type === 'curly-pair' || arrow.type === 'curly-radical';
+
+    ctx.beginPath();
+    ctx.moveTo(start.x, start.y);
+    ctx.bezierCurveTo(c1.x, c1.y, c2.x, c2.y, end.x, end.y);
+    ctx.strokeStyle = isCurly ? '#e06633' : '#cccccc';
+    ctx.lineWidth = isCurly ? 2 : 2.5;
+    ctx.stroke();
+
+    // Arrowhead
+    const dx = end.x - c2.x;
+    const dy = end.y - c2.y;
+    const len = Math.sqrt(dx * dx + dy * dy);
+    if (len > 0) {
+      const ux = dx / len;
+      const uy = dy / len;
+      const headLen = 10;
+      const headW = isCurly ? 4 : 6;
+      ctx.beginPath();
+      ctx.moveTo(end.x, end.y);
+      ctx.lineTo(end.x - ux * headLen + uy * headW, end.y - uy * headLen - ux * headW);
+      ctx.lineTo(end.x - ux * headLen - uy * headW, end.y - uy * headLen + ux * headW);
+      ctx.closePath();
+      ctx.fillStyle = isCurly ? '#e06633' : '#cccccc';
+      ctx.fill();
+
+      // Half arrowhead for radical (single-headed)
+      if (arrow.type === 'curly-radical') {
+        ctx.beginPath();
+        ctx.moveTo(end.x, end.y);
+        ctx.lineTo(end.x - ux * headLen + uy * headW, end.y - uy * headLen - ux * headW);
+        ctx.lineTo(end.x - ux * headLen * 0.6, end.y - uy * headLen * 0.6);
+        ctx.closePath();
+        ctx.fillStyle = '#e06633';
+        ctx.fill();
+      }
     }
   }
 
@@ -234,10 +326,8 @@ export class CanvasRenderer implements Renderer {
     canvas.width = rect.width * dpr;
     canvas.height = rect.height * dpr;
 
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      ctx.scale(dpr, dpr);
-    }
+    // Re-render to apply correct transform
+    if (this.lastDoc) this.render(this.lastDoc);
   }
 
   private isLightColor(hex: string): boolean {

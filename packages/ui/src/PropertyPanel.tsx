@@ -185,11 +185,15 @@ function ExportButton({ label, onClick }: { label: string; onClick: () => void }
   );
 }
 
+function sanitizeFilename(name: string): string {
+  return name.replace(/[<>:"/\\|?*]/g, '_').trim() || 'molecule';
+}
+
 function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = filename;
+  a.download = sanitizeFilename(filename);
   a.click();
   URL.revokeObjectURL(url);
 }

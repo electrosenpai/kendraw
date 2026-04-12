@@ -91,6 +91,10 @@ function applyCommand(state: Document, command: Command): { next: Document; diff
       return { next, diff: { type: 'atom-updated', id: command.id } };
     }
     case 'add-bond': {
+      // Guard: no self-bonds
+      if (command.bond.fromAtomId === command.bond.toAtomId) {
+        return { next: state, diff: { type: 'bond-added', id: command.bond.id } };
+      }
       const next = produce(state, (draft) => {
         const page = draft.pages[pageIndex];
         if (page) {
@@ -179,7 +183,8 @@ export function createSceneStore(initialDoc?: Document): SceneStore {
   let state: Document = initialDoc ?? createEmptyDocument();
   const listeners = new Set<SceneListener>();
 
-  // Undo/redo: snapshot-based history stack
+  // Undo/redo: snapshot-based history stack (capped at 200)
+  const MAX_UNDO_DEPTH = 200;
   const undoStack: Document[] = [];
   const redoStack: Document[] = [];
 
@@ -203,6 +208,7 @@ export function createSceneStore(initialDoc?: Document): SceneStore {
 
     dispatch(command: Command): void {
       undoStack.push(state);
+      if (undoStack.length > MAX_UNDO_DEPTH) undoStack.shift();
       redoStack.length = 0; // new action clears redo
       const { next, diff } = applyCommand(state, command);
       state = next;
