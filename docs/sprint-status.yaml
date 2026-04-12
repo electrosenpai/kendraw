@@ -201,15 +201,17 @@ sprints:
     end_date: null
     capacity_points: 10
     committed_points: 10
-    completed_points: 0
-    status: 'blocked_on_sprint_0'
+    completed_points: 2
+    status: 'in_progress'
     goal: 'Cliquer sur le canvas → un atome apparaît. Pipeline scene → renderer → ui fonctionne end-to-end.'
     stories:
       - id: 'STORY-001'
         title: '@kendraw/scene — types de base + SceneStore (subscribe/dispatch)'
         points: 2
         priority: 'must_have'
-        status: 'not_started'
+        status: 'completed'
+        story_doc: 'docs/stories/STORY-001.md'
+        completed_at: '2026-04-12'
         depends_on: ['sprint_0_gate']
       - id: 'STORY-002'
         title: '@kendraw/scene — Command bus + AddAtom + RemoveAtom'
