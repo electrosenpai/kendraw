@@ -46,14 +46,19 @@ export function App() {
   }, [panelW]);
 
   useEffect(() => {
+    let cancelled = false;
     async function init() {
       await workspaceStore.restoreFromDB();
+      if (cancelled) return;
       if (workspaceStore.getState().tabs.length === 0) {
         workspaceStore.createTab();
       }
       setInitialized(true);
     }
     void init();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {

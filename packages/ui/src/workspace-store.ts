@@ -97,7 +97,13 @@ class WorkspaceStore {
     this.updateTabTitle(id, name);
   }
 
+  private restored = false;
+
   async restoreFromDB(): Promise<void> {
+    // Guard against double-call (React StrictMode runs effects twice)
+    if (this.restored) return;
+    this.restored = true;
+
     const stored = await db.listDocuments();
     if (stored.length === 0) return;
     for (const record of stored) {
