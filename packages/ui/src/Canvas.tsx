@@ -107,15 +107,21 @@ export function Canvas({ store }: CanvasProps) {
     rendererRef.current?.render(doc);
   }, [doc]);
 
-  // Convert screen coords to canvas coords (with zoom/pan)
+  // Convert screen coords to world coords (accounting for container offset, zoom, pan)
   const toCanvasCoords = useCallback(
     (e: React.MouseEvent) => {
-      const container = containerRef.current;
-      if (!container) return { x: 0, y: 0 };
-      const rect = container.getBoundingClientRect();
-      const sx = e.clientX - rect.left;
-      const sy = e.clientY - rect.top;
-      return { x: (sx - pan.x) / zoom, y: (sy - pan.y) / zoom };
+      // Use the actual event target's bounding rect for pixel-perfect positioning
+      const el = containerRef.current;
+      if (!el) return { x: 0, y: 0 };
+      const rect = el.getBoundingClientRect();
+      // CSS pixels relative to container top-left
+      const cssX = e.clientX - rect.left;
+      const cssY = e.clientY - rect.top;
+      // Invert the renderer's transform: ctx.translate(panX, panY) then ctx.scale(zoom, zoom)
+      // screen = world * zoom + pan  =>  world = (screen - pan) / zoom
+      const worldX = (cssX - pan.x) / zoom;
+      const worldY = (cssY - pan.y) / zoom;
+      return { x: worldX, y: worldY };
     },
     [zoom, pan],
   );

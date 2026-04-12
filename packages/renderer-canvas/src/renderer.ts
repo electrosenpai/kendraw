@@ -174,10 +174,7 @@ export class CanvasRenderer implements Renderer {
       }
     }
 
-    // Reset to screen coords for selection rectangle
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-    // Draw selection rectangle (in screen space)
+    // Draw selection rectangle (in world space, same transform as atoms/bonds)
     if (this.selectionRect) {
       const { x1, y1, x2, y2 } = this.selectionRect;
       ctx.strokeStyle = 'rgba(77, 171, 247, 0.8)';
