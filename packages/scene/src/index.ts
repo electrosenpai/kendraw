@@ -27,3 +27,15 @@ export { createSceneStore, createEmptyDocument } from './store.js';
 export { createAtom } from './helpers.js';
 
 export { NotImplementedError } from './errors.js';
+
+export { SpatialIndex } from './spatial-index.js';
+
+export type { Selection } from './selection.js';
+export {
+  createSelection,
+  addToSelection,
+  removeFromSelection,
+  toggleInSelection,
+  clearSelection,
+  isSelected,
+} from './selection.js';
