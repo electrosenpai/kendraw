@@ -1,9 +1,17 @@
-import type { AtomId } from './types.js';
+import type { Atom, AtomId } from './types.js';
+
+export type AddAtomCommand = {
+  type: 'add-atom';
+  atom: Atom;
+};
+
+export type RemoveAtomCommand = {
+  type: 'remove-atom';
+  id: AtomId;
+};
+
+export type Command = AddAtomCommand | RemoveAtomCommand;
 
 export type SceneDiff =
   | { type: 'atom-added'; id: AtomId }
-  | { type: 'atom-removed'; id: AtomId }
-  | { type: 'noop' };
-
-// Discriminated union — expanded in STORY-002 with AddAtomCommand, RemoveAtomCommand
-export type Command = { type: '__placeholder' };
+  | { type: 'atom-removed'; id: AtomId };

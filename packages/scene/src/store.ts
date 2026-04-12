@@ -1,3 +1,4 @@
+import { produce } from 'immer';
 import type { Document, Page } from './types.js';
 import type { Command, SceneDiff } from './commands.js';
 import { NotImplementedError } from './errors.js';
@@ -42,9 +43,35 @@ export function createEmptyDocument(): Document {
   };
 }
 
+function applyCommand(state: Document, command: Command): { next: Document; diff: SceneDiff } {
+  const pageIndex = state.activePageIndex;
+
+  switch (command.type) {
+    case 'add-atom': {
+      const next = produce(state, (draft) => {
+        const page = draft.pages[pageIndex];
+        if (page) {
+          page.atoms[command.atom.id] = command.atom;
+        }
+      });
+      return { next, diff: { type: 'atom-added', id: command.atom.id } };
+    }
+    case 'remove-atom': {
+      const next = produce(state, (draft) => {
+        const page = draft.pages[pageIndex];
+        if (page) {
+          delete page.atoms[command.id];
+        }
+      });
+      return { next, diff: { type: 'atom-removed', id: command.id } };
+    }
+  }
+}
+
 export function createSceneStore(initialDoc?: Document): SceneStore {
   let state: Document = initialDoc ?? createEmptyDocument();
   const listeners = new Set<SceneListener>();
+  const history: Command[] = [];
 
   return {
     getState(): Document {
@@ -59,9 +86,9 @@ export function createSceneStore(initialDoc?: Document): SceneStore {
     },
 
     dispatch(command: Command): void {
-      // Command application will be implemented in STORY-002.
-      // For now, just notify listeners with a noop diff.
-      const diff: SceneDiff = { type: 'noop' };
+      const { next, diff } = applyCommand(state, command);
+      state = next;
+      history.push(command);
       for (const listener of listeners) {
         listener(state, diff);
       }
