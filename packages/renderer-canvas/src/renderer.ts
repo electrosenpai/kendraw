@@ -134,10 +134,26 @@ export class CanvasRenderer implements Renderer {
 
     // 0. Graphic overlays (rectangles, lines from CDXML)
     for (const g of this.graphicOverlays) {
-      ctx.strokeStyle = '#666666';
-      ctx.lineWidth = S.lineWidth;
+      ctx.strokeStyle = '#888888';
+      ctx.lineWidth = S.lineWidth * 0.8;
       if (g.type === 'rectangle') {
-        ctx.strokeRect(g.x1, g.y1, g.x2 - g.x1, g.y2 - g.y1);
+        const rx = Math.min(g.x1, g.x2);
+        const ry = Math.min(g.y1, g.y2);
+        const rw = Math.abs(g.x2 - g.x1);
+        const rh = Math.abs(g.y2 - g.y1);
+        const r = Math.min(6, rw * 0.1, rh * 0.1); // rounded corners
+        ctx.beginPath();
+        ctx.moveTo(rx + r, ry);
+        ctx.lineTo(rx + rw - r, ry);
+        ctx.arcTo(rx + rw, ry, rx + rw, ry + r, r);
+        ctx.lineTo(rx + rw, ry + rh - r);
+        ctx.arcTo(rx + rw, ry + rh, rx + rw - r, ry + rh, r);
+        ctx.lineTo(rx + r, ry + rh);
+        ctx.arcTo(rx, ry + rh, rx, ry + rh - r, r);
+        ctx.lineTo(rx, ry + r);
+        ctx.arcTo(rx, ry, rx + r, ry, r);
+        ctx.closePath();
+        ctx.stroke();
       } else {
         ctx.beginPath();
         ctx.moveTo(g.x1, g.y1);
@@ -431,18 +447,20 @@ export class CanvasRenderer implements Renderer {
         break;
 
       case 'wavy': {
-        // Sinusoidal bond (5 waves per bond length)
-        const waves = 5;
-        const amp = S.boldWidth;
+        // Sinusoidal bond — approximately 5 full waves per standard bond length
+        // Amplitude = boldWidth, ~40 segments for smooth curve
+        const bondLen = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+        const wavesPerBond = Math.max(3, Math.round(bondLen / 8));
+        const amp = S.boldWidth * 1.2;
         ctx.lineWidth = S.lineWidth;
         ctx.beginPath();
         ctx.moveTo(x1, y1);
-        const steps = 40;
+        const steps = Math.max(20, wavesPerBond * 8);
         for (let i = 1; i <= steps; i++) {
           const t = i / steps;
           const bx = x1 + (x2 - x1) * t;
           const by = y1 + (y2 - y1) * t;
-          const wave = Math.sin(t * waves * 2 * Math.PI) * amp;
+          const wave = Math.sin(t * wavesPerBond * 2 * Math.PI) * amp;
           ctx.lineTo(bx + px * wave, by + py * wave);
         }
         ctx.stroke();

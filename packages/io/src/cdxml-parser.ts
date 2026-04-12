@@ -226,7 +226,8 @@ export function parseCdxml(xml: string): CdxmlParseResult {
           }
         }
       } else {
-        richText.push({ text: sText });
+        // Plain text or bold (face=1) — render as normal
+        richText.push({ text: sText, style: 'normal' });
       }
     }
     if (richText.length === 0) continue;
@@ -283,11 +284,32 @@ function parseOrder(s: string): Bond['order'] {
 }
 
 function parseDisplay(display: string, order: Bond['order']): Bond['style'] {
-  const d = display.toLowerCase();
+  const d = display.toLowerCase().trim();
+
+  // Numeric display types (CDX binary values)
+  const numericMap: Record<string, Bond['style']> = {
+    '0': 'single',
+    '1': 'dash',
+    '2': 'dash', // 2=Hash → render as dash
+    '3': 'dash',
+    '4': 'dash', // 3,4=WedgedHash
+    '5': 'bold',
+    '6': 'wedge',
+    '7': 'wedge',
+    '8': 'wavy',
+    '9': 'wedge',
+    '10': 'wedge', // 9,10=HollowWedge → wedge
+    '11': 'double', // WavyCross → double as fallback
+  };
+  if (numericMap[d]) return numericMap[d];
+
+  // String display types
+  if (d.includes('wavy')) return 'wavy';
   if (d.includes('wedge')) return 'wedge';
   if (d === 'bold') return 'bold';
-  if (d === 'wavy') return 'wavy';
   if (d === 'dash' || d.includes('hash')) return 'dash';
+
+  // Default from bond order
   if (order === 2) return 'double';
   if (order === 3) return 'triple';
   if (order === 1.5) return 'aromatic';
