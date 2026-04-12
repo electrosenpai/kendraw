@@ -1,0 +1,78 @@
+{
+  "seed": 42,
+  "generated": "2026-04-12T07:32:28.612Z",
+  "structures": [
+    {
+      "file": "chain-100.json",
+      "pattern": "chain",
+      "atoms": 100,
+      "bonds": 99
+    },
+    {
+      "file": "rings-100.json",
+      "pattern": "rings",
+      "atoms": 100,
+      "bonds": 100
+    },
+    {
+      "file": "mixed-100.json",
+      "pattern": "mixed",
+      "atoms": 100,
+      "bonds": 82
+    },
+    {
+      "file": "chain-250.json",
+      "pattern": "chain",
+      "atoms": 250,
+      "bonds": 249
+    },
+    {
+      "file": "rings-250.json",
+      "pattern": "rings",
+      "atoms": 250,
+      "bonds": 250
+    },
+    {
+      "file": "mixed-250.json",
+      "pattern": "mixed",
+      "atoms": 250,
+      "bonds": 204
+    },
+    {
+      "file": "chain-500.json",
+      "pattern": "chain",
+      "atoms": 500,
+      "bonds": 499
+    },
+    {
+      "file": "rings-500.json",
+      "pattern": "rings",
+      "atoms": 500,
+      "bonds": 500
+    },
+    {
+      "file": "mixed-500.json",
+      "pattern": "mixed",
+      "atoms": 500,
+      "bonds": 409
+    },
+    {
+      "file": "chain-750.json",
+      "pattern": "chain",
+      "atoms": 750,
+      "bonds": 749
+    },
+    {
+      "file": "rings-750.json",
+      "pattern": "rings",
+      "atoms": 750,
+      "bonds": 750
+    },
+    {
+      "file": "mixed-750.json",
+      "pattern": "mixed",
+      "atoms": 750,
+      "bonds": 616
+    }
+  ]
+}
