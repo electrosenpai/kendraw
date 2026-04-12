@@ -164,7 +164,7 @@ export function Canvas({ store, onMoleculeSearch, showPropertyPanel = true }: Ca
 
   // Keyboard shortcuts
   useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
+    async function handleKeyDown(e: KeyboardEvent) {
       const isMod = e.ctrlKey || e.metaKey;
 
       // Undo/Redo
@@ -181,12 +181,38 @@ export function Canvas({ store, onMoleculeSearch, showPropertyPanel = true }: Ca
         return;
       }
 
-      // Copy
+      // Copy — internal + multi-format system clipboard (Section 5.6)
       if (isMod && e.key === 'c') {
         e.preventDefault();
         const page = store.getState().pages[store.getState().activePageIndex];
         if (page && selection.atomIds.length > 0) {
           clipboardRef.current = copySelection(page, selection.atomIds);
+          // Multi-format clipboard: SVG + MOL as text
+          try {
+            const { exportToSVG } = await import('@kendraw/renderer-svg');
+            const { writeMolV2000 } = await import('@kendraw/io');
+            const selAtoms = selection.atomIds
+              .map((id) => page.atoms[id])
+              .filter((a): a is NonNullable<typeof a> => !!a);
+            const selBonds = Object.values(page.bonds).filter(
+              (b) =>
+                selection.atomIds.includes(b.fromAtomId) && selection.atomIds.includes(b.toAtomId),
+            );
+            const svg = exportToSVG(page);
+            const mol = writeMolV2000(selAtoms, selBonds);
+            // Write SVG as image + MOL as text to clipboard
+            const items: Record<string, Blob> = {
+              'text/plain': new Blob([mol], { type: 'text/plain' }),
+            };
+            // Try adding SVG as image (not all browsers support this)
+            items['image/svg+xml'] = new Blob([svg], { type: 'image/svg+xml' });
+            void navigator.clipboard.write([new ClipboardItem(items)]).catch(() => {
+              // Fallback: just copy MOL as text
+              void navigator.clipboard.writeText(mol);
+            });
+          } catch {
+            // Imports failed — internal clipboard only
+          }
         }
         return;
       }
