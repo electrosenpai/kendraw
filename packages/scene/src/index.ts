@@ -59,3 +59,7 @@ export {
   clearSelection,
   isSelected,
 } from './selection.js';
+
+export { RING_TEMPLATES, generateRing, type RingTemplate, type GeneratedRing } from './rings.js';
+
+export { validateValence, type ValenceIssue } from './valence.js';
