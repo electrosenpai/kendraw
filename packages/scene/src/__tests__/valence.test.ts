@@ -63,14 +63,23 @@ describe('Valence validation', () => {
     expect(validateValence(page)).toHaveLength(0);
   });
 
-  it('considers charge in valence calculation', () => {
-    const n = createAtom(0, 0, 7); // nitrogen, valence 3
-    n.charge = 1; // NH4+ has 4 bonds but +1 charge
+  it('NH4+ is valid (N valence 3,5 per ChemDraw ref)', () => {
+    const n = createAtom(0, 0, 7); // nitrogen, valences [3, 5]
+    n.charge = 1; // NH4+ has 4 bonds + 1 charge = 5 effective
     const hs = Array.from({ length: 4 }, (_, i) => createAtom(i, 0, 1));
     const bonds = hs.map((h) => createBond(n.id, h.id));
     const page = createPage([n, ...hs], bonds);
     const issues = validateValence(page);
-    // 4 bonds + 1 charge = 5 effective, max for N is 3 -> should flag
+    // 5 effective ≤ max valence 5 for N → no issue
+    expect(issues).toHaveLength(0);
+  });
+
+  it('flags N with 6 bonds as violation', () => {
+    const n = createAtom(0, 0, 7);
+    const hs = Array.from({ length: 6 }, (_, i) => createAtom(i, 0, 1));
+    const bonds = hs.map((h) => createBond(n.id, h.id));
+    const page = createPage([n, ...hs], bonds);
+    const issues = validateValence(page);
     expect(issues.length).toBeGreaterThanOrEqual(1);
   });
 });
