@@ -131,12 +131,18 @@ importers:
       '@kendraw/chem':
         specifier: workspace:*
         version: link:../chem
+      '@kendraw/io':
+        specifier: workspace:*
+        version: link:../io
       '@kendraw/persistence':
         specifier: workspace:*
         version: link:../persistence
       '@kendraw/renderer-canvas':
         specifier: workspace:*
         version: link:../renderer-canvas
+      '@kendraw/renderer-svg':
+        specifier: workspace:*
+        version: link:../renderer-svg
       '@kendraw/scene':
         specifier: workspace:*
         version: link:../scene
