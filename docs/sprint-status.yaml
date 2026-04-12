@@ -38,7 +38,7 @@ sprints:
     end_date: null
     capacity_points: 45 # cumulative effort budget, not 10 pts
     committed_points: 45
-    completed_points: 20
+    completed_points: 22
     status: 'in_progress'
     goal: 'Repo + CI + ADRs + 4 POCs verts (POC #1 et #2 bloquants). Aucune story applicative.'
     gate_criteria:
@@ -171,7 +171,9 @@ sprints:
         title: 'Test corpus #6 — générateur structures synthétiques perf'
         points: 2
         priority: 'must_have'
-        status: 'not_started'
+        status: 'completed'
+        story_doc: 'docs/stories/STORY-TC-001.md'
+        completed_at: '2026-04-12'
         depends_on: ['STORY-INF-001']
 
   - sprint_number: 1
