@@ -5,11 +5,12 @@ import {
   autocomplete,
   searchByName,
   getSDF,
+  parseSmiles,
+  parseMolV2000,
   type MoleculeTemplate,
   type PubChemCompound,
-  parseMolV2000,
 } from '@kendraw/io';
-import { createAtom, createBond, type SceneStore, type AtomId } from '@kendraw/scene';
+import type { SceneStore } from '@kendraw/scene';
 
 interface MoleculeSearchProps {
   store: SceneStore;
@@ -66,38 +67,13 @@ export function MoleculeSearch({ store, onClose }: MoleculeSearchProps) {
     setLoading(false);
   }, []);
 
-  const insertTemplate = useCallback(
-    (smiles: string, name: string) => {
-      // Simple SMILES-to-atoms: place atoms in a line
-      // For a real SMILES parser, we'd use RDKit
-      const atoms: ReturnType<typeof createAtom>[] = [];
-      const x = 200;
-      const y = 200;
+  const insertFromSmiles = useCallback(
+    (smiles: string) => {
+      const parsed = parseSmiles(smiles);
+      if (parsed.atoms.length === 0) return;
 
-      // Count heavy atoms from SMILES (rough approximation)
-      const heavyAtomCount = smiles.replace(/[[\]()=#@+\-\d\\/.HhcnospBbrClIF]/g, '').length;
-      const atomCount = Math.max(heavyAtomCount, 3);
-
-      for (let i = 0; i < atomCount; i++) {
-        const angle = (2 * Math.PI * i) / atomCount - Math.PI / 2;
-        const radius = Math.max(50, atomCount * 8);
-        const ax = x + radius * Math.cos(angle);
-        const ay = y + radius * Math.sin(angle);
-        const atom = createAtom(ax, ay, 6);
-        atom.label = name.slice(0, 6);
-        atoms.push(atom);
-        store.dispatch({ type: 'add-atom', atom });
-      }
-
-      // Connect in ring
-      for (let i = 0; i < atoms.length; i++) {
-        const next = atoms[(i + 1) % atoms.length];
-        const curr = atoms[i];
-        if (curr && next) {
-          const bond = createBond(curr.id as AtomId, next.id as AtomId);
-          store.dispatch({ type: 'add-bond', bond });
-        }
-      }
+      for (const a of parsed.atoms) store.dispatch({ type: 'add-atom', atom: a });
+      for (const b of parsed.bonds) store.dispatch({ type: 'add-bond', bond: b });
 
       onClose();
     },
@@ -232,7 +208,7 @@ export function MoleculeSearch({ store, onClose }: MoleculeSearchProps) {
                           key={t.name}
                           name={t.name}
                           extra={t.abbr3}
-                          onClick={() => insertTemplate(t.smiles, t.name)}
+                          onClick={() => insertFromSmiles(t.smiles)}
                         />
                       ))}
                     </div>
@@ -252,7 +228,7 @@ export function MoleculeSearch({ store, onClose }: MoleculeSearchProps) {
                   key={t.name}
                   name={t.name}
                   extra={t.category}
-                  onClick={() => insertTemplate(t.smiles, t.name)}
+                  onClick={() => insertFromSmiles(t.smiles)}
                 />
               ))}
             </div>

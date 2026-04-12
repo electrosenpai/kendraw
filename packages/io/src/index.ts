@@ -18,3 +18,5 @@ export {
   type MoleculeTemplate,
   type TemplateCategory,
 } from './templates/template-library.js';
+
+export { parseSmiles, type SmilesParseResult } from './smiles-parser.js';
