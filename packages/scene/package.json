@@ -11,7 +11,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "immer": "^10.2.0",
+    "immer": "^11.1.4",
     "rbush": "^4.0.1"
   },
   "devDependencies": {
