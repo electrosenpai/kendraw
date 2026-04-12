@@ -118,4 +118,34 @@ describe('CDXML parser', () => {
     expect(result.atoms).toHaveLength(1);
     expect(result.atoms[0]?.label).toBe('R3');
   });
+
+  it('preserves explicit labels and hasExplicitLabel flag from <t> elements', () => {
+    const cdxml = `<CDXML><page><fragment>
+      <n id="1" p="100 100" Element="8"><t p="96 104"><s font="3" size="8" face="96">OH</s></t></n>
+      <n id="2" p="114 108"/>
+      <b B="1" E="2"/>
+    </fragment></page></CDXML>`;
+    const result = parseCdxml(cdxml);
+    expect(result.atoms).toHaveLength(2);
+    const oAtom = result.atoms.find(a => a.element === 8);
+    expect(oAtom?.label).toBe('OH');
+    expect(oAtom?.hasExplicitLabel).toBe(true);
+    expect(result.bonds).toHaveLength(1);
+  });
+
+  it('parses all bonds when multiple fragments present', () => {
+    const cdxml = `<CDXML><page>
+      <fragment>
+        <n id="1" p="100 100"/><n id="2" p="114 108"/>
+        <b B="1" E="2"/>
+      </fragment>
+      <fragment>
+        <n id="3" p="200 100"/><n id="4" p="214 108"/><n id="5" p="228 100"/>
+        <b B="3" E="4"/><b B="4" E="5" Order="2"/>
+      </fragment>
+    </page></CDXML>`;
+    const result = parseCdxml(cdxml);
+    expect(result.atoms).toHaveLength(5);
+    expect(result.bonds).toHaveLength(3);
+  });
 });

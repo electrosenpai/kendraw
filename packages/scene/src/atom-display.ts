@@ -165,6 +165,26 @@ export function buildAtomLabel(page: Page, atomId: AtomId): LabelSegment[] {
     return formulaMode(atom.label);
   }
 
+  // CDXML explicit labels already include the correct hydrogen count
+  // (e.g. "OH", "NH2", "CO2H") — render as formula, skip implicit H
+  if (atom.hasExplicitLabel && atom.label) {
+    const segments: LabelSegment[] = [];
+    if (atom.isotope) {
+      segments.push({ text: String(atom.isotope), style: 'superscript' });
+    }
+    segments.push(...formulaMode(atom.label));
+    if (atom.charge !== 0) {
+      const mag = Math.abs(atom.charge);
+      const sign = atom.charge > 0 ? '+' : '\u2013';
+      const chargeStr = mag === 1 ? sign : `${mag}${sign}`;
+      segments.push({ text: chargeStr, style: 'superscript' });
+    }
+    if (atom.radicalCount > 0) {
+      segments.push({ text: '\u2022'.repeat(atom.radicalCount), style: 'normal' });
+    }
+    return segments;
+  }
+
   const symbol = atom.label ?? getSymbol(atom.element);
   // If atom has a custom multi-char label (CO2H, OMe, etc.), use formula mode
   if (atom.label && atom.label.length > 2) {

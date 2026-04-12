@@ -184,6 +184,54 @@ describe('buildAtomLabel', () => {
     expect(text).toContain('H');
   });
 
+  it('CDXML explicit "OH" label does not double hydrogens', () => {
+    const o = createAtom(0, 0, 8);
+    o.label = 'OH';
+    o.hasExplicitLabel = true;
+    const c = createAtom(-40, 0, 6);
+    const page = buildPage(
+      (s) => s.dispatch({ type: 'add-atom', atom: o }),
+      (s) => s.dispatch({ type: 'add-atom', atom: c }),
+      (s) => s.dispatch({ type: 'add-bond', bond: createBond(o.id, c.id) }),
+    );
+    const label = buildAtomLabel(page, o.id);
+    const text = label.map((s) => s.text).join('');
+    expect(text).toBe('OH');
+  });
+
+  it('CDXML explicit "OH" with right-justified label shows "OH" not "HOH"', () => {
+    const o = createAtom(0, 0, 8);
+    o.label = 'OH';
+    o.hasExplicitLabel = true;
+    const c = createAtom(40, 0, 6); // bond to the right
+    const page = buildPage(
+      (s) => s.dispatch({ type: 'add-atom', atom: o }),
+      (s) => s.dispatch({ type: 'add-atom', atom: c }),
+      (s) => s.dispatch({ type: 'add-bond', bond: createBond(o.id, c.id) }),
+    );
+    const label = buildAtomLabel(page, o.id);
+    const text = label.map((s) => s.text).join('');
+    expect(text).toBe('OH');
+  });
+
+  it('CDXML explicit "O" label shows just "O" (no implicit H)', () => {
+    const o = createAtom(0, 0, 8);
+    o.label = 'O';
+    o.hasExplicitLabel = true;
+    const c1 = createAtom(-40, 0, 6);
+    const c2 = createAtom(40, 0, 6);
+    const page = buildPage(
+      (s) => s.dispatch({ type: 'add-atom', atom: o }),
+      (s) => s.dispatch({ type: 'add-atom', atom: c1 }),
+      (s) => s.dispatch({ type: 'add-atom', atom: c2 }),
+      (s) => s.dispatch({ type: 'add-bond', bond: createBond(o.id, c1.id) }),
+      (s) => s.dispatch({ type: 'add-bond', bond: createBond(o.id, c2.id) }),
+    );
+    const label = buildAtomLabel(page, o.id);
+    const text = label.map((s) => s.text).join('');
+    expect(text).toBe('O');
+  });
+
   it('shows charge as superscript', () => {
     const n = createAtom(0, 0, 7);
     n.charge = 1;
