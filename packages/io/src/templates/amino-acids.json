@@ -1,0 +1,142 @@
+[
+  {
+    "name": "Glycine",
+    "abbr3": "Gly",
+    "abbr1": "G",
+    "smiles": "NCC(=O)O",
+    "category": "amino-acid"
+  },
+  {
+    "name": "Alanine",
+    "abbr3": "Ala",
+    "abbr1": "A",
+    "smiles": "CC(N)C(=O)O",
+    "category": "amino-acid"
+  },
+  {
+    "name": "Valine",
+    "abbr3": "Val",
+    "abbr1": "V",
+    "smiles": "CC(C)C(N)C(=O)O",
+    "category": "amino-acid"
+  },
+  {
+    "name": "Leucine",
+    "abbr3": "Leu",
+    "abbr1": "L",
+    "smiles": "CC(C)CC(N)C(=O)O",
+    "category": "amino-acid"
+  },
+  {
+    "name": "Isoleucine",
+    "abbr3": "Ile",
+    "abbr1": "I",
+    "smiles": "CCC(C)C(N)C(=O)O",
+    "category": "amino-acid"
+  },
+  {
+    "name": "Proline",
+    "abbr3": "Pro",
+    "abbr1": "P",
+    "smiles": "OC(=O)C1CCCN1",
+    "category": "amino-acid"
+  },
+  {
+    "name": "Phenylalanine",
+    "abbr3": "Phe",
+    "abbr1": "F",
+    "smiles": "NC(Cc1ccccc1)C(=O)O",
+    "category": "amino-acid"
+  },
+  {
+    "name": "Tryptophan",
+    "abbr3": "Trp",
+    "abbr1": "W",
+    "smiles": "NC(Cc1c[nH]c2ccccc12)C(=O)O",
+    "category": "amino-acid"
+  },
+  {
+    "name": "Methionine",
+    "abbr3": "Met",
+    "abbr1": "M",
+    "smiles": "CSCCC(N)C(=O)O",
+    "category": "amino-acid"
+  },
+  {
+    "name": "Serine",
+    "abbr3": "Ser",
+    "abbr1": "S",
+    "smiles": "NC(CO)C(=O)O",
+    "category": "amino-acid"
+  },
+  {
+    "name": "Threonine",
+    "abbr3": "Thr",
+    "abbr1": "T",
+    "smiles": "CC(O)C(N)C(=O)O",
+    "category": "amino-acid"
+  },
+  {
+    "name": "Cysteine",
+    "abbr3": "Cys",
+    "abbr1": "C",
+    "smiles": "NC(CS)C(=O)O",
+    "category": "amino-acid"
+  },
+  {
+    "name": "Tyrosine",
+    "abbr3": "Tyr",
+    "abbr1": "Y",
+    "smiles": "NC(Cc1ccc(O)cc1)C(=O)O",
+    "category": "amino-acid"
+  },
+  {
+    "name": "Asparagine",
+    "abbr3": "Asn",
+    "abbr1": "N",
+    "smiles": "NC(CC(=O)N)C(=O)O",
+    "category": "amino-acid"
+  },
+  {
+    "name": "Glutamine",
+    "abbr3": "Gln",
+    "abbr1": "Q",
+    "smiles": "NC(CCC(=O)N)C(=O)O",
+    "category": "amino-acid"
+  },
+  {
+    "name": "Aspartate",
+    "abbr3": "Asp",
+    "abbr1": "D",
+    "smiles": "NC(CC(=O)O)C(=O)O",
+    "category": "amino-acid"
+  },
+  {
+    "name": "Glutamate",
+    "abbr3": "Glu",
+    "abbr1": "E",
+    "smiles": "NC(CCC(=O)O)C(=O)O",
+    "category": "amino-acid"
+  },
+  {
+    "name": "Lysine",
+    "abbr3": "Lys",
+    "abbr1": "K",
+    "smiles": "NCCCCC(N)C(=O)O",
+    "category": "amino-acid"
+  },
+  {
+    "name": "Arginine",
+    "abbr3": "Arg",
+    "abbr1": "R",
+    "smiles": "NC(CCCNC(=N)N)C(=O)O",
+    "category": "amino-acid"
+  },
+  {
+    "name": "Histidine",
+    "abbr3": "His",
+    "abbr1": "H",
+    "smiles": "NC(Cc1cnc[nH]1)C(=O)O",
+    "category": "amino-acid"
+  }
+]

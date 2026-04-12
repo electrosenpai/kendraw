@@ -1,0 +1,54 @@
+[
+  { "name": "Aspirin", "smiles": "CC(=O)Oc1ccccc1C(=O)O", "category": "drug" },
+  { "name": "Ibuprofen", "smiles": "CC(C)Cc1ccc(cc1)C(C)C(=O)O", "category": "drug" },
+  { "name": "Paracetamol", "smiles": "CC(=O)Nc1ccc(O)cc1", "category": "drug" },
+  { "name": "Caffeine", "smiles": "Cn1c(=O)c2c(ncn2C)n(C)c1=O", "category": "drug" },
+  { "name": "Metformin", "smiles": "CN(C)C(=N)NC(=N)N", "category": "drug" },
+  {
+    "name": "Atorvastatin",
+    "smiles": "CC(C)c1n(CC[C@@H](O)C[C@@H](O)CC(=O)O)c(c2ccc(F)cc2)c(c1c1ccccc1)C(=O)Nc1ccccc1",
+    "category": "drug"
+  },
+  {
+    "name": "Amoxicillin",
+    "smiles": "CC1(C)SC2C(NC(=O)C(N)c3ccc(O)cc3)C(=O)N2C1C(=O)O",
+    "category": "drug"
+  },
+  {
+    "name": "Omeprazole",
+    "smiles": "COc1ccc2[nH]c(S(=O)Cc3ncc(C)c(OC)c3C)nc2c1",
+    "category": "drug"
+  },
+  {
+    "name": "Penicillin G",
+    "smiles": "CC1(C)SC2C(NC(=O)Cc3ccccc3)C(=O)N2C1C(=O)O",
+    "category": "drug"
+  },
+  { "name": "Diazepam", "smiles": "CN1C(=O)CN=C(c2ccccc2)c2cc(Cl)ccc21", "category": "drug" },
+  { "name": "Morphine", "smiles": "CN1CCC23c4c1cc(O)c4OC2C(O)C=CC3", "category": "drug" },
+  { "name": "Codeine", "smiles": "COc1ccc2CC3N(C)CCC4=CC1Oc2c34", "category": "drug" },
+  { "name": "Warfarin", "smiles": "CC(=O)CC(c1ccccc1)c1c(O)c2ccccc2oc1=O", "category": "drug" },
+  {
+    "name": "Ciprofloxacin",
+    "smiles": "OC(=O)c1cn(C2CC2)c2cc(N3CCNCC3)c(F)cc2c1=O",
+    "category": "drug"
+  },
+  {
+    "name": "Dexamethasone",
+    "smiles": "CC1CC2C3CCC4=CC(=O)C=CC4(C)C3(F)C(O)CC2(C)C1(O)C(=O)CO",
+    "category": "drug"
+  },
+  {
+    "name": "Prednisone",
+    "smiles": "CC12CC(=O)C3C(CCC4=CC(=O)C=CC34C)C1CCC2(O)C(=O)CO",
+    "category": "drug"
+  },
+  { "name": "Testosterone", "smiles": "CC12CCC3C(C1CCC2O)CCC4=CC(=O)CCC34C", "category": "drug" },
+  { "name": "Estradiol", "smiles": "CC12CCC3c4ccc(O)cc4CCC3C1CCC2O", "category": "drug" },
+  { "name": "Lidocaine", "smiles": "CCN(CC)CC(=O)Nc1c(C)cccc1C", "category": "drug" },
+  {
+    "name": "Loratadine",
+    "smiles": "CCOC(=O)N1CCC(=C2c3ccc(Cl)cc3CCc3ncccc32)CC1",
+    "category": "drug"
+  }
+]

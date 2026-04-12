@@ -1,0 +1,32 @@
+[
+  {
+    "name": "Boc (tert-butoxycarbonyl)",
+    "smiles": "CC(C)(C)OC(=O)",
+    "category": "protecting-group"
+  },
+  {
+    "name": "Fmoc (fluorenylmethoxycarbonyl)",
+    "smiles": "O=COC(c1ccccc1)c1ccccc1",
+    "category": "protecting-group"
+  },
+  { "name": "Cbz (benzyloxycarbonyl)", "smiles": "O=COCc1ccccc1", "category": "protecting-group" },
+  {
+    "name": "TBS (tert-butyldimethylsilyl)",
+    "smiles": "CC(C)(C)[Si](C)(C)O",
+    "category": "protecting-group"
+  },
+  { "name": "TMS (trimethylsilyl)", "smiles": "C[Si](C)(C)O", "category": "protecting-group" },
+  {
+    "name": "TIPS (triisopropylsilyl)",
+    "smiles": "CC(C)[Si](OC)(C(C)C)C(C)C",
+    "category": "protecting-group"
+  },
+  { "name": "Bn (benzyl)", "smiles": "OCc1ccccc1", "category": "protecting-group" },
+  {
+    "name": "PMB (para-methoxybenzyl)",
+    "smiles": "COc1ccc(CO)cc1",
+    "category": "protecting-group"
+  },
+  { "name": "Ac (acetyl)", "smiles": "CC(=O)O", "category": "protecting-group" },
+  { "name": "Tosyl (Ts)", "smiles": "Cc1ccc(S(=O)(=O)O)cc1", "category": "protecting-group" }
+]

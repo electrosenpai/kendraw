@@ -1,0 +1,24 @@
+[
+  { "name": "D-Glucose", "smiles": "OC[C@H]1OC(O)[C@H](O)[C@@H](O)[C@@H]1O", "category": "sugar" },
+  { "name": "D-Fructose", "smiles": "OCC(=O)[C@@H](O)[C@H](O)[C@H](O)CO", "category": "sugar" },
+  { "name": "D-Galactose", "smiles": "OC[C@H]1OC(O)[C@H](O)[C@@H](O)[C@H]1O", "category": "sugar" },
+  { "name": "D-Mannose", "smiles": "OC[C@H]1OC(O)[C@@H](O)[C@@H](O)[C@@H]1O", "category": "sugar" },
+  { "name": "D-Ribose", "smiles": "OC[C@H]1OC(O)[C@H](O)[C@H]1O", "category": "sugar" },
+  { "name": "2-Deoxy-D-ribose", "smiles": "OC[C@H]1OC(O)C[C@@H]1O", "category": "sugar" },
+  { "name": "D-Xylose", "smiles": "OC[C@@H]1OC(O)[C@H](O)[C@@H]1O", "category": "sugar" },
+  {
+    "name": "Sucrose",
+    "smiles": "OC[C@H]1OC(O[C@@]2(CO)O[C@H](CO)[C@@H](O)[C@@H]2O)[C@H](O)[C@@H](O)[C@@H]1O",
+    "category": "sugar"
+  },
+  {
+    "name": "Lactose",
+    "smiles": "OC[C@H]1OC(O)[C@H](O)[C@@H](O)[C@@H]1OC1OC(CO)[C@H](O)[C@H](O)[C@H]1O",
+    "category": "sugar"
+  },
+  {
+    "name": "Maltose",
+    "smiles": "OC[C@H]1OC(O)[C@H](O)[C@@H](O)[C@@H]1OC1OC(CO)C(O)C(O)C1O",
+    "category": "sugar"
+  }
+]

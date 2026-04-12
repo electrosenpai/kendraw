@@ -3,6 +3,7 @@ import { Canvas } from './Canvas';
 import { TabBar } from './TabBar';
 import { ShortcutCheatsheet } from './ShortcutCheatsheet';
 import { AboutPage } from './AboutPage';
+import { MoleculeSearch } from './MoleculeSearch';
 import { workspaceStore, type WorkspaceState } from './workspace-store';
 
 function subscribeToWorkspace(onStoreChange: () => void) {
@@ -18,6 +19,7 @@ export function App() {
   const [initialized, setInitialized] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
+  const [showMolSearch, setShowMolSearch] = useState(false);
 
   useEffect(() => {
     async function init() {
@@ -40,6 +42,14 @@ export function App() {
       if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
         e.preventDefault();
         workspaceStore.createTab();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'm') {
+        e.preventDefault();
+        setShowMolSearch((s) => !s);
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'l') {
+        e.preventDefault();
+        setShowMolSearch((s) => !s);
       }
     }
     window.addEventListener('keydown', handleKeyDown);
@@ -108,6 +118,9 @@ export function App() {
       </div>
       {showShortcuts && <ShortcutCheatsheet onClose={() => setShowShortcuts(false)} />}
       {showAbout && <AboutPage onClose={() => setShowAbout(false)} />}
+      {showMolSearch && activeStore && (
+        <MoleculeSearch store={activeStore} onClose={() => setShowMolSearch(false)} />
+      )}
     </div>
   );
 }

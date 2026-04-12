@@ -1,0 +1,17 @@
+[
+  { "name": "Water", "smiles": "O", "category": "solvent" },
+  { "name": "Methanol", "smiles": "CO", "category": "solvent" },
+  { "name": "Ethanol", "smiles": "CCO", "category": "solvent" },
+  { "name": "Acetone", "smiles": "CC(=O)C", "category": "solvent" },
+  { "name": "DCM", "smiles": "ClCCl", "category": "solvent" },
+  { "name": "Chloroform", "smiles": "ClC(Cl)Cl", "category": "solvent" },
+  { "name": "THF", "smiles": "C1CCOC1", "category": "solvent" },
+  { "name": "Diethyl ether", "smiles": "CCOCC", "category": "solvent" },
+  { "name": "DMF", "smiles": "CN(C)C=O", "category": "solvent" },
+  { "name": "DMSO", "smiles": "CS(=O)C", "category": "solvent" },
+  { "name": "Toluene", "smiles": "Cc1ccccc1", "category": "solvent" },
+  { "name": "Hexane", "smiles": "CCCCCC", "category": "solvent" },
+  { "name": "Ethyl acetate", "smiles": "CCOC(=O)C", "category": "solvent" },
+  { "name": "Acetonitrile", "smiles": "CC#N", "category": "solvent" },
+  { "name": "Pyridine", "smiles": "c1ccncc1", "category": "solvent" }
+]

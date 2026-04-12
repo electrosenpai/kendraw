@@ -1,0 +1,16 @@
+[
+  { "name": "NaBH4", "smiles": "[Na+].[BH4-]", "category": "reagent" },
+  { "name": "LiAlH4", "smiles": "[Li+].[AlH4-]", "category": "reagent" },
+  { "name": "mCPBA", "smiles": "OC(=O)c1cccc(Cl)c1", "category": "reagent" },
+  { "name": "DCC", "smiles": "C(=NC1CCCCC1)=NC1CCCCC1", "category": "reagent" },
+  { "name": "DMAP", "smiles": "CN(C)c1ccncc1", "category": "reagent" },
+  { "name": "Triethylamine", "smiles": "CCN(CC)CC", "category": "reagent" },
+  { "name": "DIBAL-H", "smiles": "CC(C)C([Al]C(C)C)C", "category": "reagent" },
+  {
+    "name": "Grubbs 1st gen",
+    "smiles": "Cl[Ru](Cl)(=CC1CCCCC1)(c1ccccc1)P(C1CCCCC1)(C1CCCCC1)C1CCCCC1",
+    "category": "reagent"
+  },
+  { "name": "Pd(PPh3)4", "smiles": "[Pd]", "category": "reagent" },
+  { "name": "Oxalyl chloride", "smiles": "ClC(=O)C(=O)Cl", "category": "reagent" }
+]
