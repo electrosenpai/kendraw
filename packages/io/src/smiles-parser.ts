@@ -298,8 +298,11 @@ function parseBracketAtom(bracket: string): ParsedAtom {
 }
 
 /**
- * Simple force-directed 2D layout.
- * Places atoms using adjacency info to create reasonable molecular layouts.
+ * 2D layout with ring detection and polygon placement.
+ * 1. Detect all rings via DFS back-edges
+ * 2. Place ring atoms as regular polygons
+ * 3. Place chain atoms via BFS with chemical angles
+ * 4. Spring relaxation to resolve overlaps
  */
 function layout2D(atomCount: number, bonds: ParsedBond[]): { x: number; y: number }[] {
   if (atomCount === 0) return [];
@@ -311,34 +314,97 @@ function layout2D(atomCount: number, bonds: ParsedBond[]): { x: number; y: numbe
   }
 
   const BOND_LEN = 40;
-  const cx = Array.from({ length: atomCount }, () => 0);
-  const cy = Array.from({ length: atomCount }, () => 0);
+  const posX = Array.from({ length: atomCount }, () => 0);
+  const posY = Array.from({ length: atomCount }, () => 0);
   const placed = new Set<number>();
-  const queue: number[] = [0];
-  placed.add(0);
-  cx[0] = 300;
-  cy[0] = 300;
+
+  // --- Step 1: Find rings via DFS ---
+  const rings = findRings(atomCount, adj);
+
+  // --- Step 2: Place ring atoms as regular polygons ---
+  const ringPlaced = new Set<number>();
+  let ringOffsetX = 300;
+  for (const ring of rings) {
+    // Check if any atom in this ring is already placed
+    let anchorIdx = -1;
+    const anchorAngle = -Math.PI / 2; // default: first atom at top
+    for (const atomIdx of ring) {
+      if (ringPlaced.has(atomIdx)) {
+        anchorIdx = atomIdx;
+        break;
+      }
+    }
+
+    const n = ring.length;
+    const radius = BOND_LEN / (2 * Math.sin(Math.PI / n)); // polygon circumradius
+
+    let centerX: number;
+    let centerY: number;
+
+    if (anchorIdx >= 0) {
+      // Compute center from the anchor atom position
+      const ai = ring.indexOf(anchorIdx);
+      const aAngle = anchorAngle + (2 * Math.PI * ai) / n;
+      centerX = (posX[anchorIdx] ?? 0) - radius * Math.cos(aAngle);
+      centerY = (posY[anchorIdx] ?? 0) - radius * Math.sin(aAngle);
+    } else {
+      centerX = ringOffsetX;
+      centerY = 300;
+      ringOffsetX += radius * 2.5;
+    }
+
+    for (let i = 0; i < n; i++) {
+      const atomIdx = ring[i];
+      if (atomIdx === undefined) continue;
+      if (ringPlaced.has(atomIdx)) continue; // already placed by another ring
+      const angle = -Math.PI / 2 + (2 * Math.PI * i) / n;
+      posX[atomIdx] = centerX + radius * Math.cos(angle);
+      posY[atomIdx] = centerY + radius * Math.sin(angle);
+      placed.add(atomIdx);
+      ringPlaced.add(atomIdx);
+    }
+  }
+
+  // --- Step 3: BFS for chain atoms (non-ring) ---
+  // Start from ring atoms or atom 0
+  const bfsStart: number[] = [];
+  for (const atomIdx of placed) bfsStart.push(atomIdx);
+  if (bfsStart.length === 0) {
+    bfsStart.push(0);
+    posX[0] = 300;
+    posY[0] = 300;
+    placed.add(0);
+  }
+
+  const queue = [...bfsStart];
+  let zigzagSign = 1;
 
   while (queue.length > 0) {
     const cur = queue.shift();
     if (cur === undefined) break;
     const neighbors = adj[cur] ?? [];
-    const placedNeighbors = neighbors.filter((n) => placed.has(n));
-    let baseAngle = 0;
+    const unplaced = neighbors.filter((n) => !placed.has(n));
+    if (unplaced.length === 0) continue;
 
-    if (placedNeighbors.length > 0) {
-      const pn = placedNeighbors[0] ?? 0;
-      baseAngle = Math.atan2((cy[cur] ?? 0) - (cy[pn] ?? 0), (cx[cur] ?? 0) - (cx[pn] ?? 0));
+    // Find angle away from placed neighbors
+    const placedNbrs = neighbors.filter((n) => placed.has(n));
+    let baseAngle = 0;
+    if (placedNbrs.length > 0) {
+      // Average angle FROM cur TO placed neighbors, then go opposite
+      let sumSin = 0;
+      let sumCos = 0;
+      for (const pn of placedNbrs) {
+        const a = Math.atan2(
+          (posY[pn] ?? 0) - (posY[cur] ?? 0),
+          (posX[pn] ?? 0) - (posX[cur] ?? 0),
+        );
+        sumSin += Math.sin(a);
+        sumCos += Math.cos(a);
+      }
+      baseAngle = Math.atan2(sumSin, sumCos) + Math.PI; // opposite direction
     }
 
-    const unplaced = neighbors.filter((n) => !placed.has(n));
-
-    // Determine bond order to detect hybridization for angle choice
-    const maxOrder = bonds
-      .filter((b) => b.from === cur || b.to === cur)
-      .reduce((max, b) => Math.max(max, b.order), 0);
-    // sp2 = 120°, sp3 = 109.5°, sp = 180°
-    const chemAngle = maxOrder >= 2 ? (2 * Math.PI) / 3 : (109.5 * Math.PI) / 180;
+    const chemAngle = (2 * Math.PI) / 3; // 120° default
 
     for (let j = 0; j < unplaced.length; j++) {
       const n = unplaced[j];
@@ -346,51 +412,47 @@ function layout2D(atomCount: number, bonds: ParsedBond[]): { x: number; y: numbe
 
       let angle: number;
       if (unplaced.length === 1) {
-        // Single new bond: zigzag at chemical angle
-        // Alternate sign based on the atom index for consistent zigzag
-        const sign = cur % 2 === 0 ? 1 : -1;
-        angle = baseAngle + chemAngle * sign;
+        angle = baseAngle + (chemAngle / 3) * zigzagSign;
+        zigzagSign *= -1;
       } else {
-        // Multiple new bonds: distribute evenly in the available arc
         const totalArc = chemAngle * (unplaced.length - 1);
-        const start = baseAngle - totalArc / 2;
-        angle = start + chemAngle * j;
+        angle = baseAngle - totalArc / 2 + chemAngle * j;
       }
 
-      cx[n] = (cx[cur] ?? 0) + BOND_LEN * Math.cos(angle);
-      cy[n] = (cy[cur] ?? 0) + BOND_LEN * Math.sin(angle);
+      posX[n] = (posX[cur] ?? 0) + BOND_LEN * Math.cos(angle);
+      posY[n] = (posY[cur] ?? 0) + BOND_LEN * Math.sin(angle);
       placed.add(n);
       queue.push(n);
     }
   }
 
-  // Place disconnected atoms
+  // Place any remaining disconnected atoms
   let offsetX = 0;
   for (let i = 0; i < atomCount; i++) {
     if (!placed.has(i)) {
-      cx[i] = 300 + offsetX;
-      cy[i] = 400;
+      posX[i] = 500 + offsetX;
+      posY[i] = 300;
       offsetX += BOND_LEN;
       placed.add(i);
     }
   }
 
-  // Spring relaxation (40 iterations for better convergence)
+  // --- Step 4: Spring relaxation (30 iterations) ---
   const fx = Array.from({ length: atomCount }, () => 0);
   const fy = Array.from({ length: atomCount }, () => 0);
 
-  for (let iter = 0; iter < 40; iter++) {
+  for (let iter = 0; iter < 30; iter++) {
     fx.fill(0);
     fy.fill(0);
 
-    // Repulsion
+    // Repulsion between non-bonded close atoms
     for (let a = 0; a < atomCount; a++) {
       for (let b = a + 1; b < atomCount; b++) {
-        const dx = (cx[b] ?? 0) - (cx[a] ?? 0);
-        const dy = (cy[b] ?? 0) - (cy[a] ?? 0);
+        const dx = (posX[b] ?? 0) - (posX[a] ?? 0);
+        const dy = (posY[b] ?? 0) - (posY[a] ?? 0);
         const dist = Math.sqrt(dx * dx + dy * dy) + 0.1;
-        if (dist < BOND_LEN * 2) {
-          const f = (BOND_LEN * 2 - dist) * 0.1;
+        if (dist < BOND_LEN * 1.8) {
+          const f = (BOND_LEN * 1.8 - dist) * 0.08;
           const ffx = (dx / dist) * f;
           const ffy = (dy / dist) * f;
           fx[a] = (fx[a] ?? 0) - ffx;
@@ -401,12 +463,12 @@ function layout2D(atomCount: number, bonds: ParsedBond[]): { x: number; y: numbe
       }
     }
 
-    // Spring attraction
+    // Spring attraction for bonds
     for (const b of bonds) {
-      const dx = (cx[b.to] ?? 0) - (cx[b.from] ?? 0);
-      const dy = (cy[b.to] ?? 0) - (cy[b.from] ?? 0);
+      const dx = (posX[b.to] ?? 0) - (posX[b.from] ?? 0);
+      const dy = (posY[b.to] ?? 0) - (posY[b.from] ?? 0);
       const dist = Math.sqrt(dx * dx + dy * dy) + 0.1;
-      const f = (dist - BOND_LEN) * 0.05;
+      const f = (dist - BOND_LEN) * 0.03;
       const ffx = (dx / dist) * f;
       const ffy = (dy / dist) * f;
       fx[b.from] = (fx[b.from] ?? 0) + ffx;
@@ -415,12 +477,63 @@ function layout2D(atomCount: number, bonds: ParsedBond[]): { x: number; y: numbe
       fy[b.to] = (fy[b.to] ?? 0) - ffy;
     }
 
-    // Apply
     for (let a = 0; a < atomCount; a++) {
-      cx[a] = (cx[a] ?? 0) + (fx[a] ?? 0);
-      cy[a] = (cy[a] ?? 0) + (fy[a] ?? 0);
+      // Ring atoms get reduced force (preserve polygon shape)
+      const damping = ringPlaced.has(a) ? 0.2 : 1.0;
+      posX[a] = (posX[a] ?? 0) + (fx[a] ?? 0) * damping;
+      posY[a] = (posY[a] ?? 0) + (fy[a] ?? 0) * damping;
     }
   }
 
-  return cx.map((x, i) => ({ x, y: cy[i] ?? 0 }));
+  return posX.map((x, i) => ({ x, y: posY[i] ?? 0 }));
+}
+
+/**
+ * Find rings using DFS back-edge detection.
+ * Returns arrays of atom indices forming each ring.
+ */
+function findRings(atomCount: number, adj: number[][]): number[][] {
+  const rings: number[][] = [];
+  const visited = new Set<number>();
+  const parent = new Map<number, number>();
+
+  function dfs(node: number, par: number): void {
+    visited.add(node);
+    parent.set(node, par);
+    for (const neighbor of adj[node] ?? []) {
+      if (neighbor === par) continue;
+      if (visited.has(neighbor)) {
+        // Back edge found — extract ring
+        const ring: number[] = [neighbor];
+        let cur = node;
+        while (cur !== neighbor) {
+          ring.push(cur);
+          cur = parent.get(cur) ?? neighbor;
+          if (ring.length > atomCount) break; // safety
+        }
+        if (ring.length >= 3 && ring.length <= 8) {
+          rings.push(ring);
+        }
+      } else {
+        dfs(neighbor, node);
+      }
+    }
+  }
+
+  for (let i = 0; i < atomCount; i++) {
+    if (!visited.has(i)) dfs(i, -1);
+  }
+
+  // Remove duplicate rings (same atoms, different order)
+  const unique: number[][] = [];
+  const seen = new Set<string>();
+  for (const ring of rings) {
+    const key = [...ring].sort((a, b) => a - b).join(',');
+    if (!seen.has(key)) {
+      seen.add(key);
+      unique.push(ring);
+    }
+  }
+
+  return unique;
 }
