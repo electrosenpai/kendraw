@@ -12,6 +12,7 @@ import type {
 export type AddAtomCommand = { type: 'add-atom'; atom: Atom };
 export type RemoveAtomCommand = { type: 'remove-atom'; id: AtomId };
 export type MoveAtomCommand = { type: 'move-atom'; id: AtomId; dx: number; dy: number };
+export type MoveBatchCommand = { type: 'move-batch'; ids: AtomId[]; dx: number; dy: number };
 export type UpdateAtomCommand = {
   type: 'update-atom';
   id: AtomId;
@@ -32,6 +33,7 @@ export type Command =
   | AddAtomCommand
   | RemoveAtomCommand
   | MoveAtomCommand
+  | MoveBatchCommand
   | UpdateAtomCommand
   | AddBondCommand
   | RemoveBondCommand
@@ -45,6 +47,7 @@ export type SceneDiff =
   | { type: 'atom-added'; id: AtomId }
   | { type: 'atom-removed'; id: AtomId }
   | { type: 'atom-moved'; id: AtomId }
+  | { type: 'batch-moved' }
   | { type: 'atom-updated'; id: AtomId }
   | { type: 'bond-added'; id: BondId }
   | { type: 'bond-removed'; id: BondId }

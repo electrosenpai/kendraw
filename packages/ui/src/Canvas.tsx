@@ -17,6 +17,7 @@ import {
   mirrorAtomsH,
   mirrorAtomsV,
   defaultCurlyGeometry,
+  floodSelectMolecule,
   type SceneStore,
   type Selection,
   type ClipboardData,
@@ -52,6 +53,8 @@ export function Canvas({ store, onMoleculeSearch }: CanvasProps) {
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const isPanningRef = useRef(false);
   const panStartRef = useRef({ x: 0, y: 0, panX: 0, panY: 0 });
+  const isMovingRef = useRef(false);
+  const moveStartRef = useRef({ x: 0, y: 0 });
   const [cursorPos, setCursorPos] = useState<{ x: number; y: number } | null>(null);
 
   const updateToolState = useCallback((partial: Partial<ToolState>) => {
@@ -246,6 +249,17 @@ export function Canvas({ store, onMoleculeSearch }: CanvasProps) {
         return;
       }
 
+      // Select all (Ctrl+A)
+      if (isMod && e.key === 'a') {
+        e.preventDefault();
+        const page = store.getState().pages[store.getState().activePageIndex];
+        if (page) {
+          const allIds = Object.keys(page.atoms) as AtomId[];
+          setSelection(addToSelection(createSelection(), { atomIds: allIds }));
+        }
+        return;
+      }
+
       // Delete (cascade: remove connected bonds first, then atoms)
       if (e.key === 'Delete' || e.key === 'Backspace') {
         if (selection.atomIds.length > 0) {
@@ -377,11 +391,24 @@ export function Canvas({ store, onMoleculeSearch }: CanvasProps) {
         return;
       }
 
+      // Select tool: check if clicking on a selected atom to start move
+      if (toolState.tool === 'select') {
+        const hitId = spatialIndexRef.current.hitTest(x, y, ATOM_RADIUS);
+        if (hitId && selection.atomIds.includes(hitId)) {
+          // Start moving the selection
+          isMovingRef.current = true;
+          moveStartRef.current = { x, y };
+          dragStartRef.current = { x, y };
+          isDraggingRef.current = false;
+          return;
+        }
+      }
+
       // Track mouse-down position for all tools (drag guard)
       dragStartRef.current = { x, y };
       isDraggingRef.current = false;
     },
-    [toolState.tool, toCanvasCoords, pan],
+    [toolState.tool, toCanvasCoords, pan, selection],
   );
 
   const handleMouseMove = useCallback(
@@ -398,13 +425,26 @@ export function Canvas({ store, onMoleculeSearch }: CanvasProps) {
         return;
       }
 
+      // Moving selected atoms
+      if (isMovingRef.current && selection.atomIds.length > 0) {
+        const { x: mx, y: my } = toCanvasCoords(e);
+        const mdx = mx - moveStartRef.current.x;
+        const mdy = my - moveStartRef.current.y;
+        if (Math.abs(mdx) > 1 || Math.abs(mdy) > 1) {
+          store.dispatch({ type: 'move-batch', ids: selection.atomIds, dx: mdx, dy: mdy });
+          moveStartRef.current = { x: mx, y: my };
+          isDraggingRef.current = true;
+        }
+        return;
+      }
+
       if (!dragStartRef.current) return;
       const { x, y } = toCanvasCoords(e);
       const dx = x - dragStartRef.current.x;
       const dy = y - dragStartRef.current.y;
       if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
         isDraggingRef.current = true;
-        // Only show selection rect for select tool
+        // Only show selection rect for select tool (not moving)
         if (toolState.tool === 'select') {
           rendererRef.current?.setSelectionRect({
             x1: dragStartRef.current.x,
@@ -415,7 +455,22 @@ export function Canvas({ store, onMoleculeSearch }: CanvasProps) {
         }
       }
     },
-    [toolState.tool, toCanvasCoords],
+    [toolState.tool, toCanvasCoords, selection, store],
+  );
+
+  // Double-click handler for flood-select molecule
+  const handleDoubleClick = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (toolState.tool !== 'select') return;
+      const { x, y } = toCanvasCoords(e);
+      const hitId = spatialIndexRef.current.hitTest(x, y, ATOM_RADIUS);
+      if (!hitId) return;
+      const page = store.getState().pages[store.getState().activePageIndex];
+      if (!page) return;
+      const moleculeIds = floodSelectMolecule(page, hitId);
+      setSelection(addToSelection(createSelection(), { atomIds: moleculeIds }));
+    },
+    [toolState.tool, toCanvasCoords, store],
   );
 
   const handleMouseUp = useCallback(
@@ -423,6 +478,14 @@ export function Canvas({ store, onMoleculeSearch }: CanvasProps) {
       // End panning
       if (isPanningRef.current) {
         isPanningRef.current = false;
+        return;
+      }
+
+      // End move drag
+      if (isMovingRef.current) {
+        isMovingRef.current = false;
+        dragStartRef.current = null;
+        isDraggingRef.current = false;
         return;
       }
 
@@ -681,11 +744,12 @@ export function Canvas({ store, onMoleculeSearch }: CanvasProps) {
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
+          onDoubleClick={handleDoubleClick}
           style={{
             width: '100%',
             height: '100%',
             backgroundColor: 'var(--kd-color-bg-primary)',
-            cursor: cursorStyle,
+            cursor: isMovingRef.current ? 'grabbing' : cursorStyle,
           }}
         />
         <PropertyPanel doc={doc} visible={showProperties} />

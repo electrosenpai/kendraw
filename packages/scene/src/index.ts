@@ -24,6 +24,7 @@ export type {
   AddAtomCommand,
   RemoveAtomCommand,
   MoveAtomCommand,
+  MoveBatchCommand,
   UpdateAtomCommand,
   AddBondCommand,
   RemoveBondCommand,
@@ -73,3 +74,5 @@ export { copySelection, prepareForPaste, type ClipboardData } from './clipboard.
 export { rotateAtoms, snapAngle, mirrorAtomsH, mirrorAtomsV, computeCenter } from './transforms.js';
 
 export { evaluateBezier, bezierBoundingBox, bezierLength, defaultCurlyGeometry } from './bezier.js';
+
+export { floodSelectMolecule } from './flood-select.js';

@@ -78,6 +78,21 @@ function applyCommand(state: Document, command: Command): { next: Document; diff
       });
       return { next, diff: { type: 'atom-moved', id: command.id } };
     }
+    case 'move-batch': {
+      const next = produce(state, (draft) => {
+        const page = draft.pages[pageIndex];
+        if (page) {
+          for (const id of command.ids) {
+            const atom = page.atoms[id];
+            if (atom) {
+              atom.x += command.dx;
+              atom.y += command.dy;
+            }
+          }
+        }
+      });
+      return { next, diff: { type: 'batch-moved' } };
+    }
     case 'update-atom': {
       const next = produce(state, (draft) => {
         const page = draft.pages[pageIndex];
