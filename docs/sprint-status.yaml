@@ -38,7 +38,7 @@ sprints:
     end_date: null
     capacity_points: 45 # cumulative effort budget, not 10 pts
     committed_points: 45
-    completed_points: 9
+    completed_points: 10
     status: 'in_progress'
     goal: 'Repo + CI + ADRs + 4 POCs verts (POC #1 et #2 bloquants). Aucune story applicative.'
     gate_criteria:
@@ -108,7 +108,9 @@ sprints:
         title: 'Structure docs/ + ADR template'
         points: 1
         priority: 'must_have'
-        status: 'not_started'
+        status: 'completed'
+        story_doc: 'docs/stories/STORY-INF-008.md'
+        completed_at: '2026-04-12'
         depends_on: []
       - id: 'STORY-INF-009'
         title: '.github/ templates (PR, issue, dependabot, code owners)'
