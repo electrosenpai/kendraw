@@ -25,7 +25,7 @@ velocity:
   rolling_average: null
 
 # Current state
-current_sprint: 14
+current_sprint: 15
 current_sprint_status: 'completed'
 mvp_target: 'v0.1.0 in ~9-10 months'
 
@@ -579,11 +579,28 @@ sprints:
     name: 'Sprint 15 — Citation + EXIF metadata + image clipboard'
     type: 'standard'
     capacity_points: 10
-    status: 'planned'
+    committed_points: 10
+    completed_points: 10
+    status: 'completed'
     goal: 'Splash + About + EXIF/SVG metadata + clipboard image cross-OS'
     epics: ['EPIC-012', 'EPIC-007']
     frs: ['FR-025', 'FR-026', 'FR-027']
-    estimated_stories: 3
+    stories:
+      - id: 'STORY-15.1'
+        title: 'About page with BibTeX citation copy'
+        points: 3
+        status: 'completed'
+        completed_at: '2026-04-12'
+      - id: 'STORY-15.2'
+        title: 'SVG metadata injection (Dublin Core RDF)'
+        points: 3
+        status: 'completed'
+        completed_at: '2026-04-12'
+      - id: 'STORY-15.3'
+        title: 'Image clipboard (ClipboardItem API ready)'
+        points: 4
+        status: 'completed'
+        completed_at: '2026-04-12'
 
   - sprint_number: 16
     name: 'Sprint 16 — Self-hosted bundle + static demo + i18n scaffold'
