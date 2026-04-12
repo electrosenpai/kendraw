@@ -16,11 +16,11 @@
 
 ### Options evaluees
 
-| Option        | Licence     | JRE requis | Image size impact | Precision        | Complexite |
-|---------------|-------------|------------|-------------------|------------------|------------|
-| **py2opsin**  | MIT         | Oui        | +100 MB (JRE)     | Excellente       | Faible     |
-| sidecar JVM   | Apache-2.0  | Oui        | +200 MB (image separee) | Excellente | Moyenne    |
-| STOUT (ML)    | MIT         | Non        | +500 MB (PyTorch) | Moyenne          | Moyenne    |
+| Option       | Licence    | JRE requis | Image size impact       | Precision  | Complexite |
+| ------------ | ---------- | ---------- | ----------------------- | ---------- | ---------- |
+| **py2opsin** | MIT        | Oui        | +100 MB (JRE)           | Excellente | Faible     |
+| sidecar JVM  | Apache-2.0 | Oui        | +200 MB (image separee) | Excellente | Moyenne    |
+| STOUT (ML)   | MIT        | Non        | +500 MB (PyTorch)       | Moyenne    | Moyenne    |
 
 ### Recommandation : py2opsin
 
@@ -33,12 +33,14 @@
 ### Impact sur le Dockerfile backend
 
 V1 ajoutera au Dockerfile :
+
 ```dockerfile
 # Install JRE for OPSIN (V1 only)
 RUN apt-get update && apt-get install -y --no-install-recommends openjdk-17-jre-headless && rm -rf /var/lib/apt/lists/*
 ```
 
 Et dans `pyproject.toml` :
+
 ```toml
 dependencies = [
     ...
@@ -49,6 +51,7 @@ dependencies = [
 ### Mesures differees (necessitent JRE)
 
 Les mesures suivantes seront realisees lors de la validation finale pre-V1 :
+
 - Latence cold start (premier appel JVM).
 - Latence steady-state (appels suivants).
 - Couverture sur test set IUPAC 200 noms (cf. `docs/test-corpus-plan.md` test set #3).
@@ -65,6 +68,7 @@ Les mesures suivantes seront realisees lors de la validation finale pre-V1 :
 ---
 
 ## References
+
 - Architecture §4.2, §5.2.2, §15.1 POC #4, TO-008
 - Test corpus plan : `docs/test-corpus-plan.md` §3-4
 - OPSIN scaffold : `backend/kendraw_chem/naming_opsin.py`

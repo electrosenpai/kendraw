@@ -60,7 +60,8 @@ function applyCommand(state: Document, command: Command): { next: Document; diff
       const next = produce(state, (draft) => {
         const page = draft.pages[pageIndex];
         if (page) {
-          delete page.atoms[command.id];
+          const { [command.id]: _, ...rest } = page.atoms;
+          page.atoms = rest as typeof page.atoms;
         }
       });
       return { next, diff: { type: 'atom-removed', id: command.id } };

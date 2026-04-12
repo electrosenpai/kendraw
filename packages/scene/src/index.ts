@@ -19,12 +19,7 @@ export type {
   Document,
 } from './types.js';
 
-export type {
-  Command,
-  AddAtomCommand,
-  RemoveAtomCommand,
-  SceneDiff,
-} from './commands.js';
+export type { Command, AddAtomCommand, RemoveAtomCommand, SceneDiff } from './commands.js';
 
 export type { SceneStore, Unsubscribe, SceneListener } from './store.js';
 export { createSceneStore, createEmptyDocument } from './store.js';

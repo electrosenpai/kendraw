@@ -44,6 +44,7 @@
 ## Prochaine etape
 
 Attendre l'arrivee du corpus URD Abbaye (calendrier 2-4 semaines apres envoi mail). Puis :
+
 1. Analyser les 50-100 fichiers reels.
 2. Identifier le subset minimal a supporter pour >= 95 % couverture.
 3. Implementer le parser TS/Python.
@@ -52,6 +53,7 @@ Attendre l'arrivee du corpus URD Abbaye (calendrier 2-4 semaines apres envoi mai
 ---
 
 ## References
+
 - Architecture §5.2.2, §15.1 POC #3
 - Test corpus plan : `docs/test-corpus-plan.md` §2
 - CDXML scaffold : `backend/kendraw_chem/convert_cdxml.py`

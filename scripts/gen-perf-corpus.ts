@@ -130,10 +130,13 @@ function generateRingCluster(targetAtoms: number, seed: number): BenchmarkStruct
       const next = (i + 1) % ringAtomIds.length;
       if (next < ringAtomIds.length && ringAtomIds[next] !== undefined) {
         const bid = `b${bondIdx}`;
+        const fromId = ringAtomIds[i];
+        const toId = ringAtomIds[next];
+        if (!fromId || !toId) continue;
         bonds[bid] = {
           id: bid,
-          fromAtomId: ringAtomIds[i]!,
-          toAtomId: ringAtomIds[next]!,
+          fromAtomId: fromId,
+          toAtomId: toId,
           order: i % 2 === 0 ? 2 : 1, // alternating for aromatic-like
           style: i % 2 === 0 ? 'double' : 'single',
         };
@@ -177,7 +180,7 @@ function generateMixed(targetAtoms: number, seed: number): BenchmarkStructure {
           id,
           x: cx + (rng() - 0.5) * spacing * 2,
           y: cy + (rng() - 0.5) * spacing * 2,
-          element: [6, 6, 6, 7, 8, 16][Math.floor(rng() * 6)]!,
+          element: [6, 6, 6, 7, 8, 16][Math.floor(rng() * 6)] ?? 6,
           charge: 0,
         };
         if (atomIdx > clusterStart) {
@@ -208,7 +211,14 @@ function generateMixed(targetAtoms: number, seed: number): BenchmarkStructure {
 
 // ---- Main ----
 
-const outDir = join(import.meta.dirname ?? '.', '..', 'tests', 'fixtures', 'perf-benchmarks', 'synthetic');
+const outDir = join(
+  import.meta.dirname ?? '.',
+  '..',
+  'tests',
+  'fixtures',
+  'perf-benchmarks',
+  'synthetic',
+);
 mkdirSync(outDir, { recursive: true });
 
 const sizes = [100, 250, 500, 750];
@@ -237,5 +247,12 @@ for (const size of sizes) {
   }
 }
 
-writeFileSync(join(outDir, 'manifest.json'), JSON.stringify({ seed: SEED_BASE, generated: new Date().toISOString(), structures: manifest }, null, 2));
+writeFileSync(
+  join(outDir, 'manifest.json'),
+  JSON.stringify(
+    { seed: SEED_BASE, generated: new Date().toISOString(), structures: manifest },
+    null,
+    2,
+  ),
+);
 console.log(`\nGenerated ${manifest.length} structures in ${outDir}`);

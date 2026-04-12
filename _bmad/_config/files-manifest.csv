@@ -1,6 +1,6 @@
 type,name,module,path,hash
 "csv","agent-manifest","_config","_config/agent-manifest.csv","d61e885757ee2c2ad146e5b876563144107b99c5de9ef4ed80b46f434bd1f951"
-"yaml","manifest","_config","_config/manifest.yaml","a9c70c9d3717c66fb15c88bf22e89d94eb47decd2c2477594976d39f04cc4c11"
+"yaml","manifest","_config","_config/manifest.yaml","5315a8ae5bc55a92a06533902e56c61de1a6090d8b03ce5e3387abf9b69e3c44"
 "csv","brain-methods","core","core/bmad-brainstorming/brain-methods.csv","0ab5878b1dbc9e3fa98cb72abfc3920a586b9e2b42609211bb0516eefd542039"
 "csv","methods","core","core/bmad-advanced-elicitation/methods.csv","e08b2e22fec700274982e37be608d6c3d1d4d0c04fa0bae05aa9dba2454e6141"
 "csv","module-help","core","core/module-help.csv","3a16823dcffc0c08f30097f2eb2244e81d5f3debecd323cd484131245389203c"
@@ -32,4 +32,4 @@ type,name,module,path,hash
 "md","workflow","core","core/bmad-brainstorming/workflow.md","74c87846a5cda7a4534ea592ea3125a8d8a1a88d19c94f5f4481fb28d0d16bf2"
 "py","analyze_sources","core","core/bmad-distillator/scripts/analyze_sources.py","31e2a8441c3c43c2536739c580cdef6abecb18ff20e7447f42dd868875783166"
 "py","test_analyze_sources","core","core/bmad-distillator/scripts/tests/test_analyze_sources.py","d90525311f8010aaf8d7d9212a370468a697866190bae78c35d0aae9b7f23fdf"
-"yaml","config","core","core/config.yaml","aefa058feef883389c73ef84f7d9e7b682fa7636522c40b150cb29aa17485b86"
+"yaml","config","core","core/config.yaml","6e7d7aac7b0b3b16cc76e9b890e2b84e9a473dbcdadef2f775061a135ad1c019"

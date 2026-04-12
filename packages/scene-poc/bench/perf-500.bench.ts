@@ -19,7 +19,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { bench, describe } from 'vitest';
-import { applyCommand, createEmptyPage } from '../src/scene-store.js';
+import { applyCommand } from '../src/scene-store.js';
 import { SpatialIndex } from '../src/spatial-index.js';
 import type { Atom, Bond, Page } from '../src/types.js';
 
@@ -29,7 +29,16 @@ interface BenchmarkStructure {
 }
 
 function loadFixture(name: string): Page {
-  const fixtureDir = join(import.meta.dirname ?? '.', '..', '..', '..', 'tests', 'fixtures', 'perf-benchmarks', 'synthetic');
+  const fixtureDir = join(
+    import.meta.dirname ?? '.',
+    '..',
+    '..',
+    '..',
+    'tests',
+    'fixtures',
+    'perf-benchmarks',
+    'synthetic',
+  );
   const raw = readFileSync(join(fixtureDir, `${name}.json`), 'utf-8');
   const data = JSON.parse(raw) as BenchmarkStructure;
   return { atoms: data.atoms, bonds: data.bonds };

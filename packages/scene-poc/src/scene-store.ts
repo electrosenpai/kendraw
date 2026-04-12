@@ -13,9 +13,11 @@ export function applyCommand(state: Page, cmd: Command): Page {
       case 'add-atom':
         draft.atoms[cmd.atom.id] = cmd.atom;
         break;
-      case 'remove-atom':
-        delete draft.atoms[cmd.id];
+      case 'remove-atom': {
+        const { [cmd.id]: _, ...rest } = draft.atoms;
+        draft.atoms = rest;
         break;
+      }
       case 'move-atom': {
         const atom = draft.atoms[cmd.id];
         if (atom) {

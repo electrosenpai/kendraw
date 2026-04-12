@@ -35,7 +35,7 @@ When invoked from another prompt or process:
 
 ### Step 1: Method Registry Loading
 
-**Action:** Load and read `./methods.csv` and '{project-root}/_bmad/_config/agent-manifest.csv'
+**Action:** Load and read `./methods.csv` and '{project-root}/\_bmad/\_config/agent-manifest.csv'
 
 #### CSV Structure
 

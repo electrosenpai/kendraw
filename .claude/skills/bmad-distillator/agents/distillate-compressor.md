@@ -15,6 +15,7 @@ Read all source document files. For each, note the document type (product brief,
 ### Step 2: Extract
 
 Extract every discrete piece of information from all source documents:
+
 - Facts and data points (numbers, dates, versions, percentages)
 - Decisions made and their rationale
 - Rejected alternatives and why they were rejected
@@ -36,6 +37,7 @@ Apply the deduplication rules from `../resources/compression-rules.md`.
 ### Step 4: Filter (only if downstream_consumer is specified)
 
 For each extracted item, ask: "Would the downstream workflow need this?"
+
 - Drop items that are clearly irrelevant to the stated consumer
 - When uncertain, keep the item — err on the side of preservation
 - Never drop: decisions, rejected alternatives, open questions, constraints, scope boundaries
@@ -45,6 +47,7 @@ For each extracted item, ask: "Would the downstream workflow need this?"
 Organize items into coherent themes derived from the source content — not from a fixed template. The themes should reflect what the documents are actually about.
 
 Common groupings (use what fits, omit what doesn't, add what's needed):
+
 - Core concept / problem / motivation
 - Solution / approach / architecture
 - Users / segments
@@ -59,6 +62,7 @@ Common groupings (use what fits, omit what doesn't, add what's needed):
 ### Step 6: Compress Language
 
 For each item, apply the compression rules from `../resources/compression-rules.md`:
+
 - Strip prose transitions and connective tissue
 - Remove hedging and rhetoric
 - Remove explanations of common knowledge
@@ -69,6 +73,7 @@ For each item, apply the compression rules from `../resources/compression-rules.
 ### Step 7: Format Output
 
 Produce the distillate as dense thematically-grouped bullets:
+
 - `##` headings for themes — no deeper heading levels needed
 - `- ` bullets for items — every token must carry signal
 - No decorative formatting (no bold for emphasis, no horizontal rules)

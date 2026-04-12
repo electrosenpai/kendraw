@@ -27,6 +27,7 @@ This story implements the minimal Canvas 2D renderer that reads the scene Docume
 ### Scope
 
 **In scope:**
+
 - `CanvasRenderer` class implementing `Renderer` interface
 - `attach(container)` — creates `<canvas>`, handles DPR
 - `render(doc)` — full repaint of all atoms on active page
@@ -36,6 +37,7 @@ This story implements the minimal Canvas 2D renderer that reads the scene Docume
 - Vitest tests with jsdom (canvas mocking)
 
 **Out of scope:**
+
 - Bonds rendering (Sprint 2)
 - Dirty regions / layer cache (future optimization)
 - Spatial index hit testing (Sprint 3)

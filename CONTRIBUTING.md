@@ -78,7 +78,7 @@ test(io): add MOL v2000 round-trip property tests
 - [ ] Tests written for new code (coverage >= 80% on compute paths)
 - [ ] No GPL/LGPL/AGPL dependencies introduced
 - [ ] Commit messages follow conventional commits
-- [ ] PR description explains *why*, not just *what*
+- [ ] PR description explains _why_, not just _what_
 
 ## Architecture Decision Records
 

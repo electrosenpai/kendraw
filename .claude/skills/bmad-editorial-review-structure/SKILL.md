@@ -12,6 +12,7 @@ description: 'Structural editor that proposes cuts, reorganization, and simplifi
 > **STYLE GUIDE OVERRIDE:** If a style_guide input is provided, it overrides ALL generic principles in this task (including human-reader-principles, llm-reader-principles, reader_type-specific priorities, structure-models selection, and the Microsoft Writing Style Guide baseline). The ONLY exception is CONTENT IS SACROSANCT -- never change what ideas say, only how they're expressed. When style guide conflicts with this task, style guide wins.
 
 **Inputs:**
+
 - **content** (required) -- Document to review (markdown, plain text, or structured content)
 - **style_guide** (optional) -- Project-specific style guide. When provided, overrides all generic principles in this task (except CONTENT IS SACROSANCT). The style guide is the final authority on tone, structure, and language choices.
 - **purpose** (optional) -- Document's intended purpose (e.g., 'quickstart tutorial', 'API reference', 'conceptual overview')
@@ -60,30 +61,40 @@ When reader_type='llm', optimize for PRECISION and UNAMBIGUITY:
 ## Structure Models
 
 ### Tutorial/Guide (Linear)
+
 **Applicability:** Tutorials, detailed guides, how-to articles, walkthroughs
+
 - Prerequisites: Setup/Context MUST precede action
 - Sequence: Steps must follow strict chronological or logical dependency order
 - Goal-oriented: clear 'Definition of Done' at the end
 
 ### Reference/Database
+
 **Applicability:** API docs, glossaries, configuration references, cheat sheets
+
 - Random Access: No narrative flow required; user jumps to specific item
 - MECE: Topics are Mutually Exclusive and Collectively Exhaustive
 - Consistent Schema: Every item follows identical structure (e.g., Signature to Params to Returns)
 
 ### Explanation (Conceptual)
+
 **Applicability:** Deep dives, architecture overviews, conceptual guides, whitepapers, project context
+
 - Abstract to Concrete: Definition to Context to Implementation/Example
 - Scaffolding: Complex ideas built on established foundations
 
 ### Prompt/Task Definition (Functional)
+
 **Applicability:** BMAD tasks, prompts, system instructions, XML definitions
+
 - Meta-first: Inputs, usage constraints, and context defined before instructions
 - Separation of Concerns: Instructions (logic) separate from Data (content)
 - Step-by-step: Execution flow must be explicit and ordered
 
 ### Strategic/Context (Pyramid)
+
 **Applicability:** PRDs, research reports, proposals, decision records
+
 - Top-down: Conclusion/Status/Recommendation starts the document
 - Grouping: Supporting context grouped logically below the headline
 - Ordering: Most critical information first
@@ -150,6 +161,7 @@ Use the following output format:
 
 ```markdown
 ## Document Summary
+
 - **Purpose:** [inferred or provided purpose]
 - **Audience:** [inferred or provided audience]
 - **Reader type:** [selected reader type]
@@ -159,6 +171,7 @@ Use the following output format:
 ## Recommendations
 
 ### 1. [CUT/MERGE/MOVE/CONDENSE/QUESTION/PRESERVE] - [Section or element name]
+
 **Rationale:** [One sentence explanation]
 **Impact:** ~[X] words
 **Comprehension note:** [If applicable, note impact on reader understanding]
@@ -166,6 +179,7 @@ Use the following output format:
 ### 2. ...
 
 ## Summary
+
 - **Total recommendations:** [N]
 - **Estimated reduction:** [X] words ([Y]% of original)
 - **Meets length target:** [Yes/No/No target specified]

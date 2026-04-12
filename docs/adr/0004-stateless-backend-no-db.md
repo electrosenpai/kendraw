@@ -17,14 +17,17 @@ Reserve V1+ optionnelle : SQLite pour templates partages institutionnels (desact
 ## Consequences
 
 ### Positive
+
 - Simplicite operationnelle radicale : pas de migration, pas de backup, pas de restore.
 - Confidentialite totale : aucune donnee utilisateur cote serveur.
 - Backend trivialement scalable verticalement (pas d'etat a partager).
 - Deploiement en une commande (pas de DB a provisionner).
 
 ### Negative
+
 - Pas de partage natif de documents entre utilisateurs ou entre machines d'un meme utilisateur.
 - Mitigation MVP : export `.kdx` manuel. V2+ : sync optionnel OPFS / cloud bucket.
 
 ## References
+
 - Architecture §6.4, TO-003

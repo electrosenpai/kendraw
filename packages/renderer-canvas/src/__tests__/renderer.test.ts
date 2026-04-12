@@ -35,7 +35,12 @@ function mockCanvasContext() {
     return original.call(this, contextId);
   };
 
-  return { ctx, restore: () => { HTMLCanvasElement.prototype.getContext = original; } };
+  return {
+    ctx,
+    restore: () => {
+      HTMLCanvasElement.prototype.getContext = original;
+    },
+  };
 }
 
 describe('CanvasRenderer', () => {
@@ -79,10 +84,11 @@ describe('CanvasRenderer', () => {
 
     it('canvas has correct display style', () => {
       renderer.attach(container);
-      const canvas = container.querySelector('canvas')!;
-      expect(canvas.style.display).toBe('block');
-      expect(canvas.style.width).toBe('100%');
-      expect(canvas.style.height).toBe('100%');
+      const canvas = container.querySelector('canvas');
+      expect(canvas).not.toBeNull();
+      expect(canvas?.style.display).toBe('block');
+      expect(canvas?.style.width).toBe('100%');
+      expect(canvas?.style.height).toBe('100%');
     });
   });
 
@@ -145,7 +151,8 @@ describe('CanvasRenderer', () => {
 
 function createDocWithAtoms(count: number): Document {
   const doc = createEmptyDocument();
-  const page = doc.pages[0]!;
+  const page = doc.pages[0];
+  if (!page) throw new Error('Expected at least one page');
   for (let i = 0; i < count; i++) {
     const atom = createAtom(i * 30, i * 30, 6);
     page.atoms[atom.id] = atom;

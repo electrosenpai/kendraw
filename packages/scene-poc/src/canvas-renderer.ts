@@ -1,11 +1,11 @@
 import type { Page, Viewport } from './types.js';
 
 const CPK_COLORS: Record<number, string> = {
-  1: '#FFFFFF',  // H
-  6: '#909090',  // C
-  7: '#3050F8',  // N
-  8: '#FF0D0D',  // O
-  9: '#90E050',  // F
+  1: '#FFFFFF', // H
+  6: '#909090', // C
+  7: '#3050F8', // N
+  8: '#FF0D0D', // O
+  9: '#90E050', // F
   15: '#FF8000', // P
   16: '#FFFF30', // S
   17: '#1FF01F', // Cl
@@ -13,8 +13,15 @@ const CPK_COLORS: Record<number, string> = {
 };
 
 const ELEMENT_LABELS: Record<number, string> = {
-  1: 'H', 6: 'C', 7: 'N', 8: 'O', 9: 'F',
-  15: 'P', 16: 'S', 17: 'Cl', 35: 'Br',
+  1: 'H',
+  6: 'C',
+  7: 'N',
+  8: 'O',
+  9: 'F',
+  15: 'P',
+  16: 'S',
+  17: 'Cl',
+  35: 'Br',
 };
 
 export class CanvasRenderer {
