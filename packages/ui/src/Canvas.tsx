@@ -35,9 +35,10 @@ const ATOM_RADIUS = 14;
 interface CanvasProps {
   store: SceneStore;
   onMoleculeSearch?: (() => void) | undefined;
+  showPropertyPanel?: boolean | undefined;
 }
 
-export function Canvas({ store, onMoleculeSearch }: CanvasProps) {
+export function Canvas({ store, onMoleculeSearch, showPropertyPanel = true }: CanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<CanvasRenderer | null>(null);
   const spatialIndexRef = useRef(new SpatialIndex());
@@ -718,8 +719,8 @@ export function Canvas({ store, onMoleculeSearch }: CanvasProps) {
 
   return (
     <>
-      {/* Toolbar slot */}
-      <div className="kd-toolbar">
+      {/* Toolbar */}
+      <div style={{ gridArea: 'toolbar', overflow: 'hidden' }}>
         <ToolPalette
           toolState={toolState}
           onToolStateChange={updateToolState}
@@ -737,8 +738,16 @@ export function Canvas({ store, onMoleculeSearch }: CanvasProps) {
         />
       </div>
 
-      {/* Canvas slot */}
-      <div className="kd-main">
+      {/* Canvas */}
+      <div
+        style={{
+          gridArea: 'canvas',
+          position: 'relative',
+          overflow: 'hidden',
+          minWidth: 0,
+          minHeight: 0,
+        }}
+      >
         <div
           ref={containerRef}
           onMouseDown={handleMouseDown}
@@ -752,11 +761,15 @@ export function Canvas({ store, onMoleculeSearch }: CanvasProps) {
             cursor: isMovingRef.current ? 'grabbing' : cursorStyle,
           }}
         />
-        <PropertyPanel doc={doc} visible={showProperties} />
       </div>
 
-      {/* Status bar slot */}
-      <div className="kd-statusbar">
+      {/* Properties panel */}
+      <div style={{ gridArea: 'properties', overflow: 'auto' }}>
+        <PropertyPanel doc={doc} visible={showPropertyPanel && showProperties} />
+      </div>
+
+      {/* Status bar */}
+      <div style={{ gridArea: 'status' }}>
         <StatusBar
           toolState={toolState}
           zoom={zoom}

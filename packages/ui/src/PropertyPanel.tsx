@@ -68,18 +68,13 @@ export function PropertyPanel({ doc, visible }: PropertyPanelProps) {
   return (
     <div
       style={{
-        position: 'absolute',
-        right: 8,
-        top: 8,
-        width: 220,
-        background: 'var(--kd-glass-bg)',
-        backdropFilter: 'var(--kd-glass-blur)',
-        border: '1px solid var(--kd-glass-border)',
-        borderRadius: 'var(--kd-radius-lg)',
-        boxShadow: 'var(--kd-shadow-md)',
+        width: '100%',
+        height: '100%',
+        background: 'var(--kd-color-bg-secondary)',
+        borderLeft: '1px solid var(--kd-color-border)',
         padding: 'var(--kd-space-lg)',
-        zIndex: 20,
         fontSize: 'var(--kd-font-size-sm)',
+        overflowY: 'auto',
       }}
     >
       <SectionTitle>Properties</SectionTitle>
