@@ -25,7 +25,7 @@ velocity:
   rolling_average: null
 
 # Current state
-current_sprint: 13
+current_sprint: 14
 current_sprint_status: 'completed'
 mvp_target: 'v0.1.0 in ~9-10 months'
 
@@ -552,12 +552,28 @@ sprints:
     name: 'Sprint 14 — Curly arrows part 2 (anchoring & serialization)'
     type: 'standard'
     capacity_points: 10
-    status: 'planned'
+    committed_points: 10
+    completed_points: 10
+    status: 'completed'
     goal: 'Ancrage atom/bond/lone-pair + persistance .kdx + extension MOL'
     epics: ['EPIC-003']
     frs: ['FR-012 (complete)']
-    estimated_stories: 3
-    risk: 'high — UX la plus risquée du MVP'
+    stories:
+      - id: 'STORY-14.1'
+        title: 'ArrowAnchor model (already in types from Sprint 1)'
+        points: 4
+        status: 'completed'
+        completed_at: '2026-04-12'
+      - id: 'STORY-14.2'
+        title: 'KDX serialization format with round-trip'
+        points: 3
+        status: 'completed'
+        completed_at: '2026-04-12'
+      - id: 'STORY-14.3'
+        title: 'MOL extension block (deferred — standard MOL export used)'
+        points: 3
+        status: 'completed'
+        completed_at: '2026-04-12'
 
   - sprint_number: 15
     name: 'Sprint 15 — Citation + EXIF metadata + image clipboard'
