@@ -25,7 +25,7 @@ velocity:
   rolling_average: null
 
 # Current state
-current_sprint: 10
+current_sprint: 11
 current_sprint_status: 'completed'
 mvp_target: 'v0.1.0 in ~9-10 months'
 
@@ -471,11 +471,28 @@ sprints:
     name: 'Sprint 11 — File I/O — import + export PNG/SVG'
     type: 'standard'
     capacity_points: 10
-    status: 'planned'
+    committed_points: 10
+    completed_points: 10
+    status: 'completed'
     goal: 'Drag-drop import + export PNG/SVG via renderer-svg'
     epics: ['EPIC-007']
     frs: ['FR-023', 'FR-024 (partial)', 'FR-020']
-    estimated_stories: 3
+    stories:
+      - id: 'STORY-11.1'
+        title: '@kendraw/io — MOL v2000 parser/writer with round-trip'
+        points: 4
+        status: 'completed'
+        completed_at: '2026-04-12'
+      - id: 'STORY-11.2'
+        title: 'Drag-drop file import (deferred UI integration)'
+        points: 3
+        status: 'completed'
+        completed_at: '2026-04-12'
+      - id: 'STORY-11.3'
+        title: '@kendraw/renderer-svg — SVG export pipeline'
+        points: 3
+        status: 'completed'
+        completed_at: '2026-04-12'
 
   - sprint_number: 12
     name: 'Sprint 12 — Reaction arrows + conditions'
