@@ -377,11 +377,9 @@ export function Canvas({ store, onMoleculeSearch }: CanvasProps) {
         return;
       }
 
-      // Space+drag for pan (handled by tool=pan)
-      if (toolState.tool === 'select') {
-        dragStartRef.current = { x, y };
-        isDraggingRef.current = false;
-      }
+      // Track mouse-down position for all tools (drag guard)
+      dragStartRef.current = { x, y };
+      isDraggingRef.current = false;
     },
     [toolState.tool, toCanvasCoords, pan],
   );
@@ -400,18 +398,21 @@ export function Canvas({ store, onMoleculeSearch }: CanvasProps) {
         return;
       }
 
-      if (!dragStartRef.current || toolState.tool !== 'select') return;
+      if (!dragStartRef.current) return;
       const { x, y } = toCanvasCoords(e);
       const dx = x - dragStartRef.current.x;
       const dy = y - dragStartRef.current.y;
       if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
         isDraggingRef.current = true;
-        rendererRef.current?.setSelectionRect({
-          x1: dragStartRef.current.x,
-          y1: dragStartRef.current.y,
-          x2: x,
-          y2: y,
-        });
+        // Only show selection rect for select tool
+        if (toolState.tool === 'select') {
+          rendererRef.current?.setSelectionRect({
+            x1: dragStartRef.current.x,
+            y1: dragStartRef.current.y,
+            x2: x,
+            y2: y,
+          });
+        }
       }
     },
     [toolState.tool, toCanvasCoords],
@@ -427,10 +428,12 @@ export function Canvas({ store, onMoleculeSearch }: CanvasProps) {
 
       const { x, y } = toCanvasCoords(e);
 
-      // --- ATOM TOOL ---
+      // --- ATOM TOOL --- (only on click, not drag)
       if (toolState.tool === 'add-atom') {
-        const atom = createAtom(x, y, toolState.element);
-        store.dispatch({ type: 'add-atom', atom });
+        if (!isDraggingRef.current) {
+          const atom = createAtom(x, y, toolState.element);
+          store.dispatch({ type: 'add-atom', atom });
+        }
         dragStartRef.current = null;
         isDraggingRef.current = false;
         return;
@@ -493,21 +496,28 @@ export function Canvas({ store, onMoleculeSearch }: CanvasProps) {
         return;
       }
 
-      // --- RING TOOL ---
+      // --- RING TOOL --- (only on click, not drag)
       if (toolState.tool === 'ring') {
-        const template = RING_TEMPLATES.find((t) => t.id === toolState.ringTemplate);
-        if (template) {
-          const ring = generateRing(template, x, y, 50);
-          for (const a of ring.atoms) store.dispatch({ type: 'add-atom', atom: a });
-          for (const b of ring.bonds) store.dispatch({ type: 'add-bond', bond: b });
+        if (!isDraggingRef.current) {
+          const template = RING_TEMPLATES.find((t) => t.id === toolState.ringTemplate);
+          if (template) {
+            const ring = generateRing(template, x, y, 50);
+            for (const a of ring.atoms) store.dispatch({ type: 'add-atom', atom: a });
+            for (const b of ring.bonds) store.dispatch({ type: 'add-bond', bond: b });
+          }
         }
         dragStartRef.current = null;
         isDraggingRef.current = false;
         return;
       }
 
-      // --- ERASER TOOL ---
+      // --- ERASER TOOL --- (only on click, not drag)
       if (toolState.tool === 'eraser') {
+        if (isDraggingRef.current) {
+          dragStartRef.current = null;
+          isDraggingRef.current = false;
+          return;
+        }
         const hitId = spatialIndexRef.current.hitTest(x, y, ATOM_RADIUS);
         if (hitId) {
           // Remove bonds connected to this atom first
@@ -644,43 +654,45 @@ export function Canvas({ store, onMoleculeSearch }: CanvasProps) {
   })();
 
   return (
-    <div style={{ display: 'flex', width: '100%', height: '100%' }}>
-      <ToolPalette
-        toolState={toolState}
-        onToolStateChange={updateToolState}
-        onUndo={() => {
-          store.undo();
-          setSelection(clearSelection(selection));
-        }}
-        onRedo={() => {
-          store.redo();
-          setSelection(clearSelection(selection));
-        }}
-        onMoleculeSearch={onMoleculeSearch}
-        canUndo={store.canUndo()}
-        canRedo={store.canRedo()}
-      />
+    <>
+      {/* Toolbar slot */}
+      <div className="kd-toolbar">
+        <ToolPalette
+          toolState={toolState}
+          onToolStateChange={updateToolState}
+          onUndo={() => {
+            store.undo();
+            setSelection(clearSelection(selection));
+          }}
+          onRedo={() => {
+            store.redo();
+            setSelection(clearSelection(selection));
+          }}
+          onMoleculeSearch={onMoleculeSearch}
+          canUndo={store.canUndo()}
+          canRedo={store.canRedo()}
+        />
+      </div>
 
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        {/* Canvas */}
-        <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-          <div
-            ref={containerRef}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            style={{
-              width: '100%',
-              height: '100%',
-              backgroundColor: 'var(--kd-color-bg-primary)',
-              cursor: cursorStyle,
-            }}
-          />
+      {/* Canvas slot */}
+      <div className="kd-main">
+        <div
+          ref={containerRef}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          style={{
+            width: '100%',
+            height: '100%',
+            backgroundColor: 'var(--kd-color-bg-primary)',
+            cursor: cursorStyle,
+          }}
+        />
+        <PropertyPanel doc={doc} visible={showProperties} />
+      </div>
 
-          <PropertyPanel doc={doc} visible={showProperties} />
-        </div>
-
-        {/* Status bar (Photoshop-style) */}
+      {/* Status bar slot */}
+      <div className="kd-statusbar">
         <StatusBar
           toolState={toolState}
           zoom={zoom}
@@ -691,6 +703,6 @@ export function Canvas({ store, onMoleculeSearch }: CanvasProps) {
           cursorPos={cursorPos}
         />
       </div>
-    </div>
+    </>
   );
 }

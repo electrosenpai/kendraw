@@ -32,7 +32,6 @@ export function App() {
     void init();
   }, []);
 
-  // Global shortcuts: ? for cheatsheet, Ctrl+N for new tab
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === '?') {
@@ -43,11 +42,7 @@ export function App() {
         e.preventDefault();
         workspaceStore.createTab();
       }
-      if ((e.ctrlKey || e.metaKey) && e.key === 'm') {
-        e.preventDefault();
-        setShowMolSearch((s) => !s);
-      }
-      if ((e.ctrlKey || e.metaKey) && e.key === 'l') {
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'm' || e.key === 'l')) {
         e.preventDefault();
         setShowMolSearch((s) => !s);
       }
@@ -56,17 +51,9 @@ export function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const handleNewTab = useCallback(() => {
-    workspaceStore.createTab();
-  }, []);
-
-  const handleSwitchTab = useCallback((id: string) => {
-    workspaceStore.switchTab(id);
-  }, []);
-
-  const handleCloseTab = useCallback((id: string) => {
-    workspaceStore.closeTab(id);
-  }, []);
+  const handleNewTab = useCallback(() => workspaceStore.createTab(), []);
+  const handleSwitchTab = useCallback((id: string) => workspaceStore.switchTab(id), []);
+  const handleCloseTab = useCallback((id: string) => workspaceStore.closeTab(id), []);
 
   if (!initialized) {
     return (
@@ -89,27 +76,29 @@ export function App() {
   const activeStore = workspaceStore.getActiveStore();
 
   return (
-    <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <TabBar
-        tabs={workspace.tabs}
-        activeTabId={workspace.activeTabId}
-        onSwitchTab={handleSwitchTab}
-        onCloseTab={handleCloseTab}
-        onNewTab={handleNewTab}
-      />
-      <div style={{ flex: 1, position: 'relative' }}>
-        {activeStore ? (
-          <Canvas
-            key={workspace.activeTabId}
-            store={activeStore}
-            onMoleculeSearch={() => setShowMolSearch(true)}
-          />
-        ) : (
+    <div className="kd-app">
+      <div className="kd-tabbar">
+        <TabBar
+          tabs={workspace.tabs}
+          activeTabId={workspace.activeTabId}
+          onSwitchTab={handleSwitchTab}
+          onCloseTab={handleCloseTab}
+          onNewTab={handleNewTab}
+        />
+      </div>
+
+      {activeStore ? (
+        <Canvas
+          key={workspace.activeTabId}
+          store={activeStore}
+          onMoleculeSearch={() => setShowMolSearch(true)}
+        />
+      ) : (
+        <>
+          <div />
           <div
+            className="kd-main"
             style={{
-              width: '100%',
-              height: '100%',
-              backgroundColor: 'var(--kd-color-bg-primary)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -118,8 +107,10 @@ export function App() {
           >
             No document open
           </div>
-        )}
-      </div>
+          <div className="kd-statusbar" />
+        </>
+      )}
+
       {showShortcuts && <ShortcutCheatsheet onClose={() => setShowShortcuts(false)} />}
       {showAbout && <AboutPage onClose={() => setShowAbout(false)} />}
       {showMolSearch && activeStore && (

@@ -592,7 +592,8 @@ function Sub({ title, children }: { title: string; children: React.ReactNode }) 
 // ── Styles ──────────────────────────────────────────────────
 
 const PALETTE: React.CSSProperties = {
-  width: 56,
+  width: '100%',
+  height: '100%',
   display: 'flex',
   flexDirection: 'column',
   background: 'rgba(18, 18, 18, 0.88)',
@@ -602,6 +603,7 @@ const PALETTE: React.CSSProperties = {
   padding: '6px 4px',
   gap: 1,
   overflowY: 'auto',
+  overflowX: 'hidden',
   position: 'relative',
   zIndex: 20,
 };
