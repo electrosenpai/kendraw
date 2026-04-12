@@ -1,5 +1,12 @@
-import type { AtomId, Document, SceneDiff, Bond, Atom } from '@kendraw/scene';
-import { getColor, getSymbol } from '@kendraw/scene';
+import type { AtomId, Document, SceneDiff, Bond, Atom, Page } from '@kendraw/scene';
+import {
+  getColor,
+  shouldShowLabel,
+  buildAtomLabel,
+  type LabelSegment,
+  NEW_DOCUMENT,
+  ptToPx,
+} from '@kendraw/scene';
 
 export interface Renderer {
   attach(container: HTMLElement): void;
@@ -11,8 +18,20 @@ export interface Renderer {
   setValenceIssues(ids: Set<AtomId>): void;
 }
 
-const ATOM_RADIUS = 14;
-const FONT_SIZE = 12;
+// Style settings derived from active preset (New Document default)
+const S = {
+  lineWidth: ptToPx(NEW_DOCUMENT.lineWidthPt),
+  boldWidth: ptToPx(NEW_DOCUMENT.boldWidthPt),
+  marginWidth: ptToPx(NEW_DOCUMENT.marginWidthPt),
+  bondSpacingPx: NEW_DOCUMENT.bondSpacing * ptToPx(NEW_DOCUMENT.bondLengthPt),
+  hashSpacing: ptToPx(NEW_DOCUMENT.hashSpacingPt),
+  wedgeWide: ptToPx(1.5 * NEW_DOCUMENT.boldWidthPt),
+  labelSize: ptToPx(NEW_DOCUMENT.labelSizePt),
+  subScale: 0.75, // subscript/superscript scale factor (ref: Section 1.4)
+  subShift: 0.33, // baseline shift as fraction of cap height
+};
+
+const ATOM_RADIUS = 10; // visual hit radius for selection (not rendering)
 
 export class CanvasRenderer implements Renderer {
   private canvas: HTMLCanvasElement | null = null;
@@ -29,23 +48,16 @@ export class CanvasRenderer implements Renderer {
 
   attach(container: HTMLElement): void {
     this.container = container;
-
     const canvas = document.createElement('canvas');
     canvas.style.display = 'block';
     canvas.style.width = '100%';
     canvas.style.height = '100%';
     container.appendChild(canvas);
     this.canvas = canvas;
-
     const ctx = canvas.getContext('2d');
-    if (!ctx) {
-      throw new Error('Failed to get 2D context');
-    }
+    if (!ctx) throw new Error('Failed to get 2D context');
     this.ctx = ctx;
-
-    this.resizeObserver = new ResizeObserver(() => {
-      this.syncCanvasSize();
-    });
+    this.resizeObserver = new ResizeObserver(() => this.syncCanvasSize());
     this.resizeObserver.observe(container);
     this.syncCanvasSize();
   }
@@ -55,9 +67,7 @@ export class CanvasRenderer implements Renderer {
       this.resizeObserver.disconnect();
       this.resizeObserver = null;
     }
-    if (this.canvas && this.container) {
-      this.container.removeChild(this.canvas);
-    }
+    if (this.canvas && this.container) this.container.removeChild(this.canvas);
     this.canvas = null;
     this.ctx = null;
     this.container = null;
@@ -67,19 +77,16 @@ export class CanvasRenderer implements Renderer {
     this.selectedAtoms = ids;
     if (this.lastDoc) this.render(this.lastDoc);
   }
-
   setSelectionRect(rect: { x1: number; y1: number; x2: number; y2: number } | null): void {
     this.selectionRect = rect;
     if (this.lastDoc) this.render(this.lastDoc);
   }
-
   setViewport(zoom: number, panX: number, panY: number): void {
     this.zoom = zoom;
     this.panX = panX;
     this.panY = panY;
     if (this.lastDoc) this.render(this.lastDoc);
   }
-
   setValenceIssues(ids: Set<AtomId>): void {
     this.valenceIssues = ids;
     if (this.lastDoc) this.render(this.lastDoc);
@@ -89,97 +96,66 @@ export class CanvasRenderer implements Renderer {
     const { canvas, ctx } = this;
     if (!canvas || !ctx) return;
     this.lastDoc = doc;
-
     const dpr = window.devicePixelRatio || 1;
-    const width = canvas.width / dpr;
-    const height = canvas.height / dpr;
+    const w = canvas.width / dpr;
+    const h = canvas.height / dpr;
 
-    // Reset transform and clear
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, width, height);
-
-    // Apply zoom/pan
+    ctx.clearRect(0, 0, w, h);
     ctx.translate(this.panX, this.panY);
     ctx.scale(this.zoom, this.zoom);
 
-    // Get active page
     const page = doc.pages[doc.activePageIndex];
     if (!page) return;
 
-    // Render arrows (behind everything)
-    for (const arrow of Object.values(page.arrows)) {
-      this.renderArrow(ctx, arrow);
-    }
-
-    // Render bonds
-    for (const bond of Object.values(page.bonds)) {
-      const fromAtom = page.atoms[bond.fromAtomId];
-      const toAtom = page.atoms[bond.toAtomId];
-      if (fromAtom && toAtom) {
-        this.renderBond(ctx, bond, fromAtom, toAtom);
-      }
-    }
-
-    // Render all atoms
+    // Precompute which atoms have visible labels
+    const labelVisible = new Map<AtomId, boolean>();
+    const labelSegments = new Map<AtomId, LabelSegment[]>();
     for (const atom of Object.values(page.atoms)) {
-      const color = getColor(atom.element);
-      const label = atom.label ?? getSymbol(atom.element);
-      const selected = this.selectedAtoms.has(atom.id);
+      const show = shouldShowLabel(page, atom.id);
+      labelVisible.set(atom.id, show);
+      if (show) labelSegments.set(atom.id, buildAtomLabel(page, atom.id));
+    }
 
-      // Valence issue highlight
-      if (this.valenceIssues.has(atom.id)) {
-        ctx.beginPath();
-        ctx.arc(atom.x, atom.y, ATOM_RADIUS + 5, 0, Math.PI * 2);
-        ctx.strokeStyle = '#ffd43b';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-      }
+    // 1. Arrows (behind everything)
+    for (const arrow of Object.values(page.arrows)) {
+      this.drawArrow(ctx, arrow);
+    }
 
-      // Selection highlight ring
-      if (selected) {
-        ctx.beginPath();
-        ctx.arc(atom.x, atom.y, ATOM_RADIUS + 3, 0, Math.PI * 2);
-        ctx.strokeStyle = '#4dabf7';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-      }
-
-      // Filled circle
-      ctx.beginPath();
-      ctx.arc(atom.x, atom.y, ATOM_RADIUS, 0, Math.PI * 2);
-      ctx.fillStyle = color;
-      ctx.fill();
-
-      // Label text
-      ctx.font = `${FONT_SIZE}px system-ui, sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillStyle = this.isLightColor(color) ? '#000000' : '#ffffff';
-      ctx.fillText(label, atom.x, atom.y);
-
-      // Charge indicator
-      if (atom.charge !== 0) {
-        const chargeStr =
-          atom.charge > 0
-            ? atom.charge === 1
-              ? '+'
-              : `${atom.charge}+`
-            : atom.charge === -1
-              ? '\u2013'
-              : `${Math.abs(atom.charge)}\u2013`;
-        ctx.font = `${FONT_SIZE - 3}px system-ui, sans-serif`;
-        ctx.fillStyle = atom.charge > 0 ? '#ff6b6b' : '#4dabf7';
-        ctx.textAlign = 'left';
-        ctx.fillText(chargeStr, atom.x + ATOM_RADIUS - 2, atom.y - ATOM_RADIUS + 4);
+    // 2. Bonds (with margin shortening near labels)
+    for (const bond of Object.values(page.bonds)) {
+      const from = page.atoms[bond.fromAtomId];
+      const to = page.atoms[bond.toAtomId];
+      if (from && to) {
+        this.drawBond(
+          ctx,
+          bond,
+          from,
+          to,
+          labelVisible.get(from.id) ?? false,
+          labelVisible.get(to.id) ?? false,
+          page,
+        );
       }
     }
 
-    // Draw selection rectangle (in world space, same transform as atoms/bonds)
+    // 3. Atoms
+    for (const atom of Object.values(page.atoms)) {
+      this.drawAtom(
+        ctx,
+        atom,
+        page,
+        labelVisible.get(atom.id) ?? false,
+        labelSegments.get(atom.id),
+      );
+    }
+
+    // 4. Selection rect
     if (this.selectionRect) {
       const { x1, y1, x2, y2 } = this.selectionRect;
       ctx.strokeStyle = 'rgba(77, 171, 247, 0.8)';
-      ctx.lineWidth = 1;
-      ctx.setLineDash([4, 4]);
+      ctx.lineWidth = 1 / this.zoom;
+      ctx.setLineDash([4 / this.zoom, 4 / this.zoom]);
       ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
       ctx.fillStyle = 'rgba(77, 171, 247, 0.1)';
       ctx.fillRect(x1, y1, x2 - x1, y2 - y1);
@@ -187,7 +163,319 @@ export class CanvasRenderer implements Renderer {
     }
   }
 
-  private renderArrow(
+  // ── Atom rendering ──────────────────────────────────────
+
+  private drawAtom(
+    ctx: CanvasRenderingContext2D,
+    atom: Atom,
+    page: Page,
+    showLabel: boolean,
+    segments: LabelSegment[] | undefined,
+  ): void {
+    const selected = this.selectedAtoms.has(atom.id);
+    const valenceWarn = this.valenceIssues.has(atom.id);
+
+    // Valence warning ring
+    if (valenceWarn) {
+      ctx.beginPath();
+      ctx.arc(atom.x, atom.y, ATOM_RADIUS + 4, 0, Math.PI * 2);
+      ctx.strokeStyle = '#ffd43b';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+
+    // Selection highlight
+    if (selected) {
+      ctx.beginPath();
+      ctx.arc(atom.x, atom.y, ATOM_RADIUS + 2, 0, Math.PI * 2);
+      ctx.strokeStyle = '#4dabf7';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+
+    if (!showLabel || !segments || segments.length === 0) {
+      // Invisible vertex — draw a tiny dot for non-selected atoms
+      if (!selected) {
+        ctx.beginPath();
+        ctx.arc(atom.x, atom.y, 1.5, 0, Math.PI * 2);
+        ctx.fillStyle = '#555';
+        ctx.fill();
+      }
+      return;
+    }
+
+    // Draw label background (clear area behind text)
+    const totalWidth = this.measureLabelWidth(ctx, segments);
+    const halfW = totalWidth / 2 + 2;
+    const halfH = S.labelSize / 2 + 2;
+    ctx.fillStyle = '#0a0a0a'; // match canvas bg
+    ctx.fillRect(atom.x - halfW, atom.y - halfH, halfW * 2, halfH * 2);
+
+    // Render label segments (formula mode)
+    this.renderLabelSegments(ctx, atom.x, atom.y, segments, atom.element);
+  }
+
+  private measureLabelWidth(ctx: CanvasRenderingContext2D, segments: LabelSegment[]): number {
+    let w = 0;
+    for (const seg of segments) {
+      const size = seg.style === 'normal' ? S.labelSize : S.labelSize * S.subScale;
+      ctx.font = `${size}px Arial, system-ui, sans-serif`;
+      w += ctx.measureText(seg.text).width;
+    }
+    return w;
+  }
+
+  private renderLabelSegments(
+    ctx: CanvasRenderingContext2D,
+    cx: number,
+    cy: number,
+    segments: LabelSegment[],
+    element: number,
+  ): void {
+    const totalW = this.measureLabelWidth(ctx, segments);
+    let x = cx - totalW / 2;
+    const color = getColor(element);
+    const textColor = this.isLightColor(color) ? color : '#e0e0e0';
+
+    for (const seg of segments) {
+      const isNormal = seg.style === 'normal';
+      const size = isNormal ? S.labelSize : S.labelSize * S.subScale;
+      ctx.font = `${size}px Arial, system-ui, sans-serif`;
+      ctx.fillStyle = textColor;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+
+      let y = cy;
+      if (seg.style === 'superscript') y -= S.labelSize * S.subShift;
+      if (seg.style === 'subscript') y += S.labelSize * S.subShift;
+
+      ctx.fillText(seg.text, x, y);
+      x += ctx.measureText(seg.text).width;
+    }
+  }
+
+  // ── Bond rendering (Section 2 of reference) ────────────
+
+  private drawBond(
+    ctx: CanvasRenderingContext2D,
+    bond: Bond,
+    from: Atom,
+    to: Atom,
+    fromHasLabel: boolean,
+    toHasLabel: boolean,
+    page: Page,
+  ): void {
+    let x1 = from.x;
+    let y1 = from.y;
+    let x2 = to.x;
+    let y2 = to.y;
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const len = Math.sqrt(dx * dx + dy * dy);
+    if (len < 0.1) return;
+    const ux = dx / len;
+    const uy = dy / len;
+
+    // Bond shortening near labels (MarginWidth, Section 2.4)
+    if (fromHasLabel) {
+      const gap = S.marginWidth + S.labelSize * 0.3;
+      x1 += ux * gap;
+      y1 += uy * gap;
+    }
+    if (toHasLabel) {
+      const gap = S.marginWidth + S.labelSize * 0.3;
+      x2 -= ux * gap;
+      y2 -= uy * gap;
+    }
+
+    // Perpendicular for double/triple offsets
+    const px = -uy;
+    const py = ux;
+    const offset = S.bondSpacingPx;
+
+    ctx.strokeStyle = '#aaaaaa';
+    ctx.fillStyle = '#aaaaaa';
+
+    switch (bond.style) {
+      case 'single':
+        ctx.lineWidth = S.lineWidth;
+        this.line(ctx, x1, y1, x2, y2);
+        break;
+
+      case 'double': {
+        ctx.lineWidth = S.lineWidth;
+        // Determine offset direction (toward ring center if in ring)
+        const side = this.getDoubleBondSide(bond, from, to, page);
+        if (side === 0) {
+          // Center double bond
+          this.line(
+            ctx,
+            x1 + px * offset * 0.5,
+            y1 + py * offset * 0.5,
+            x2 + px * offset * 0.5,
+            y2 + py * offset * 0.5,
+          );
+          this.line(
+            ctx,
+            x1 - px * offset * 0.5,
+            y1 - py * offset * 0.5,
+            x2 - px * offset * 0.5,
+            y2 - py * offset * 0.5,
+          );
+        } else {
+          this.line(ctx, x1, y1, x2, y2);
+          // Shorter second line (80% length, centered)
+          const shrink = len * 0.1;
+          const sx1 = x1 + ux * shrink + px * offset * side;
+          const sy1 = y1 + uy * shrink + py * offset * side;
+          const sx2 = x2 - ux * shrink + px * offset * side;
+          const sy2 = y2 - uy * shrink + py * offset * side;
+          this.line(ctx, sx1, sy1, sx2, sy2);
+        }
+        break;
+      }
+
+      case 'triple':
+        ctx.lineWidth = S.lineWidth;
+        this.line(ctx, x1, y1, x2, y2);
+        this.line(ctx, x1 + px * offset, y1 + py * offset, x2 + px * offset, y2 + py * offset);
+        this.line(ctx, x1 - px * offset, y1 - py * offset, x2 - px * offset, y2 - py * offset);
+        break;
+
+      case 'aromatic': {
+        ctx.lineWidth = S.lineWidth;
+        this.line(ctx, x1, y1, x2, y2);
+        // Dashed second line (Kekulé-like aromatic indicator)
+        ctx.setLineDash([3, 3]);
+        const side2 = this.getDoubleBondSide(bond, from, to, page);
+        const s = side2 || 1;
+        const shrink2 = len * 0.1;
+        this.line(
+          ctx,
+          x1 + ux * shrink2 + px * offset * s,
+          y1 + uy * shrink2 + py * offset * s,
+          x2 - ux * shrink2 + px * offset * s,
+          y2 - uy * shrink2 + py * offset * s,
+        );
+        ctx.setLineDash([]);
+        break;
+      }
+
+      case 'wedge': {
+        // Solid wedge: triangle, narrow at from (stereocenter)
+        const w = S.wedgeWide;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2 + px * w, y2 + py * w);
+        ctx.lineTo(x2 - px * w, y2 - py * w);
+        ctx.closePath();
+        ctx.fill();
+        break;
+      }
+
+      case 'dash': {
+        // Hashed wedge: parallel lines increasing in width
+        const w = S.wedgeWide;
+        const numLines = Math.max(3, Math.round(len / S.hashSpacing));
+        ctx.lineWidth = S.lineWidth;
+        for (let i = 0; i < numLines; i++) {
+          const t = (i + 0.5) / numLines;
+          const mx = x1 + (x2 - x1) * t;
+          const my = y1 + (y2 - y1) * t;
+          const hw = w * t; // width increases from narrow to wide
+          ctx.beginPath();
+          ctx.moveTo(mx + px * hw, my + py * hw);
+          ctx.lineTo(mx - px * hw, my - py * hw);
+          ctx.stroke();
+        }
+        break;
+      }
+
+      case 'bold':
+        ctx.lineWidth = S.boldWidth;
+        this.line(ctx, x1, y1, x2, y2);
+        break;
+
+      case 'wavy': {
+        // Sinusoidal bond (5 waves per bond length)
+        const waves = 5;
+        const amp = S.boldWidth;
+        ctx.lineWidth = S.lineWidth;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        const steps = 40;
+        for (let i = 1; i <= steps; i++) {
+          const t = i / steps;
+          const bx = x1 + (x2 - x1) * t;
+          const by = y1 + (y2 - y1) * t;
+          const wave = Math.sin(t * waves * 2 * Math.PI) * amp;
+          ctx.lineTo(bx + px * wave, by + py * wave);
+        }
+        ctx.stroke();
+        break;
+      }
+
+      case 'dative':
+        ctx.lineWidth = S.lineWidth;
+        ctx.setLineDash([6, 3]);
+        this.line(ctx, x1, y1, x2, y2);
+        ctx.setLineDash([]);
+        break;
+
+      default:
+        ctx.lineWidth = S.lineWidth;
+        this.line(ctx, x1, y1, x2, y2);
+    }
+  }
+
+  /** Determine which side of a bond to place the double-bond offset.
+   *  Returns +1, -1, or 0 (center). For endocyclic bonds, offset toward ring center. */
+  private getDoubleBondSide(bond: Bond, from: Atom, to: Atom, page: Page): number {
+    // Find atoms bonded to both from and to (ring detection heuristic)
+    const fromNeighbors = new Set<AtomId>();
+    const toNeighbors = new Set<AtomId>();
+    for (const b of Object.values(page.bonds)) {
+      if (b.fromAtomId === from.id && b.toAtomId !== to.id) fromNeighbors.add(b.toAtomId);
+      if (b.toAtomId === from.id && b.fromAtomId !== to.id) fromNeighbors.add(b.fromAtomId);
+      if (b.fromAtomId === to.id && b.toAtomId !== from.id) toNeighbors.add(b.toAtomId);
+      if (b.toAtomId === to.id && b.fromAtomId !== from.id) toNeighbors.add(b.fromAtomId);
+    }
+
+    // Common neighbor = likely in a ring → offset toward that neighbor
+    for (const nId of fromNeighbors) {
+      if (toNeighbors.has(nId)) {
+        const n = page.atoms[nId];
+        if (!n) continue;
+        const mx = (from.x + to.x) / 2;
+        const my = (from.y + to.y) / 2;
+        const dx = to.x - from.x;
+        const dy = to.y - from.y;
+        const px = -dy;
+        const py = dx;
+        const dot = (n.x - mx) * px + (n.y - my) * py;
+        return dot > 0 ? 1 : -1;
+      }
+    }
+
+    return 1; // default: right side
+  }
+
+  private line(
+    ctx: CanvasRenderingContext2D,
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number,
+  ): void {
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+  }
+
+  // ── Arrow rendering ─────────────────────────────────────
+
+  private drawArrow(
     ctx: CanvasRenderingContext2D,
     arrow: {
       type: string;
@@ -201,129 +489,40 @@ export class CanvasRenderer implements Renderer {
   ): void {
     const { start, c1, c2, end } = arrow.geometry;
     const isCurly = arrow.type === 'curly-pair' || arrow.type === 'curly-radical';
-
     ctx.beginPath();
     ctx.moveTo(start.x, start.y);
     ctx.bezierCurveTo(c1.x, c1.y, c2.x, c2.y, end.x, end.y);
     ctx.strokeStyle = isCurly ? '#e06633' : '#cccccc';
-    ctx.lineWidth = isCurly ? 2 : 2.5;
+    ctx.lineWidth = isCurly ? 1.5 : 2;
     ctx.stroke();
 
-    // Arrowhead
-    const dx = end.x - c2.x;
-    const dy = end.y - c2.y;
-    const len = Math.sqrt(dx * dx + dy * dy);
-    if (len > 0) {
-      const ux = dx / len;
-      const uy = dy / len;
-      const headLen = 10;
-      const headW = isCurly ? 4 : 6;
+    const adx = end.x - c2.x;
+    const ady = end.y - c2.y;
+    const alen = Math.sqrt(adx * adx + ady * ady);
+    if (alen > 0) {
+      const aux = adx / alen;
+      const auy = ady / alen;
+      const hl = 8;
+      const hw = isCurly ? 3 : 5;
       ctx.beginPath();
       ctx.moveTo(end.x, end.y);
-      ctx.lineTo(end.x - ux * headLen + uy * headW, end.y - uy * headLen - ux * headW);
-      ctx.lineTo(end.x - ux * headLen - uy * headW, end.y - uy * headLen + ux * headW);
+      ctx.lineTo(end.x - aux * hl + auy * hw, end.y - auy * hl - aux * hw);
+      ctx.lineTo(end.x - aux * hl - auy * hw, end.y - auy * hl + aux * hw);
       ctx.closePath();
       ctx.fillStyle = isCurly ? '#e06633' : '#cccccc';
       ctx.fill();
-
-      // Half arrowhead for radical (single-headed)
-      if (arrow.type === 'curly-radical') {
-        ctx.beginPath();
-        ctx.moveTo(end.x, end.y);
-        ctx.lineTo(end.x - ux * headLen + uy * headW, end.y - uy * headLen - ux * headW);
-        ctx.lineTo(end.x - ux * headLen * 0.6, end.y - uy * headLen * 0.6);
-        ctx.closePath();
-        ctx.fillStyle = '#e06633';
-        ctx.fill();
-      }
     }
   }
 
-  private renderBond(ctx: CanvasRenderingContext2D, bond: Bond, from: Atom, to: Atom): void {
-    const dx = to.x - from.x;
-    const dy = to.y - from.y;
-    const len = Math.sqrt(dx * dx + dy * dy);
-    if (len === 0) return;
-
-    // Perpendicular offset for double/triple bonds
-    const px = (-dy / len) * 3;
-    const py = (dx / len) * 3;
-
-    ctx.strokeStyle = '#888888';
-    ctx.lineWidth = bond.style === 'bold' ? 3 : 1.5;
-
-    if (bond.style === 'wedge') {
-      // Filled wedge (stereo)
-      ctx.beginPath();
-      ctx.moveTo(from.x, from.y);
-      ctx.lineTo(to.x + px * 2, to.y + py * 2);
-      ctx.lineTo(to.x - px * 2, to.y - py * 2);
-      ctx.closePath();
-      ctx.fillStyle = '#888888';
-      ctx.fill();
-      return;
-    }
-
-    if (bond.style === 'dash' || bond.style === 'wavy') {
-      ctx.setLineDash(bond.style === 'dash' ? [4, 3] : [2, 2]);
-    }
-
-    switch (bond.order) {
-      case 1:
-      case 1.5:
-        ctx.beginPath();
-        ctx.moveTo(from.x, from.y);
-        ctx.lineTo(to.x, to.y);
-        ctx.stroke();
-        if (bond.order === 1.5) {
-          // Dashed inner line for aromatic
-          ctx.setLineDash([3, 3]);
-          ctx.beginPath();
-          ctx.moveTo(from.x + px, from.y + py);
-          ctx.lineTo(to.x + px, to.y + py);
-          ctx.stroke();
-          ctx.setLineDash([]);
-        }
-        break;
-      case 2:
-        ctx.beginPath();
-        ctx.moveTo(from.x + px, from.y + py);
-        ctx.lineTo(to.x + px, to.y + py);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(from.x - px, from.y - py);
-        ctx.lineTo(to.x - px, to.y - py);
-        ctx.stroke();
-        break;
-      case 3:
-        ctx.beginPath();
-        ctx.moveTo(from.x, from.y);
-        ctx.lineTo(to.x, to.y);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(from.x + px * 1.5, from.y + py * 1.5);
-        ctx.lineTo(to.x + px * 1.5, to.y + py * 1.5);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(from.x - px * 1.5, from.y - py * 1.5);
-        ctx.lineTo(to.x - px * 1.5, to.y - py * 1.5);
-        ctx.stroke();
-        break;
-    }
-
-    ctx.setLineDash([]);
-  }
+  // ── Utility ─────────────────────────────────────────────
 
   private syncCanvasSize(): void {
     const { canvas, container } = this;
     if (!canvas || !container) return;
-
     const dpr = window.devicePixelRatio || 1;
     const rect = container.getBoundingClientRect();
     canvas.width = rect.width * dpr;
     canvas.height = rect.height * dpr;
-
-    // Re-render to apply correct transform
     if (this.lastDoc) this.render(this.lastDoc);
   }
 
@@ -331,7 +530,6 @@ export class CanvasRenderer implements Renderer {
     const r = parseInt(hex.slice(1, 3), 16);
     const g = parseInt(hex.slice(3, 5), 16);
     const b = parseInt(hex.slice(5, 7), 16);
-    // Relative luminance approximation
     return (r * 299 + g * 587 + b * 114) / 1000 > 128;
   }
 }
