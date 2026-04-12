@@ -25,7 +25,7 @@ velocity:
   rolling_average: null
 
 # Current state
-current_sprint: 5
+current_sprint: 6
 current_sprint_status: 'completed'
 mvp_target: 'v0.1.0 in ~9-10 months'
 
@@ -334,11 +334,28 @@ sprints:
     name: 'Sprint 6 — Atomes complets + bond styles'
     type: 'standard'
     capacity_points: 10
-    status: 'planned'
+    committed_points: 10
+    completed_points: 10
+    status: 'completed'
     goal: 'Tous les éléments + charges + labels custom + tous les styles de liaisons MVP'
     epics: ['EPIC-001']
     frs: ['FR-002 (full)', 'FR-003 (full)', 'FR-006']
-    estimated_stories: 3
+    stories:
+      - id: 'STORY-6.1'
+        title: 'Periodic table data (25 elements) + getColor/getSymbol API'
+        points: 3
+        status: 'completed'
+        completed_at: '2026-04-12'
+      - id: 'STORY-6.2'
+        title: 'Charges + labels + update-atom command + charge rendering'
+        points: 4
+        status: 'completed'
+        completed_at: '2026-04-12'
+      - id: 'STORY-6.3'
+        title: 'Bond add/remove/cycle + all style variants rendering'
+        points: 3
+        status: 'completed'
+        completed_at: '2026-04-12'
 
   - sprint_number: 7
     name: 'Sprint 7 — Rings + quick chain + valence'
