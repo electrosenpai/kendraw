@@ -47,7 +47,12 @@ export type Bond = {
     | 'triple'
     | 'aromatic'
     | 'wedge'
+    | 'wedge-end'
     | 'dash'
+    | 'hashed-wedge'
+    | 'hashed-wedge-end'
+    | 'hollow-wedge'
+    | 'hollow-wedge-end'
     | 'wavy'
     | 'dative'
     | 'bold';

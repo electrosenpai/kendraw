@@ -286,28 +286,33 @@ function parseOrder(s: string): Bond['order'] {
 function parseDisplay(display: string, order: Bond['order']): Bond['style'] {
   const d = display.toLowerCase().trim();
 
-  // Numeric display types (CDX binary values)
+  // Numeric display types (CDX binary values 0-11)
   const numericMap: Record<string, Bond['style']> = {
     '0': 'single',
     '1': 'dash',
-    '2': 'dash', // 2=Hash → render as dash
-    '3': 'dash',
-    '4': 'dash', // 3,4=WedgedHash
+    '2': 'dash',
+    '3': 'hashed-wedge',
+    '4': 'hashed-wedge-end',
     '5': 'bold',
     '6': 'wedge',
-    '7': 'wedge',
+    '7': 'wedge-end',
     '8': 'wavy',
-    '9': 'wedge',
-    '10': 'wedge', // 9,10=HollowWedge → wedge
-    '11': 'double', // WavyCross → double as fallback
+    '9': 'hollow-wedge',
+    '10': 'hollow-wedge-end',
+    '11': 'double',
   };
   if (numericMap[d]) return numericMap[d];
 
   // String display types
-  if (d.includes('wavy')) return 'wavy';
-  if (d.includes('wedge')) return 'wedge';
+  if (d === 'wavy' || d === 'wavycross') return 'wavy';
+  if (d === 'wedgebegin') return 'wedge';
+  if (d === 'wedgeend') return 'wedge-end';
+  if (d === 'wedgedhashbegin') return 'hashed-wedge';
+  if (d === 'wedgedhashend') return 'hashed-wedge-end';
+  if (d === 'hollowwedgebegin') return 'hollow-wedge';
+  if (d === 'hollowwedgeend') return 'hollow-wedge-end';
   if (d === 'bold') return 'bold';
-  if (d === 'dash' || d.includes('hash')) return 'dash';
+  if (d === 'dash' || d === 'hash') return 'dash';
 
   // Default from bond order
   if (order === 2) return 'double';

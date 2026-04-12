@@ -411,28 +411,40 @@ export class CanvasRenderer implements Renderer {
         break;
       }
 
+      // --- WEDGE: solid filled triangle, narrow at Begin atom ---
       case 'wedge': {
-        // Solid wedge: triangle, narrow at from (stereocenter)
-        const w = S.wedgeWide;
+        const ww = S.wedgeWide;
         ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2 + px * w, y2 + py * w);
-        ctx.lineTo(x2 - px * w, y2 - py * w);
+        ctx.moveTo(x1, y1); // narrow tip at stereocenter
+        ctx.lineTo(x2 + px * ww, y2 + py * ww);
+        ctx.lineTo(x2 - px * ww, y2 - py * ww);
         ctx.closePath();
         ctx.fill();
         break;
       }
 
-      case 'dash': {
-        // Hashed wedge: parallel lines increasing in width
-        const w = S.wedgeWide;
-        const numLines = Math.max(3, Math.round(len / S.hashSpacing));
+      // --- WEDGE-END: solid filled triangle, narrow at End atom ---
+      case 'wedge-end': {
+        const wwe = S.wedgeWide;
+        ctx.beginPath();
+        ctx.moveTo(x2, y2); // narrow tip at end
+        ctx.lineTo(x1 + px * wwe, y1 + py * wwe);
+        ctx.lineTo(x1 - px * wwe, y1 - py * wwe);
+        ctx.closePath();
+        ctx.fill();
+        break;
+      }
+
+      // --- HASHED WEDGE: triangle envelope filled with parallel hash lines ---
+      case 'hashed-wedge': {
+        const hww = S.wedgeWide;
+        const numH = Math.max(3, Math.round(len / S.hashSpacing));
         ctx.lineWidth = S.lineWidth;
-        for (let i = 0; i < numLines; i++) {
-          const t = (i + 0.5) / numLines;
+        for (let i = 0; i < numH; i++) {
+          const t = (i + 0.5) / numH;
           const mx = x1 + (x2 - x1) * t;
           const my = y1 + (y2 - y1) * t;
-          const hw = w * t; // width increases from narrow to wide
+          const hw = hww * t; // widens from narrow to wide
           ctx.beginPath();
           ctx.moveTo(mx + px * hw, my + py * hw);
           ctx.lineTo(mx - px * hw, my - py * hw);
@@ -441,6 +453,59 @@ export class CanvasRenderer implements Renderer {
         break;
       }
 
+      // --- HASHED WEDGE END: same but narrow at End ---
+      case 'hashed-wedge-end': {
+        const hwwe = S.wedgeWide;
+        const numHE = Math.max(3, Math.round(len / S.hashSpacing));
+        ctx.lineWidth = S.lineWidth;
+        for (let i = 0; i < numHE; i++) {
+          const t = (i + 0.5) / numHE;
+          const mx = x2 + (x1 - x2) * t; // reversed direction
+          const my = y2 + (y1 - y2) * t;
+          const hw = hwwe * t;
+          ctx.beginPath();
+          ctx.moveTo(mx + px * hw, my + py * hw);
+          ctx.lineTo(mx - px * hw, my - py * hw);
+          ctx.stroke();
+        }
+        break;
+      }
+
+      // --- HOLLOW WEDGE: triangle outline only, narrow at Begin ---
+      case 'hollow-wedge': {
+        const hwr = S.wedgeWide;
+        ctx.lineWidth = S.lineWidth;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2 + px * hwr, y2 + py * hwr);
+        ctx.lineTo(x2 - px * hwr, y2 - py * hwr);
+        ctx.closePath();
+        ctx.stroke(); // outline only
+        break;
+      }
+
+      // --- HOLLOW WEDGE END: outline, narrow at End ---
+      case 'hollow-wedge-end': {
+        const hwre = S.wedgeWide;
+        ctx.lineWidth = S.lineWidth;
+        ctx.beginPath();
+        ctx.moveTo(x2, y2);
+        ctx.lineTo(x1 + px * hwre, y1 + py * hwre);
+        ctx.lineTo(x1 - px * hwre, y1 - py * hwre);
+        ctx.closePath();
+        ctx.stroke();
+        break;
+      }
+
+      // --- DASH: evenly dashed line (NOT hashed wedge) ---
+      case 'dash':
+        ctx.lineWidth = S.lineWidth;
+        ctx.setLineDash([4, 3]);
+        this.line(ctx, x1, y1, x2, y2);
+        ctx.setLineDash([]);
+        break;
+
+      // --- BOLD: thick line at boldWidth ---
       case 'bold':
         ctx.lineWidth = S.boldWidth;
         this.line(ctx, x1, y1, x2, y2);
