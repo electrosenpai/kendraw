@@ -332,16 +332,31 @@ function layout2D(atomCount: number, bonds: ParsedBond[]): { x: number; y: numbe
     }
 
     const unplaced = neighbors.filter((n) => !placed.has(n));
-    const spread = Math.PI * 0.6;
-    const startAngle = baseAngle - (spread * (unplaced.length - 1)) / 2;
+
+    // Determine bond order to detect hybridization for angle choice
+    const maxOrder = bonds
+      .filter((b) => b.from === cur || b.to === cur)
+      .reduce((max, b) => Math.max(max, b.order), 0);
+    // sp2 = 120°, sp3 = 109.5°, sp = 180°
+    const chemAngle = maxOrder >= 2 ? (2 * Math.PI) / 3 : (109.5 * Math.PI) / 180;
 
     for (let j = 0; j < unplaced.length; j++) {
       const n = unplaced[j];
       if (n === undefined) continue;
-      const angle =
-        unplaced.length === 1
-          ? baseAngle + (Math.PI / 3) * (j % 2 === 0 ? 1 : -1)
-          : startAngle + spread * j;
+
+      let angle: number;
+      if (unplaced.length === 1) {
+        // Single new bond: zigzag at chemical angle
+        // Alternate sign based on the atom index for consistent zigzag
+        const sign = cur % 2 === 0 ? 1 : -1;
+        angle = baseAngle + chemAngle * sign;
+      } else {
+        // Multiple new bonds: distribute evenly in the available arc
+        const totalArc = chemAngle * (unplaced.length - 1);
+        const start = baseAngle - totalArc / 2;
+        angle = start + chemAngle * j;
+      }
+
       cx[n] = (cx[cur] ?? 0) + BOND_LEN * Math.cos(angle);
       cy[n] = (cy[cur] ?? 0) + BOND_LEN * Math.sin(angle);
       placed.add(n);
@@ -360,11 +375,11 @@ function layout2D(atomCount: number, bonds: ParsedBond[]): { x: number; y: numbe
     }
   }
 
-  // Spring relaxation (20 iterations)
+  // Spring relaxation (40 iterations for better convergence)
   const fx = Array.from({ length: atomCount }, () => 0);
   const fy = Array.from({ length: atomCount }, () => 0);
 
-  for (let iter = 0; iter < 20; iter++) {
+  for (let iter = 0; iter < 40; iter++) {
     fx.fill(0);
     fy.fill(0);
 
