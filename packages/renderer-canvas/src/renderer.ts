@@ -512,20 +512,20 @@ export class CanvasRenderer implements Renderer {
         break;
 
       case 'wavy': {
-        // Sinusoidal bond — approximately 5 full waves per standard bond length
-        // Amplitude = boldWidth, ~40 segments for smooth curve
-        const bondLen = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
-        const wavesPerBond = Math.max(3, Math.round(bondLen / 8));
-        const amp = S.boldWidth * 1.2;
-        ctx.lineWidth = S.lineWidth;
+        // Sinusoidal bond — ~5 complete waves, clearly visible amplitude
+        const bdLen = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+        const nWaves = Math.max(3, Math.round(bdLen / 8));
+        // Amplitude must be clearly visible: at least 3px, proportional to bond
+        const wAmp = Math.max(3, bdLen * 0.08);
+        ctx.lineWidth = S.lineWidth * 1.2;
         ctx.beginPath();
         ctx.moveTo(x1, y1);
-        const steps = Math.max(20, wavesPerBond * 8);
-        for (let i = 1; i <= steps; i++) {
-          const t = i / steps;
+        const nSteps = Math.max(30, nWaves * 10);
+        for (let i = 1; i <= nSteps; i++) {
+          const t = i / nSteps;
           const bx = x1 + (x2 - x1) * t;
           const by = y1 + (y2 - y1) * t;
-          const wave = Math.sin(t * wavesPerBond * 2 * Math.PI) * amp;
+          const wave = Math.sin(t * nWaves * 2 * Math.PI) * wAmp;
           ctx.lineTo(bx + px * wave, by + py * wave);
         }
         ctx.stroke();
