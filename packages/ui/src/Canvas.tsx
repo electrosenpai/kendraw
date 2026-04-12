@@ -625,7 +625,20 @@ export function Canvas({ store }: CanvasProps) {
 
   return (
     <div style={{ display: 'flex', width: '100%', height: '100%' }}>
-      <ToolPalette toolState={toolState} onToolStateChange={updateToolState} />
+      <ToolPalette
+        toolState={toolState}
+        onToolStateChange={updateToolState}
+        onUndo={() => {
+          store.undo();
+          setSelection(clearSelection(selection));
+        }}
+        onRedo={() => {
+          store.redo();
+          setSelection(clearSelection(selection));
+        }}
+        canUndo={store.canUndo()}
+        canRedo={store.canRedo()}
+      />
 
       <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
         {/* Status bar */}
