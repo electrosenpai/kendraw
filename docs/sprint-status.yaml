@@ -25,7 +25,7 @@ velocity:
   rolling_average: null
 
 # Current state
-current_sprint: 4
+current_sprint: 5
 current_sprint_status: 'completed'
 mvp_target: 'v0.1.0 in ~9-10 months'
 
@@ -307,11 +307,28 @@ sprints:
     name: 'Sprint 5 — Glasswerk UI baseline + shortcuts initial'
     type: 'standard'
     capacity_points: 10
-    status: 'planned'
+    committed_points: 10
+    completed_points: 10
+    status: 'completed'
     goal: "L'app a son identité visuelle Kendraw + raccourcis ChemDraw-compat"
     epics: ['EPIC-004']
     frs: ['FR-014 (partial)', 'FR-019']
-    estimated_stories: 3
+    stories:
+      - id: 'STORY-5.1'
+        title: 'Design system Glasswerk — CSS tokens + dark/light theme'
+        points: 4
+        status: 'completed'
+        completed_at: '2026-04-12'
+      - id: 'STORY-5.2'
+        title: 'Tool palette (Select/Atom/Eraser/Pan) glassmorphic'
+        points: 3
+        status: 'completed'
+        completed_at: '2026-04-12'
+      - id: 'STORY-5.3'
+        title: 'Keyboard shortcuts + cheatsheet ? modal + Ctrl+N'
+        points: 3
+        status: 'completed'
+        completed_at: '2026-04-12'
 
   - sprint_number: 6
     name: 'Sprint 6 — Atomes complets + bond styles'
