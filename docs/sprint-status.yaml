@@ -25,7 +25,7 @@ velocity:
   rolling_average: null
 
 # Current state
-current_sprint: 3
+current_sprint: 4
 current_sprint_status: 'completed'
 mvp_target: 'v0.1.0 in ~9-10 months'
 
@@ -280,11 +280,28 @@ sprints:
     name: 'Sprint 4 — Multi-tabs + auto-save worker'
     type: 'standard'
     capacity_points: 10
-    status: 'planned'
+    committed_points: 10
+    completed_points: 10
+    status: 'completed'
     goal: 'Multi-document avec restore-on-reload via worker IDB'
     epics: ['EPIC-004']
     frs: ['FR-016', 'FR-017']
-    estimated_stories: 3
+    stories:
+      - id: 'STORY-4.1'
+        title: '@kendraw/persistence — Dexie DB + AutoSaveScheduler'
+        points: 4
+        status: 'completed'
+        completed_at: '2026-04-12'
+      - id: 'STORY-4.2'
+        title: '@kendraw/ui — Tab bar + multi-doc workspace + restore on reload'
+        points: 4
+        status: 'completed'
+        completed_at: '2026-04-12'
+      - id: 'STORY-4.3'
+        title: 'Crash resilience tests (auto-save + DB persistence)'
+        points: 2
+        status: 'completed'
+        completed_at: '2026-04-12'
 
   - sprint_number: 5
     name: 'Sprint 5 — Glasswerk UI baseline + shortcuts initial'
