@@ -38,7 +38,7 @@ sprints:
     end_date: null
     capacity_points: 45 # cumulative effort budget, not 10 pts
     committed_points: 45
-    completed_points: 35
+    completed_points: 38
     status: 'in_progress'
     goal: 'Repo + CI + ADRs + 4 POCs verts (POC #1 et #2 bloquants). Aucune story applicative.'
     gate_criteria:
@@ -166,7 +166,11 @@ sprints:
         title: 'POC #3 kickoff — CDXML (validation différée)'
         points: 3
         priority: 'should_have'
-        status: 'not_started'
+        status: 'completed'
+        story_doc: 'docs/stories/STORY-POC-003.md'
+        poc_report: 'docs/poc/poc-003-cdxml-kickoff.md'
+        completed_at: '2026-04-12'
+        verdict: 'KICKOFF DONE — full validation deferred'
         depends_on: ['STORY-INF-002']
         action_day_1: 'Envoyer le mail URD Abbaye (template Annexe A de docs/test-corpus-plan.md)'
       - id: 'STORY-POC-004'
