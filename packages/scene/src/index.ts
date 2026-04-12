@@ -105,6 +105,7 @@ export {
 } from './style-presets.js';
 
 export {
+  isGenericLabel,
   getImplicitHydrogens,
   shouldShowLabel,
   getHydrogenSide,

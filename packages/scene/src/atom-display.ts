@@ -30,9 +30,19 @@ const STANDARD_VALENCES: Record<number, number[]> = {
  * Calculate the number of implicit hydrogens for an atom.
  * Formula: implicitH = normalValence - Σ(bondOrders) - |formalCharge|
  */
+/** Check if an atom is a generic label (R-group, X, X', etc.) — not a real element. */
+export function isGenericLabel(atom: Atom): boolean {
+  if (!atom.label) return false;
+  // R1, R2, R', X, X', Y, Z followed by optional digits/primes
+  return /^[RXYZ]\d*'?$/.test(atom.label) || /^[RXYZ]'/.test(atom.label);
+}
+
 export function getImplicitHydrogens(page: Page, atomId: AtomId): number {
   const atom = page.atoms[atomId];
   if (!atom) return 0;
+
+  // Generic labels (R-groups, X, Y, Z) → never add implicit H
+  if (isGenericLabel(atom)) return 0;
 
   const valences = STANDARD_VALENCES[atom.element];
   if (!valences) return 0;
@@ -132,7 +142,17 @@ export function buildAtomLabel(page: Page, atomId: AtomId): LabelSegment[] {
 
   if (!shouldShowLabel(page, atomId)) return [];
 
+  // Generic labels (R-groups, X, Y, Z) → render with formula mode (digits as subscript)
+  if (isGenericLabel(atom) && atom.label) {
+    return formulaMode(atom.label);
+  }
+
   const symbol = atom.label ?? getSymbol(atom.element);
+  // If atom has a custom multi-char label (CO2H, OMe, etc.), use formula mode
+  if (atom.label && atom.label.length > 2) {
+    return formulaMode(atom.label);
+  }
+
   const implicitH = getImplicitHydrogens(page, atomId);
   const hSide = getHydrogenSide(page, atomId);
   const segments: LabelSegment[] = [];

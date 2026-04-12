@@ -17,20 +17,40 @@ import type {
   AnnotationId,
 } from '@kendraw/scene';
 
+export interface CdxmlGraphic {
+  type: 'rectangle' | 'line';
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+}
+
 export interface CdxmlParseResult {
   atoms: Atom[];
   bonds: Bond[];
   arrows: Arrow[];
   annotations: Annotation[];
+  graphics: CdxmlGraphic[];
 }
 
 const SCALE = 96 / 72; // pt to px at 96 DPI
+
+/** Decode XML entities: &amp; &lt; &gt; &apos; &quot; */
+function decodeXmlEntities(s: string): string {
+  return s
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&apos;/g, "'")
+    .replace(/&quot;/g, '"');
+}
 
 export function parseCdxml(xml: string): CdxmlParseResult {
   const atoms: Atom[] = [];
   const bonds: Bond[] = [];
   const arrows: Arrow[] = [];
   const annotations: Annotation[] = [];
+  const graphics: CdxmlGraphic[] = [];
   const idMap = new Map<string, AtomId>();
 
   // Strip nested <fragment> inside NodeType="Fragment" nodes (CO2H expansions)
@@ -83,7 +103,7 @@ export function parseCdxml(xml: string): CdxmlParseResult {
       lonePairs: 0,
     };
     if (isotope) atom.isotope = isotope;
-    if (label) atom.label = label;
+    if (label) atom.label = decodeXmlEntities(label);
     atoms.push(atom);
   }
 
@@ -148,7 +168,8 @@ export function parseCdxml(xml: string): CdxmlParseResult {
   // --- Parse standalone <t> elements (free text: conditions, labels, "+", numbering) ---
   // These are <t> directly under <page>, not inside <n> nodes.
   // Strategy: find all <t> with a p attribute that are NOT inside a <n>...</n> block.
-  const freeTextRegex = /<t\b\s([^>]*?)>[\s\S]*?<s\b[^>]*>([^<]*)<\/s>[\s\S]*?<\/t>/g;
+  // Capture ALL <s> text content within each <t> block (multi-run support)
+  const freeTextRegex = /<t\b\s([^>]*?)>([\s\S]*?)<\/t>/g;
   // We need to check that each match is not inside a <n>...</n>
   const nOpenRegex = /<n\b/g;
   const nCloseRegex = /<\/n>/g;
@@ -172,8 +193,17 @@ export function parseCdxml(xml: string): CdxmlParseResult {
     if (insideNode) continue;
 
     const attrs = m[1] ?? '';
-    const textContent = m[2] ?? '';
-    if (!textContent.trim()) continue;
+    const innerHtml = m[2] ?? '';
+
+    // Extract all <s> text content (multi-run: bold, formula, etc.)
+    const sRegex = /<s\b[^>]*>([^<]*)<\/s>/g;
+    let sMatch: RegExpExecArray | null;
+    let fullText = '';
+    while ((sMatch = sRegex.exec(innerHtml)) !== null) {
+      fullText += sMatch[1] ?? '';
+    }
+    fullText = decodeXmlEntities(fullText.trim());
+    if (!fullText) continue;
 
     const p = getAttr(attrs, 'p');
     if (!p) continue;
@@ -185,11 +215,32 @@ export function parseCdxml(xml: string): CdxmlParseResult {
       id: crypto.randomUUID() as AnnotationId,
       x: px,
       y: py,
-      richText: [{ text: textContent.trim() }],
+      richText: [{ text: fullText }],
     });
   }
 
-  return { atoms, bonds, arrows, annotations };
+  // --- Parse <graphic> elements (rectangles, lines) ---
+  const graphicRegex = /<graphic\b\s([^>]+?)(?:\/>|>)/g;
+  while ((m = graphicRegex.exec(xml)) !== null) {
+    const gAttrs = m[1] ?? '';
+    const gType = getAttr(gAttrs, 'GraphicType') ?? '';
+    const bb = getAttr(gAttrs, 'BoundingBox');
+    if (!bb) continue;
+
+    const bbParts = bb.split(/\s+/).map(Number);
+    const bx1 = (bbParts[0] ?? 0) * SCALE;
+    const by1 = (bbParts[1] ?? 0) * SCALE;
+    const bx2 = (bbParts[2] ?? 0) * SCALE;
+    const by2 = (bbParts[3] ?? 0) * SCALE;
+
+    if (gType === 'Rectangle' || gType.includes('Rect')) {
+      graphics.push({ type: 'rectangle', x1: bx1, y1: by1, x2: bx2, y2: by2 });
+    } else if (gType === 'Line') {
+      graphics.push({ type: 'line', x1: bx1, y1: by1, x2: bx2, y2: by2 });
+    }
+  }
+
+  return { atoms, bonds, arrows, annotations, graphics };
 }
 
 function getAttr(text: string, name: string): string | undefined {

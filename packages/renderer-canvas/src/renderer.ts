@@ -8,6 +8,14 @@ import {
   ptToPx,
 } from '@kendraw/scene';
 
+export interface GraphicOverlay {
+  type: 'rectangle' | 'line';
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+}
+
 export interface Renderer {
   attach(container: HTMLElement): void;
   detach(): void;
@@ -16,6 +24,7 @@ export interface Renderer {
   setSelectionRect(rect: { x1: number; y1: number; x2: number; y2: number } | null): void;
   setViewport(zoom: number, panX: number, panY: number): void;
   setValenceIssues(ids: Set<AtomId>): void;
+  setGraphics(graphics: GraphicOverlay[]): void;
 }
 
 // Style settings derived from active preset (New Document default)
@@ -43,6 +52,7 @@ export class CanvasRenderer implements Renderer {
   private selectionRect: { x1: number; y1: number; x2: number; y2: number } | null = null;
   private lastDoc: Document | null = null;
   private zoom = 1;
+  private graphicOverlays: GraphicOverlay[] = [];
   private panX = 0;
   private panY = 0;
 
@@ -92,6 +102,11 @@ export class CanvasRenderer implements Renderer {
     if (this.lastDoc) this.render(this.lastDoc);
   }
 
+  setGraphics(graphics: GraphicOverlay[]): void {
+    this.graphicOverlays = graphics;
+    if (this.lastDoc) this.render(this.lastDoc);
+  }
+
   render(doc: Document): void {
     const { canvas, ctx } = this;
     if (!canvas || !ctx) return;
@@ -115,6 +130,20 @@ export class CanvasRenderer implements Renderer {
       const show = shouldShowLabel(page, atom.id);
       labelVisible.set(atom.id, show);
       if (show) labelSegments.set(atom.id, buildAtomLabel(page, atom.id));
+    }
+
+    // 0. Graphic overlays (rectangles, lines from CDXML)
+    for (const g of this.graphicOverlays) {
+      ctx.strokeStyle = '#666666';
+      ctx.lineWidth = S.lineWidth;
+      if (g.type === 'rectangle') {
+        ctx.strokeRect(g.x1, g.y1, g.x2 - g.x1, g.y2 - g.y1);
+      } else {
+        ctx.beginPath();
+        ctx.moveTo(g.x1, g.y1);
+        ctx.lineTo(g.x2, g.y2);
+        ctx.stroke();
+      }
     }
 
     // 1. Arrows (behind everything)
