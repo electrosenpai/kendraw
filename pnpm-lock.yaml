@@ -63,7 +63,18 @@ importers:
 
   packages/io: {}
 
-  packages/persistence: {}
+  packages/persistence:
+    dependencies:
+      '@kendraw/scene':
+        specifier: workspace:*
+        version: link:../scene
+      dexie:
+        specifier: ^4.4.2
+        version: 4.4.2
+    devDependencies:
+      fake-indexeddb:
+        specifier: ^6.2.5
+        version: 6.2.5
 
   packages/renderer-canvas:
     dependencies:
@@ -1398,6 +1409,9 @@ packages:
   devtools-protocol@0.0.1495869:
     resolution: {integrity: sha512-i+bkd9UYFis40RcnkW7XrOprCujXRAHg62IVh/Ah3G8MmNXpCGt1m0dTFhSdx/AVs8XEMbdOGRwdkR1Bcta8AA==}
 
+  dexie@4.4.2:
+    resolution: {integrity: sha512-zMtV8q79EFE5U8FKZvt0Y/77PCU/Hr/RDxv1EDeo228L+m/HTbeN2AjoQm674rhQCX8n3ljK87lajt7UQuZfvw==}
+
   dezalgo@1.0.4:
     resolution: {integrity: sha512-rXSP0bf+5n0Qonsb+SVVfNfIsimO4HEtmnIpPHY8Q1UCzKlQrDMfdobr8nJOOsRgWCyMRqeSBQzmWUMq7zvVig==}
 
@@ -1529,6 +1543,10 @@ packages:
     resolution: {integrity: sha512-GDhU9ntwuKyGXdZBUgTIe+vXnWj0fppUEtMDL0+idd5Sta8TGpHssn/eusA9mrPr9qNDym6SxAYZjNvCn/9RBg==}
     engines: {node: '>= 10.17.0'}
     hasBin: true
+
+  fake-indexeddb@6.2.5:
+    resolution: {integrity: sha512-CGnyrvbhPlWYMngksqrSSUT1BAVP49dZocrHuK0SvtR0D5TMs5wP0o3j7jexDJW01KSadjBp1M/71o/KR3nD1w==}
+    engines: {node: '>=18'}
 
   fast-deep-equal@3.1.3:
     resolution: {integrity: sha512-f3qQ9oQy9j2AhBe/H9VC91wLmKBCCU/gDOnKNAYG5hswO7BLKj09Hc5HYNz9cGI++xlpDCIgDaitVs03ATR84Q==}
@@ -3701,6 +3719,8 @@ snapshots:
 
   devtools-protocol@0.0.1495869: {}
 
+  dexie@4.4.2: {}
+
   dezalgo@1.0.4:
     dependencies:
       asap: 2.0.6
@@ -3911,6 +3931,8 @@ snapshots:
       '@types/yauzl': 2.10.3
     transitivePeerDependencies:
       - supports-color
+
+  fake-indexeddb@6.2.5: {}
 
   fast-deep-equal@3.1.3: {}
 
