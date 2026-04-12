@@ -27,6 +27,7 @@ import {
 import { CanvasRenderer } from '@kendraw/renderer-canvas';
 import { ToolPalette, DEFAULT_TOOL_STATE, type ToolState } from './ToolPalette';
 import { PropertyPanel } from './PropertyPanel';
+import { StatusBar } from './StatusBar';
 
 const ATOM_RADIUS = 14;
 
@@ -51,6 +52,7 @@ export function Canvas({ store, onMoleculeSearch }: CanvasProps) {
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const isPanningRef = useRef(false);
   const panStartRef = useRef({ x: 0, y: 0, panX: 0, panY: 0 });
+  const [cursorPos, setCursorPos] = useState<{ x: number; y: number } | null>(null);
 
   const updateToolState = useCallback((partial: Partial<ToolState>) => {
     if (partial.tool) bondStartAtomRef.current = null;
@@ -386,6 +388,10 @@ export function Canvas({ store, onMoleculeSearch }: CanvasProps) {
 
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
+      // Track cursor position for status bar
+      const worldPos = toCanvasCoords(e);
+      setCursorPos(worldPos);
+
       // Panning
       if (isPanningRef.current) {
         const dx = e.clientX - panStartRef.current.x;
@@ -618,15 +624,22 @@ export function Canvas({ store, onMoleculeSearch }: CanvasProps) {
   );
 
   const cursorStyle = (() => {
+    if (isPanningRef.current) return 'grabbing';
     switch (toolState.tool) {
       case 'select':
         return 'default';
       case 'pan':
         return 'grab';
       case 'eraser':
-        return 'pointer';
-      default:
         return 'crosshair';
+      case 'add-atom':
+      case 'add-bond':
+      case 'ring':
+      case 'arrow':
+      case 'curly-arrow':
+        return 'crosshair';
+      default:
+        return 'default';
     }
   })();
 
@@ -648,47 +661,35 @@ export function Canvas({ store, onMoleculeSearch }: CanvasProps) {
         canRedo={store.canRedo()}
       />
 
-      <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-        {/* Status bar */}
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 4,
-            left: 8,
-            fontSize: 10,
-            color: 'var(--kd-color-text-muted)',
-            zIndex: 10,
-            display: 'flex',
-            gap: 12,
-          }}
-        >
-          <span>Zoom: {Math.round(zoom * 100)}%</span>
-          {selection.atomIds.length > 0 && <span>{selection.atomIds.length} selected</span>}
-          {valenceIssues.size > 0 && (
-            <span style={{ color: 'var(--kd-color-warning)' }}>
-              {valenceIssues.size} valence warning{valenceIssues.size > 1 ? 's' : ''}
-            </span>
-          )}
-          {bondStartAtomRef.current && (
-            <span style={{ color: 'var(--kd-color-accent)' }}>Click target atom for bond</span>
-          )}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        {/* Canvas */}
+        <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+          <div
+            ref={containerRef}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            style={{
+              width: '100%',
+              height: '100%',
+              backgroundColor: 'var(--kd-color-bg-primary)',
+              cursor: cursorStyle,
+            }}
+          />
+
+          <PropertyPanel doc={doc} visible={showProperties} />
         </div>
 
-        {/* Canvas */}
-        <div
-          ref={containerRef}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          style={{
-            width: '100%',
-            height: '100%',
-            backgroundColor: 'var(--kd-color-bg-primary)',
-            cursor: cursorStyle,
-          }}
+        {/* Status bar (Photoshop-style) */}
+        <StatusBar
+          toolState={toolState}
+          zoom={zoom}
+          atomCount={Object.keys(doc.pages[doc.activePageIndex]?.atoms ?? {}).length}
+          bondCount={Object.keys(doc.pages[doc.activePageIndex]?.bonds ?? {}).length}
+          selectionCount={selection.atomIds.length}
+          valenceWarnings={valenceIssues.size}
+          cursorPos={cursorPos}
         />
-
-        <PropertyPanel doc={doc} visible={showProperties} />
       </div>
     </div>
   );

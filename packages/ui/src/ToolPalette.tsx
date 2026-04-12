@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { COMMON_ELEMENTS, getSymbol, getColor, RING_TEMPLATES } from '@kendraw/scene';
 import type { RingTemplate } from '@kendraw/scene';
 
-// ── Tool types ──────────────────────────────────────────────
+// ── Types ───────────────────────────────────────────────────
 
 export type ToolId =
   | 'select'
@@ -32,13 +32,13 @@ export const DEFAULT_TOOL_STATE: ToolState = {
   curlyType: 'pair',
 };
 
-// ── SVG Icons (inline, monochrome, 20x20 viewBox) ──────────
+// ── Icons (20x20 SVG, stroke 1.5) ──────────────────────────
 
-const Icons = {
-  select: (
+function I({ children }: { children: React.ReactNode }) {
+  return (
     <svg
-      width="20"
-      height="20"
+      width="18"
+      height="18"
       viewBox="0 0 20 20"
       fill="none"
       stroke="currentColor"
@@ -46,186 +46,219 @@ const Icons = {
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <path d="M4 2l10 7-4.5 1.2L12 16l-2.5-1-2 5L4 2z" />
+      {children}
     </svg>
+  );
+}
+
+const ICN = {
+  select: (
+    <I>
+      <path d="M4 2l10 7-4.5 1.2L12 16l-2.5-1-2 5L4 2z" />
+    </I>
   ),
   pan: (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 20 20"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
+    <I>
       <path d="M10 2v5M10 13v5M2 10h5M13 10h5" />
       <path d="M10 2l2 2-2-2-2 2M10 18l2-2-2 2-2-2M2 10l2-2-2 2 2 2M18 10l-2-2 2 2-2 2" />
-    </svg>
+    </I>
   ),
   eraser: (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 20 20"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
+    <I>
       <path d="M15.5 4.5l-7 7-4-4 7-7 4 4z" />
       <path d="M8.5 11.5l-4 4h6l4-4" />
       <line x1="6" y1="17" x2="17" y2="17" />
-    </svg>
+    </I>
   ),
   atom: (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 20 20"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-    >
+    <I>
       <circle cx="10" cy="10" r="4" />
       <ellipse cx="10" cy="10" rx="9" ry="4" transform="rotate(45 10 10)" />
-    </svg>
+    </I>
   ),
   bond: (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 20 20"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-    >
+    <I>
       <circle cx="5" cy="15" r="2.5" />
       <circle cx="15" cy="5" r="2.5" />
       <line x1="7" y1="13" x2="13" y2="7" />
-    </svg>
+    </I>
   ),
   ring: (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 20 20"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinejoin="round"
-    >
+    <I>
       <polygon points="10,2 17,6 17,14 10,18 3,14 3,6" />
-    </svg>
-  ),
-  arrow: (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 20 20"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <line x1="3" y1="10" x2="15" y2="10" />
-      <polyline points="12,6 16,10 12,14" />
-    </svg>
-  ),
-  curly: (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 20 20"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M3 14 C6 4, 14 4, 17 8" />
-      <polyline points="15,5 17,8 14,9" />
-    </svg>
-  ),
-  undo: (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 20 20"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M4 8l4-4M4 8l4 4" />
-      <path d="M4 8h8a5 5 0 010 10H9" />
-    </svg>
-  ),
-  redo: (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 20 20"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M16 8l-4-4M16 8l-4 4" />
-      <path d="M16 8H8a5 5 0 000 10h3" />
-    </svg>
+    </I>
   ),
   molecule: (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 20 20"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-    >
+    <I>
       <circle cx="6" cy="6" r="3" />
       <circle cx="14" cy="6" r="3" />
       <circle cx="10" cy="14" r="3" />
       <line x1="8.5" y1="7.5" x2="11.5" y2="7.5" />
       <line x1="7.5" y1="8.5" x2="9" y2="12" />
       <line x1="12.5" y1="8.5" x2="11" y2="12" />
-    </svg>
+    </I>
   ),
-  zoomFit: (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 20 20"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
+  arrow: (
+    <I>
+      <line x1="3" y1="10" x2="15" y2="10" />
+      <polyline points="12,6 16,10 12,14" />
+    </I>
+  ),
+  curly: (
+    <I>
+      <path d="M3 14 C6 4, 14 4, 17 8" />
+      <polyline points="15,5 17,8 14,9" />
+    </I>
+  ),
+  undo: (
+    <I>
+      <path d="M4 8l4-4M4 8l4 4" />
+      <path d="M4 8h8a5 5 0 010 10H9" />
+    </I>
+  ),
+  redo: (
+    <I>
+      <path d="M16 8l-4-4M16 8l-4 4" />
+      <path d="M16 8H8a5 5 0 000 10h3" />
+    </I>
+  ),
+  fit: (
+    <I>
       <rect x="3" y="3" width="14" height="14" rx="2" />
       <path d="M3 7h14M3 13h14M7 3v14M13 3v14" />
-    </svg>
+    </I>
   ),
 };
 
-// ── Bond style options ──────────────────────────────────────
+// ── Tool definitions ────────────────────────────────────────
 
-const BOND_STYLES: { id: ToolState['bondStyle']; label: string; icon: React.ReactNode }[] = [
-  { id: 'single', label: 'Single', icon: <span style={{ fontSize: 16 }}>—</span> },
-  { id: 'double', label: 'Double', icon: <span style={{ fontSize: 16 }}>=</span> },
-  { id: 'triple', label: 'Triple', icon: <span style={{ fontSize: 14 }}>≡</span> },
-  { id: 'wedge', label: 'Wedge', icon: <span style={{ fontSize: 14 }}>▸</span> },
-  { id: 'dash', label: 'Dash', icon: <span style={{ fontSize: 14 }}>┄</span> },
-  { id: 'aromatic', label: 'Aromatic', icon: <span style={{ fontSize: 14 }}>◎</span> },
+interface ToolDef {
+  id: ToolId | 'molecules' | 'undo' | 'redo' | 'fit';
+  icon: React.ReactNode;
+  label: string;
+  shortcut: string;
+  description: string;
+  hasSubmenu?: boolean;
+  action?: true;
+}
+
+const GROUPS: { label: string; tools: ToolDef[] }[] = [
+  {
+    label: '',
+    tools: [
+      {
+        id: 'select',
+        icon: ICN.select,
+        label: 'Select',
+        shortcut: 'V',
+        description: 'Select and move atoms',
+      },
+      { id: 'pan', icon: ICN.pan, label: 'Pan', shortcut: 'H', description: 'Pan the canvas' },
+      {
+        id: 'eraser',
+        icon: ICN.eraser,
+        label: 'Eraser',
+        shortcut: 'E',
+        description: 'Delete atoms and bonds',
+      },
+    ],
+  },
+  {
+    label: '',
+    tools: [
+      {
+        id: 'add-atom',
+        icon: ICN.atom,
+        label: 'Atom',
+        shortcut: 'A',
+        description: 'Place atoms (right-click for elements)',
+        hasSubmenu: true,
+      },
+      {
+        id: 'add-bond',
+        icon: ICN.bond,
+        label: 'Bond',
+        shortcut: 'B',
+        description: 'Draw bonds (right-click for type)',
+        hasSubmenu: true,
+      },
+      {
+        id: 'ring',
+        icon: ICN.ring,
+        label: 'Ring',
+        shortcut: 'R',
+        description: 'Insert ring templates',
+        hasSubmenu: true,
+      },
+    ],
+  },
+  {
+    label: '',
+    tools: [
+      {
+        id: 'molecules',
+        icon: ICN.molecule,
+        label: 'Molecules',
+        shortcut: 'M',
+        description: 'Browse molecule library',
+      },
+    ],
+  },
+  {
+    label: '',
+    tools: [
+      {
+        id: 'arrow',
+        icon: ICN.arrow,
+        label: 'Arrow',
+        shortcut: 'W',
+        description: 'Reaction arrows',
+      },
+      {
+        id: 'curly-arrow',
+        icon: ICN.curly,
+        label: 'Curly',
+        shortcut: 'U',
+        description: 'Curved mechanism arrows',
+      },
+    ],
+  },
+];
+
+const ACTIONS: ToolDef[] = [
+  {
+    id: 'undo',
+    icon: ICN.undo,
+    label: 'Undo',
+    shortcut: 'Ctrl+Z',
+    description: 'Undo last action',
+    action: true,
+  },
+  {
+    id: 'redo',
+    icon: ICN.redo,
+    label: 'Redo',
+    shortcut: 'Ctrl+Y',
+    description: 'Redo last action',
+    action: true,
+  },
+  {
+    id: 'fit',
+    icon: ICN.fit,
+    label: 'Fit',
+    shortcut: 'Ctrl+0',
+    description: 'Fit all to screen',
+    action: true,
+  },
+];
+
+const BOND_OPTIONS: { id: ToolState['bondStyle']; label: string; sym: string }[] = [
+  { id: 'single', label: 'Single', sym: '—' },
+  { id: 'double', label: 'Double', sym: '=' },
+  { id: 'triple', label: 'Triple', sym: '≡' },
+  { id: 'aromatic', label: 'Aromatic', sym: '◎' },
+  { id: 'wedge', label: 'Wedge', sym: '▸' },
+  { id: 'dash', label: 'Dash', sym: '┄' },
 ];
 
 // ── Main component ──────────────────────────────────────────
@@ -249,178 +282,99 @@ export function ToolPalette({
   canUndo = true,
   canRedo = false,
 }: ToolPaletteProps) {
-  const [flyout, setFlyout] = useState<string | null>(null);
-  const [flyoutPos, setFlyoutPos] = useState(0);
-  const flyoutRef = useRef<HTMLDivElement>(null);
+  const [submenu, setSubmenu] = useState<string | null>(null);
+  const [submenuTop, setSubmenuTop] = useState(0);
+  const submenuRef = useRef<HTMLDivElement>(null);
 
-  // Close flyout on outside click
+  // Close submenu on outside click
   useEffect(() => {
-    if (!flyout) return;
-    function handleClick(e: MouseEvent) {
-      if (flyoutRef.current && !flyoutRef.current.contains(e.target as Node)) {
-        setFlyout(null);
+    if (!submenu) return;
+    const h = (e: MouseEvent) => {
+      if (submenuRef.current && !submenuRef.current.contains(e.target as Node)) setSubmenu(null);
+    };
+    window.addEventListener('mousedown', h);
+    return () => window.removeEventListener('mousedown', h);
+  }, [submenu]);
+
+  const handleClick = useCallback(
+    (def: ToolDef) => {
+      if (def.id === 'molecules') {
+        onMoleculeSearch?.();
+        return;
       }
-    }
-    window.addEventListener('mousedown', handleClick);
-    return () => window.removeEventListener('mousedown', handleClick);
-  }, [flyout]);
+      if (def.id === 'undo') {
+        onUndo?.();
+        return;
+      }
+      if (def.id === 'redo') {
+        onRedo?.();
+        return;
+      }
+      if (def.id === 'fit') return; // TODO
+      onToolStateChange({ tool: def.id as ToolId });
+      setSubmenu(null);
+    },
+    [onToolStateChange, onMoleculeSearch, onUndo, onRedo],
+  );
 
-  const openFlyout = useCallback((id: string, buttonEl: HTMLButtonElement) => {
-    const rect = buttonEl.getBoundingClientRect();
-    setFlyoutPos(rect.top);
-    setFlyout((prev) => (prev === id ? null : id));
-  }, []);
-
-  const selectTool = useCallback(
-    (tool: ToolId) => {
-      onToolStateChange({ tool });
-      setFlyout(null);
+  const handleContext = useCallback(
+    (def: ToolDef, el: HTMLButtonElement) => {
+      if (!def.hasSubmenu) return;
+      const r = el.getBoundingClientRect();
+      setSubmenuTop(r.top);
+      setSubmenu((p) => (p === def.id ? null : def.id));
+      onToolStateChange({ tool: def.id as ToolId });
     },
     [onToolStateChange],
   );
 
   return (
-    <div style={paletteContainer}>
-      {/* ── Selection ── */}
-      <SectionLabel>Select</SectionLabel>
-      <ToolButton
-        icon={Icons.select}
-        label="Select"
-        shortcut="V"
-        active={toolState.tool === 'select'}
-        onClick={() => selectTool('select')}
-      />
-      <ToolButton
-        icon={Icons.pan}
-        label="Pan"
-        shortcut="H"
-        active={toolState.tool === 'pan'}
-        onClick={() => selectTool('pan')}
-      />
-      <ToolButton
-        icon={Icons.eraser}
-        label="Eraser"
-        shortcut="E"
-        active={toolState.tool === 'eraser'}
-        onClick={() => selectTool('eraser')}
-      />
-
-      <Separator />
-
-      {/* ── Draw ── */}
-      <SectionLabel>Draw</SectionLabel>
-      <ToolButton
-        icon={Icons.atom}
-        label={`Atom (${getSymbol(toolState.element)})`}
-        shortcut="A"
-        active={toolState.tool === 'add-atom'}
-        badge={getSymbol(toolState.element)}
-        badgeColor={getColor(toolState.element)}
-        onClick={() => selectTool('add-atom')}
-        onContextMenu={(e, btn) => {
-          e.preventDefault();
-          openFlyout('element', btn);
-        }}
-      />
-      <ToolButton
-        icon={Icons.bond}
-        label={`Bond (${toolState.bondStyle})`}
-        shortcut="B"
-        active={toolState.tool === 'add-bond'}
-        onClick={() => selectTool('add-bond')}
-        onContextMenu={(e, btn) => {
-          e.preventDefault();
-          openFlyout('bond', btn);
-        }}
-      />
-      <ToolButton
-        icon={Icons.ring}
-        label="Ring"
-        shortcut="R"
-        active={toolState.tool === 'ring'}
-        onClick={() => selectTool('ring')}
-        onContextMenu={(e, btn) => {
-          e.preventDefault();
-          openFlyout('ring', btn);
-        }}
-      />
-
-      <Separator />
-
-      {/* ── Library ── */}
-      <SectionLabel>Library</SectionLabel>
-      <ToolButton
-        icon={Icons.molecule}
-        label="Molecules"
-        shortcut="M"
-        active={false}
-        onClick={onMoleculeSearch}
-      />
-
-      <Separator />
-
-      {/* ── Annotate ── */}
-      <SectionLabel>React</SectionLabel>
-      <ToolButton
-        icon={Icons.arrow}
-        label="Reaction Arrow"
-        shortcut="W"
-        active={toolState.tool === 'arrow'}
-        onClick={() => selectTool('arrow')}
-      />
-      <ToolButton
-        icon={Icons.curly}
-        label="Curly Arrow"
-        shortcut="U"
-        active={toolState.tool === 'curly-arrow'}
-        onClick={() => selectTool('curly-arrow')}
-      />
+    <div style={PALETTE}>
+      {GROUPS.map((g, gi) => (
+        <div key={gi}>
+          {gi > 0 && <Sep />}
+          {g.tools.map((def) => (
+            <Btn
+              key={def.id}
+              def={def}
+              active={toolState.tool === def.id}
+              badge={def.id === 'add-atom' ? getSymbol(toolState.element) : undefined}
+              badgeColor={def.id === 'add-atom' ? getColor(toolState.element) : undefined}
+              onClick={() => handleClick(def)}
+              onContextMenu={(el) => handleContext(def, el)}
+            />
+          ))}
+        </div>
+      ))}
 
       <div style={{ flex: 1 }} />
 
-      {/* ── Actions ── */}
-      <Separator />
-      <ToolButton
-        icon={Icons.undo}
-        label="Undo"
-        shortcut="Ctrl+Z"
-        active={false}
-        disabled={!canUndo}
-        onClick={onUndo}
-      />
-      <ToolButton
-        icon={Icons.redo}
-        label="Redo"
-        shortcut="Ctrl+Y"
-        active={false}
-        disabled={!canRedo}
-        onClick={onRedo}
-      />
-      <ToolButton
-        icon={Icons.zoomFit}
-        label="Zoom to Fit"
-        shortcut="Ctrl+0"
-        active={false}
-        onClick={() => {
-          /* TODO */
-        }}
-      />
+      <Sep />
+      {ACTIONS.map((def) => (
+        <Btn
+          key={def.id}
+          def={def}
+          active={false}
+          disabled={def.id === 'undo' ? !canUndo : def.id === 'redo' ? !canRedo : false}
+          onClick={() => handleClick(def)}
+        />
+      ))}
 
-      {/* ── Flyout panels ── */}
-      {flyout && (
-        <div ref={flyoutRef} style={{ ...flyoutContainer, top: flyoutPos }}>
-          {flyout === 'element' && (
-            <FlyoutPanel title="Element">
-              <div style={flyoutGrid}>
+      {/* ── Submenus ── */}
+      {submenu && (
+        <div ref={submenuRef} style={{ ...SUBMENU, top: submenuTop }}>
+          {submenu === 'add-atom' && (
+            <Sub title="Element">
+              <div style={GRID}>
                 {COMMON_ELEMENTS.map((z) => (
                   <button
                     key={z}
                     onClick={() => {
                       onToolStateChange({ element: z, tool: 'add-atom' });
-                      setFlyout(null);
+                      setSubmenu(null);
                     }}
                     style={{
-                      ...flyoutChip,
+                      ...CHIP,
                       background: toolState.element === z ? getColor(z) : 'var(--kd-color-surface)',
                       color: toolState.element === z ? '#fff' : 'var(--kd-color-text-primary)',
                     }}
@@ -430,60 +384,56 @@ export function ToolPalette({
                   </button>
                 ))}
               </div>
-            </FlyoutPanel>
+            </Sub>
           )}
-
-          {flyout === 'bond' && (
-            <FlyoutPanel title="Bond Style">
-              <div style={flyoutGrid}>
-                {BOND_STYLES.map((bs) => (
+          {submenu === 'add-bond' && (
+            <Sub title="Bond Type">
+              <div style={GRID}>
+                {BOND_OPTIONS.map((b) => (
                   <button
-                    key={bs.id}
+                    key={b.id}
                     onClick={() => {
-                      onToolStateChange({ bondStyle: bs.id, tool: 'add-bond' });
-                      setFlyout(null);
+                      onToolStateChange({ bondStyle: b.id, tool: 'add-bond' });
+                      setSubmenu(null);
                     }}
-                    title={bs.label}
+                    title={b.label}
                     style={{
-                      ...flyoutChip,
+                      ...CHIP,
                       background:
-                        toolState.bondStyle === bs.id
+                        toolState.bondStyle === b.id
                           ? 'var(--kd-color-accent)'
                           : 'var(--kd-color-surface)',
-                      color:
-                        toolState.bondStyle === bs.id ? '#fff' : 'var(--kd-color-text-primary)',
+                      color: toolState.bondStyle === b.id ? '#fff' : 'var(--kd-color-text-primary)',
+                      fontSize: 14,
                     }}
                   >
-                    {bs.icon}
+                    {b.sym}
                   </button>
                 ))}
               </div>
-            </FlyoutPanel>
+            </Sub>
           )}
-
-          {flyout === 'ring' && (
-            <FlyoutPanel title="Ring Template">
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                {RING_TEMPLATES.map((rt: RingTemplate) => (
-                  <button
-                    key={rt.id}
-                    onClick={() => {
-                      onToolStateChange({ ringTemplate: rt.id, tool: 'ring' });
-                      setFlyout(null);
-                    }}
-                    style={{
-                      ...flyoutRow,
-                      background:
-                        toolState.ringTemplate === rt.id
-                          ? 'var(--kd-color-accent-muted)'
-                          : 'transparent',
-                    }}
-                  >
-                    {rt.name}
-                  </button>
-                ))}
-              </div>
-            </FlyoutPanel>
+          {submenu === 'ring' && (
+            <Sub title="Ring Template">
+              {RING_TEMPLATES.map((rt: RingTemplate) => (
+                <button
+                  key={rt.id}
+                  onClick={() => {
+                    onToolStateChange({ ringTemplate: rt.id, tool: 'ring' });
+                    setSubmenu(null);
+                  }}
+                  style={{
+                    ...ROW,
+                    background:
+                      toolState.ringTemplate === rt.id
+                        ? 'var(--kd-color-accent-muted)'
+                        : 'transparent',
+                  }}
+                >
+                  {rt.name}
+                </button>
+              ))}
+            </Sub>
           )}
         </div>
       )}
@@ -491,12 +441,10 @@ export function ToolPalette({
   );
 }
 
-// ── Sub-components ──────────────────────────────────────────
+// ── Button ──────────────────────────────────────────────────
 
-function ToolButton({
-  icon,
-  label,
-  shortcut,
+function Btn({
+  def,
   active,
   disabled,
   badge,
@@ -504,58 +452,57 @@ function ToolButton({
   onClick,
   onContextMenu,
 }: {
-  icon: React.ReactNode;
-  label: string;
-  shortcut: string;
+  def: ToolDef;
   active: boolean;
   disabled?: boolean;
-  badge?: string;
-  badgeColor?: string;
-  onClick?: (() => void) | undefined;
-  onContextMenu?: ((e: React.MouseEvent, btn: HTMLButtonElement) => void) | undefined;
+  badge?: string | undefined;
+  badgeColor?: string | undefined;
+  onClick: () => void;
+  onContextMenu?: ((el: HTMLButtonElement) => void) | undefined;
 }) {
-  const [hovered, setHovered] = useState(false);
-  const [showTooltip, setShowTooltip] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout>>();
-  const btnRef = useRef<HTMLButtonElement>(null);
+  const [hover, setHover] = useState(false);
+  const [tip, setTip] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout>>();
+  const ref = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    if (hovered) {
-      timerRef.current = setTimeout(() => setShowTooltip(true), 400);
+    if (hover) {
+      timer.current = setTimeout(() => setTip(true), 350);
     } else {
-      clearTimeout(timerRef.current);
-      setShowTooltip(false);
+      clearTimeout(timer.current);
+      setTip(false);
     }
-    return () => clearTimeout(timerRef.current);
-  }, [hovered]);
+    return () => clearTimeout(timer.current);
+  }, [hover]);
 
   return (
     <div style={{ position: 'relative' }}>
       <button
-        ref={btnRef}
+        ref={ref}
         onClick={onClick}
         onContextMenu={
           onContextMenu
             ? (e) => {
-                const btn = btnRef.current;
-                if (btn) onContextMenu(e, btn);
+                e.preventDefault();
+                const b = ref.current;
+                if (b) onContextMenu(b);
               }
             : undefined
         }
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
+        onMouseEnter={() => setHover(true)}
+        onMouseLeave={() => setHover(false)}
         disabled={disabled}
         style={{
-          width: 44,
-          height: 44,
+          width: 42,
+          height: 42,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           position: 'relative',
           background: active
             ? 'var(--kd-color-accent-muted)'
-            : hovered
-              ? 'rgba(255,255,255,0.06)'
+            : hover
+              ? 'rgba(255,255,255,0.05)'
               : 'transparent',
           color: active
             ? 'var(--kd-color-accent)'
@@ -564,22 +511,39 @@ function ToolButton({
               : 'var(--kd-color-text-primary)',
           border: 'none',
           borderLeft: active ? '2px solid var(--kd-color-accent)' : '2px solid transparent',
-          borderRadius: 'var(--kd-radius-md)',
+          borderRadius: 6,
           cursor: disabled ? 'default' : 'pointer',
-          transition: 'all 150ms ease',
-          opacity: disabled ? 0.4 : 1,
+          transition: 'all 120ms ease',
+          opacity: disabled ? 0.35 : 1,
+          transform: hover && !disabled ? 'scale(1.04)' : 'none',
         }}
       >
-        {icon}
+        {def.icon}
+        {/* Sub-menu triangle indicator (like Photoshop) */}
+        {def.hasSubmenu && (
+          <span
+            style={{
+              position: 'absolute',
+              right: 2,
+              bottom: 2,
+              fontSize: 6,
+              opacity: 0.4,
+              lineHeight: 1,
+            }}
+          >
+            ▸
+          </span>
+        )}
+        {/* Element badge */}
         {badge && (
           <span
             style={{
               position: 'absolute',
-              bottom: 2,
-              right: 4,
-              fontSize: 8,
+              bottom: 1,
+              right: 3,
+              fontSize: 7,
               fontWeight: 700,
-              color: badgeColor ?? 'var(--kd-color-text-muted)',
+              color: badgeColor ?? '#888',
               lineHeight: 1,
             }}
           >
@@ -588,59 +552,34 @@ function ToolButton({
         )}
       </button>
 
-      {/* Tooltip */}
-      {showTooltip && (
-        <div style={tooltipStyle}>
-          <span>{label}</span>
-          <kbd style={kbdStyle}>{shortcut}</kbd>
+      {/* Tooltip (Photoshop-style) */}
+      {tip && (
+        <div style={TIP}>
+          <div style={{ fontWeight: 600, fontSize: 11 }}>
+            {def.label} <kbd style={KBD}>{def.shortcut}</kbd>
+          </div>
+          <div style={{ fontSize: 10, opacity: 0.6, marginTop: 2 }}>{def.description}</div>
         </div>
       )}
     </div>
   );
 }
 
-function SectionLabel({ children }: { children: string }) {
-  return (
-    <div
-      style={{
-        fontSize: 9,
-        fontWeight: 600,
-        textTransform: 'uppercase',
-        letterSpacing: '0.08em',
-        color: 'var(--kd-color-text-muted)',
-        opacity: 0.5,
-        padding: '8px 0 2px 6px',
-        userSelect: 'none',
-      }}
-    >
-      {children}
-    </div>
-  );
+function Sep() {
+  return <div style={{ height: 1, margin: '3px 6px', background: 'rgba(255,255,255,0.06)' }} />;
 }
 
-function Separator() {
-  return (
-    <div
-      style={{
-        height: 1,
-        margin: '4px 8px',
-        background: 'rgba(255,255,255,0.06)',
-      }}
-    />
-  );
-}
-
-function FlyoutPanel({ title, children }: { title: string; children: React.ReactNode }) {
+function Sub({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
       <div
         style={{
-          fontSize: 10,
+          fontSize: 9,
           fontWeight: 600,
           textTransform: 'uppercase',
           letterSpacing: '0.06em',
           color: 'var(--kd-color-text-muted)',
-          marginBottom: 6,
+          marginBottom: 5,
         }}
       >
         {title}
@@ -652,87 +591,53 @@ function FlyoutPanel({ title, children }: { title: string; children: React.React
 
 // ── Styles ──────────────────────────────────────────────────
 
-const paletteContainer: React.CSSProperties = {
-  width: 64,
+const PALETTE: React.CSSProperties = {
+  width: 56,
   display: 'flex',
   flexDirection: 'column',
-  background: 'rgba(20, 20, 20, 0.85)',
+  background: 'rgba(18, 18, 18, 0.88)',
   backdropFilter: 'blur(16px)',
   WebkitBackdropFilter: 'blur(16px)',
-  borderRight: '1px solid rgba(255, 255, 255, 0.08)',
-  padding: '4px 6px',
+  borderRight: '1px solid rgba(255,255,255,0.07)',
+  padding: '6px 4px',
   gap: 1,
   overflowY: 'auto',
   position: 'relative',
   zIndex: 20,
 };
 
-const flyoutContainer: React.CSSProperties = {
+const SUBMENU: React.CSSProperties = {
   position: 'fixed',
-  left: 72,
-  background: 'rgba(25, 25, 25, 0.92)',
+  left: 64,
+  background: 'rgba(22, 22, 22, 0.94)',
   backdropFilter: 'blur(20px)',
   WebkitBackdropFilter: 'blur(20px)',
-  border: '1px solid rgba(255, 255, 255, 0.1)',
-  borderRadius: 10,
+  border: '1px solid rgba(255,255,255,0.1)',
+  borderRadius: 8,
   boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-  padding: 10,
+  padding: '8px 10px',
   zIndex: 50,
-  minWidth: 140,
+  minWidth: 130,
+  animation: 'fadeSlide 120ms ease',
 };
 
-const flyoutGrid: React.CSSProperties = {
-  display: 'flex',
-  flexWrap: 'wrap',
-  gap: 3,
-};
-
-const flyoutChip: React.CSSProperties = {
-  width: 34,
-  height: 30,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  border: '1px solid rgba(255,255,255,0.08)',
-  borderRadius: 6,
-  cursor: 'pointer',
-  fontSize: 12,
-  fontWeight: 600,
-  transition: 'background 100ms ease',
-};
-
-const flyoutRow: React.CSSProperties = {
-  padding: '5px 8px',
-  border: 'none',
-  borderRadius: 6,
-  cursor: 'pointer',
-  fontSize: 11,
-  color: 'var(--kd-color-text-primary)',
-  textAlign: 'left',
-  transition: 'background 100ms ease',
-};
-
-const tooltipStyle: React.CSSProperties = {
+const TIP: React.CSSProperties = {
   position: 'absolute',
-  left: 52,
+  left: 50,
   top: '50%',
   transform: 'translateY(-50%)',
-  background: 'rgba(10, 10, 10, 0.95)',
+  background: 'rgba(8,8,8,0.96)',
   border: '1px solid rgba(255,255,255,0.1)',
   borderRadius: 6,
-  padding: '4px 8px',
-  display: 'flex',
-  alignItems: 'center',
-  gap: 8,
+  padding: '5px 9px',
   whiteSpace: 'nowrap',
-  fontSize: 11,
   color: 'var(--kd-color-text-primary)',
-  boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+  boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
   zIndex: 100,
   pointerEvents: 'none',
 };
 
-const kbdStyle: React.CSSProperties = {
+const KBD: React.CSSProperties = {
   fontSize: 9,
   padding: '1px 4px',
   background: 'rgba(255,255,255,0.08)',
@@ -740,4 +645,33 @@ const kbdStyle: React.CSSProperties = {
   borderRadius: 3,
   color: 'var(--kd-color-text-muted)',
   fontFamily: 'var(--kd-font-mono)',
+  marginLeft: 4,
+};
+
+const GRID: React.CSSProperties = { display: 'flex', flexWrap: 'wrap', gap: 3 };
+
+const CHIP: React.CSSProperties = {
+  width: 32,
+  height: 28,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  border: '1px solid rgba(255,255,255,0.08)',
+  borderRadius: 5,
+  cursor: 'pointer',
+  fontSize: 11,
+  fontWeight: 600,
+  transition: 'background 100ms',
+};
+
+const ROW: React.CSSProperties = {
+  display: 'block',
+  width: '100%',
+  padding: '4px 8px',
+  border: 'none',
+  borderRadius: 4,
+  cursor: 'pointer',
+  fontSize: 11,
+  color: 'var(--kd-color-text-primary)',
+  textAlign: 'left',
 };
