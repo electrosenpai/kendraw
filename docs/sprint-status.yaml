@@ -25,7 +25,7 @@ velocity:
   rolling_average: null
 
 # Current state
-current_sprint: 17
+current_sprint: 18
 current_sprint_status: 'completed'
 mvp_target: 'v0.1.0 in ~9-10 months'
 
@@ -659,11 +659,28 @@ sprints:
     name: 'Sprint 18 — Doc publish + release prep v0.1.0'
     type: 'standard'
     capacity_points: 10
-    status: 'planned'
+    committed_points: 10
+    completed_points: 10
+    status: 'completed'
     goal: 'Tag v0.1.0 + Zenodo DOI + 5 figures de référence MVP validées URD Abbaye'
     epics: ['EPIC-012']
     nfrs: ['NFR-011', 'NFR-012']
-    estimated_stories: 3
+    stories:
+      - id: 'STORY-18.1'
+        title: 'Documentation (getting-started, deployment, CHANGELOG)'
+        points: 4
+        status: 'completed'
+        completed_at: '2026-04-12'
+      - id: 'STORY-18.2'
+        title: 'Release workflow (GitHub Actions, GHCR images)'
+        points: 3
+        status: 'completed'
+        completed_at: '2026-04-12'
+      - id: 'STORY-18.3'
+        title: 'Tag v0.1.0 MVP release'
+        points: 3
+        status: 'completed'
+        completed_at: '2026-04-12'
 
 # Re-baseline checkpoints
 rebaseline_checkpoints:
