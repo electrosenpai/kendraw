@@ -5,7 +5,7 @@
  */
 
 import type { Atom, AtomId, Page } from './types.js';
-import { getSymbol } from './periodic-table.js';
+import { getSymbol, getElementBySymbol } from './periodic-table.js';
 
 /**
  * Standard valences for common elements.
@@ -146,6 +146,62 @@ export function getHydrogenSide(page: Page, atomId: AtomId): 'left' | 'right' {
 }
 
 /**
+ * Determine label justification for an atom (ChemDraw Auto mode).
+ * Left = normal order (element first, e.g. "OH"), bonds go left.
+ * Right = reversed order (H first, e.g. "HO"), bonds go right.
+ */
+export function getLabelJustification(page: Page, atomId: AtomId): 'left' | 'right' {
+  // Same logic as getHydrogenSide but with the semantics inverted:
+  // bonds go right → Right justification (reverse the label)
+  // bonds go left  → Left justification (normal label)
+  const hSide = getHydrogenSide(page, atomId);
+  return hSide === 'left' ? 'right' : 'left';
+}
+
+/**
+ * Reverse a formula label for right-justified display.
+ * Tokenizes at uppercase-letter boundaries ([A-Z][a-z]*\d*) and reverses.
+ * "OH" → "HO", "NH2" → "H2N", "OCH3" → "H3CO", "OMe" → "MeO"
+ *
+ * For abbreviation labels where element-group tokens aren't all valid elements
+ * (e.g. "OTBS"), falls back to swapping the main element with the rest:
+ * "OTBS" → "TBSO".
+ */
+export function reverseFormulaLabel(label: string, elementZ?: number): string {
+  if (label.length <= 1) return label;
+
+  // Tokenize: each token = uppercase + optional lowercase + optional digits
+  const tokens = label.match(/[A-Z][a-z]*\d*/g);
+  if (!tokens || tokens.length <= 1) return label;
+
+  // Check if all tokens (stripping trailing digits) are recognized element symbols
+  const allElements = tokens.every((t) => {
+    const sym = t.replace(/\d+$/, '');
+    return !!getElementBySymbol(sym);
+  });
+
+  if (allElements) {
+    // Full element-group reversal: OH→HO, NH2→H2N, OCH3→H3CO
+    return tokens.reverse().join('');
+  }
+
+  // Abbreviation fallback: split at element symbol boundary
+  // e.g. "OTBS" (element=O) → "TBS" + "O" = "TBSO"
+  if (elementZ !== undefined) {
+    const sym = getSymbol(elementZ);
+    if (label.startsWith(sym) && label.length > sym.length) {
+      return label.slice(sym.length) + sym;
+    }
+    if (label.endsWith(sym) && label.length > sym.length) {
+      return sym + label.slice(0, label.length - sym.length);
+    }
+  }
+
+  // Last resort: full token reversal
+  return tokens.reverse().join('');
+}
+
+/**
  * Build the full display label for an atom including implicit H.
  * Produces structured segments for rendering with subscripts/superscripts.
  */
@@ -166,13 +222,20 @@ export function buildAtomLabel(page: Page, atomId: AtomId): LabelSegment[] {
   }
 
   // CDXML explicit labels already include the correct hydrogen count
-  // (e.g. "OH", "NH2", "CO2H") — render as formula, skip implicit H
+  // (e.g. "OH", "NH2", "CO2H") — render as formula, skip implicit H.
+  // Apply label reversal when bonds come predominantly from the right
+  // (Right justification) so "OH" → "HO", keeping element symbol toward the bond.
   if (atom.hasExplicitLabel && atom.label) {
+    const justification = getLabelJustification(page, atomId);
+    const labelText =
+      justification === 'right'
+        ? reverseFormulaLabel(atom.label, atom.element)
+        : atom.label;
     const segments: LabelSegment[] = [];
     if (atom.isotope) {
       segments.push({ text: String(atom.isotope), style: 'superscript' });
     }
-    segments.push(...formulaMode(atom.label));
+    segments.push(...formulaMode(labelText));
     if (atom.charge !== 0) {
       const mag = Math.abs(atom.charge);
       const sign = atom.charge > 0 ? '+' : '\u2013';

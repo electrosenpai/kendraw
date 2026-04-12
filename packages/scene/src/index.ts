@@ -109,6 +109,8 @@ export {
   getImplicitHydrogens,
   shouldShowLabel,
   getHydrogenSide,
+  getLabelJustification,
+  reverseFormulaLabel,
   buildAtomLabel,
   formulaMode,
   type LabelSegment,

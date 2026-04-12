@@ -4,6 +4,8 @@ import {
   shouldShowLabel,
   buildAtomLabel,
   formulaMode,
+  getLabelJustification,
+  reverseFormulaLabel,
 } from '../atom-display.js';
 import { createSceneStore, createAtom, createBond } from '../index.js';
 
@@ -199,7 +201,7 @@ describe('buildAtomLabel', () => {
     expect(text).toBe('OH');
   });
 
-  it('CDXML explicit "OH" with right-justified label shows "OH" not "HOH"', () => {
+  it('CDXML explicit "OH" with bond to the right → reversed to "HO"', () => {
     const o = createAtom(0, 0, 8);
     o.label = 'OH';
     o.hasExplicitLabel = true;
@@ -211,7 +213,8 @@ describe('buildAtomLabel', () => {
     );
     const label = buildAtomLabel(page, o.id);
     const text = label.map((s) => s.text).join('');
-    expect(text).toBe('OH');
+    // Bond from the right → element O must face the bond → label reversed
+    expect(text).toBe('HO');
   });
 
   it('CDXML explicit "O" label shows just "O" (no implicit H)', () => {
@@ -232,6 +235,36 @@ describe('buildAtomLabel', () => {
     expect(text).toBe('O');
   });
 
+  it('CDXML explicit "OH" with bond to the left → stays "OH"', () => {
+    const o = createAtom(0, 0, 8);
+    o.label = 'OH';
+    o.hasExplicitLabel = true;
+    const c = createAtom(-40, 0, 6); // bond to the left
+    const page = buildPage(
+      (s) => s.dispatch({ type: 'add-atom', atom: o }),
+      (s) => s.dispatch({ type: 'add-atom', atom: c }),
+      (s) => s.dispatch({ type: 'add-bond', bond: createBond(o.id, c.id) }),
+    );
+    const label = buildAtomLabel(page, o.id);
+    const text = label.map((s) => s.text).join('');
+    expect(text).toBe('OH');
+  });
+
+  it('CDXML explicit "NH2" with bond to the right → reversed to "H2N"', () => {
+    const n = createAtom(0, 0, 7);
+    n.label = 'NH2';
+    n.hasExplicitLabel = true;
+    const c = createAtom(40, 0, 6);
+    const page = buildPage(
+      (s) => s.dispatch({ type: 'add-atom', atom: n }),
+      (s) => s.dispatch({ type: 'add-atom', atom: c }),
+      (s) => s.dispatch({ type: 'add-bond', bond: createBond(n.id, c.id) }),
+    );
+    const label = buildAtomLabel(page, n.id);
+    const text = label.map((s) => s.text).join('');
+    expect(text).toBe('H2N');
+  });
+
   it('shows charge as superscript', () => {
     const n = createAtom(0, 0, 7);
     n.charge = 1;
@@ -240,5 +273,60 @@ describe('buildAtomLabel', () => {
     const supSegs = label.filter((s) => s.style === 'superscript');
     expect(supSegs.length).toBeGreaterThan(0);
     expect(supSegs.some((s) => s.text.includes('+'))).toBe(true);
+  });
+});
+
+describe('reverseFormulaLabel', () => {
+  it('OH → HO', () => {
+    expect(reverseFormulaLabel('OH')).toBe('HO');
+  });
+
+  it('NH2 → H2N', () => {
+    expect(reverseFormulaLabel('NH2')).toBe('H2N');
+  });
+
+  it('SH → HS', () => {
+    expect(reverseFormulaLabel('SH')).toBe('HS');
+  });
+
+  it('OCH3 → H3CO', () => {
+    expect(reverseFormulaLabel('OCH3')).toBe('H3CO');
+  });
+
+  it('OMe → MeO', () => {
+    expect(reverseFormulaLabel('OMe')).toBe('MeO');
+  });
+
+  it('OTBS → TBSO (abbreviation fallback with element hint)', () => {
+    // T is not a recognized element, so falls back to element+abbreviation split
+    expect(reverseFormulaLabel('OTBS', 8)).toBe('TBSO');
+  });
+
+  it('single char unchanged', () => {
+    expect(reverseFormulaLabel('O')).toBe('O');
+  });
+});
+
+describe('getLabelJustification', () => {
+  it('bond to the left → Left justification (normal label)', () => {
+    const o = createAtom(0, 0, 8);
+    const c = createAtom(-40, 0, 6);
+    const page = buildPage(
+      (s) => s.dispatch({ type: 'add-atom', atom: o }),
+      (s) => s.dispatch({ type: 'add-atom', atom: c }),
+      (s) => s.dispatch({ type: 'add-bond', bond: createBond(o.id, c.id) }),
+    );
+    expect(getLabelJustification(page, o.id)).toBe('left');
+  });
+
+  it('bond to the right → Right justification (reversed label)', () => {
+    const o = createAtom(0, 0, 8);
+    const c = createAtom(40, 0, 6);
+    const page = buildPage(
+      (s) => s.dispatch({ type: 'add-atom', atom: o }),
+      (s) => s.dispatch({ type: 'add-atom', atom: c }),
+      (s) => s.dispatch({ type: 'add-bond', bond: createBond(o.id, c.id) }),
+    );
+    expect(getLabelJustification(page, o.id)).toBe('right');
   });
 });

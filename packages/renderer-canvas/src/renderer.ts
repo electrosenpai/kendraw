@@ -3,6 +3,7 @@ import {
   getColor,
   shouldShowLabel,
   buildAtomLabel,
+  getLabelJustification,
   type LabelSegment,
   type LabelDisplayOptions,
   NEW_DOCUMENT,
@@ -150,13 +151,17 @@ export class CanvasRenderer implements Renderer {
 
     const S = this.S;
 
-    // Precompute which atoms have visible labels
+    // Precompute which atoms have visible labels and their justification
     const labelVisible = new Map<AtomId, boolean>();
     const labelSegments = new Map<AtomId, LabelSegment[]>();
+    const labelJust = new Map<AtomId, 'left' | 'right'>();
     for (const atom of Object.values(page.atoms)) {
       const show = shouldShowLabel(page, atom.id, S.labelDisplayOptions);
       labelVisible.set(atom.id, show);
-      if (show) labelSegments.set(atom.id, buildAtomLabel(page, atom.id));
+      if (show) {
+        labelSegments.set(atom.id, buildAtomLabel(page, atom.id));
+        labelJust.set(atom.id, getLabelJustification(page, atom.id));
+      }
     }
 
     // 0. Graphic overlays (rectangles, lines from CDXML)
@@ -219,6 +224,7 @@ export class CanvasRenderer implements Renderer {
         page,
         labelVisible.get(atom.id) ?? false,
         labelSegments.get(atom.id),
+        labelJust.get(atom.id),
       );
     }
 
@@ -248,6 +254,7 @@ export class CanvasRenderer implements Renderer {
     page: Page,
     showLabel: boolean,
     segments: LabelSegment[] | undefined,
+    justification?: 'left' | 'right',
   ): void {
     const selected = this.selectedAtoms.has(atom.id);
     const valenceWarn = this.valenceIssues.has(atom.id);
@@ -282,15 +289,27 @@ export class CanvasRenderer implements Renderer {
       return;
     }
 
-    // Draw label background (clear area behind text)
+    // Draw label background (clear area behind text), accounting for
+    // justification offset so the element symbol sits at atom.x.
     const totalWidth = this.measureLabelWidth(ctx, segments);
-    const halfW = totalWidth / 2 + 2;
-    const halfH = S.labelSize / 2 + 2;
+    let bgX: number;
+    if (justification === 'right') {
+      const last = this.measureLastElementOffset(ctx, segments);
+      bgX = atom.x - last.offset - last.width / 2;
+    } else if (justification === 'left') {
+      const first = this.measureElementWidth(ctx, segments);
+      bgX = atom.x - first.offset - first.width / 2;
+    } else {
+      bgX = atom.x - totalWidth / 2;
+    }
+    const pad = 2;
+    const halfH = S.labelSize / 2 + pad;
     ctx.fillStyle = '#0a0a0a'; // match canvas bg
-    ctx.fillRect(atom.x - halfW, atom.y - halfH, halfW * 2, halfH * 2);
+    ctx.fillRect(bgX - pad, atom.y - halfH, totalWidth + pad * 2, halfH * 2);
 
-    // Render label segments (formula mode)
-    this.renderLabelSegments(ctx, atom.x, atom.y, segments, atom.element);
+    // Render label segments (formula mode), anchored so the element symbol
+    // sits at the atom coordinate (bond connection point).
+    this.renderLabelSegments(ctx, atom.x, atom.y, segments, atom.element, justification);
   }
 
   private measureLabelWidth(ctx: CanvasRenderingContext2D, segments: LabelSegment[]): number {
@@ -304,16 +323,56 @@ export class CanvasRenderer implements Renderer {
     return w;
   }
 
+  /** Measure the width of the first element symbol segment in the label. */
+  private measureElementWidth(
+    ctx: CanvasRenderingContext2D,
+    segments: LabelSegment[],
+  ): { offset: number; width: number } {
+    const S = this.S;
+    // Find the first normal-style segment that is a letter (the element symbol).
+    // In reversed labels like "HO", the element is the last normal letter.
+    // But since buildAtomLabel already reversed, the element is where it should be
+    // relative to justification. For left-justified: element is the first letter.
+    // For right-justified: element is the last letter (on the right side).
+    let offset = 0;
+    for (const seg of segments) {
+      const size = seg.style === 'normal' ? S.labelSize : S.labelSize * S.subScale;
+      ctx.font = `${size}px Arial, system-ui, sans-serif`;
+      const w = ctx.measureText(seg.text).width;
+      if (seg.style === 'normal' && /[A-Z]/.test(seg.text)) {
+        return { offset, width: w };
+      }
+      offset += w;
+    }
+    return { offset: 0, width: 0 };
+  }
+
   private renderLabelSegments(
     ctx: CanvasRenderingContext2D,
     cx: number,
     cy: number,
     segments: LabelSegment[],
     element: number,
+    justification?: 'left' | 'right',
   ): void {
     const S = this.S;
     const totalW = this.measureLabelWidth(ctx, segments);
-    let x = cx - totalW / 2;
+    let x: number;
+
+    if (justification === 'right') {
+      // Right-justified: element symbol is on the right side of the label.
+      // Find the LAST uppercase letter segment and center it at cx.
+      const lastElem = this.measureLastElementOffset(ctx, segments);
+      x = cx - lastElem.offset - lastElem.width / 2;
+    } else if (justification === 'left') {
+      // Left-justified: element symbol is on the left side (first letter).
+      const firstElem = this.measureElementWidth(ctx, segments);
+      x = cx - firstElem.offset - firstElem.width / 2;
+    } else {
+      // Default center
+      x = cx - totalW / 2;
+    }
+
     const color = getColor(element);
     const textColor = this.isLightColor(color) ? color : '#e0e0e0';
 
@@ -332,6 +391,28 @@ export class CanvasRenderer implements Renderer {
       ctx.fillText(seg.text, x, y);
       x += ctx.measureText(seg.text).width;
     }
+  }
+
+  /** Find the offset and width of the last uppercase letter segment (element symbol on right). */
+  private measureLastElementOffset(
+    ctx: CanvasRenderingContext2D,
+    segments: LabelSegment[],
+  ): { offset: number; width: number } {
+    const S = this.S;
+    let offset = 0;
+    let lastOffset = 0;
+    let lastWidth = 0;
+    for (const seg of segments) {
+      const size = seg.style === 'normal' ? S.labelSize : S.labelSize * S.subScale;
+      ctx.font = `${size}px Arial, system-ui, sans-serif`;
+      const w = ctx.measureText(seg.text).width;
+      if (seg.style === 'normal' && /[A-Z]/.test(seg.text)) {
+        lastOffset = offset;
+        lastWidth = w;
+      }
+      offset += w;
+    }
+    return { offset: lastOffset, width: lastWidth };
   }
 
   // ── Bond rendering (Section 2 of reference) ────────────
