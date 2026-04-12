@@ -1,17 +1,17 @@
 # BMAD Method — Sprint Status Tracker
 # Updated by BMM workflows (sprint-planning, create-story, dev-story)
 
-version: "6.0.0"
-project_name: "Kendraw"
+version: '6.0.0'
+project_name: 'Kendraw'
 project_level: 4
-sprint_plan_path: "docs/sprint-plan-kendraw-2026-04-12.md"
-created_at: "2026-04-12"
-last_updated: "2026-04-12T04:30:00Z"
+sprint_plan_path: 'docs/sprint-plan-kendraw-2026-04-12.md'
+created_at: '2026-04-12'
+last_updated: '2026-04-12T04:30:00Z'
 
 # Capacity calibration (re-baseline en rétro Sprint 2)
 team:
   size: 1
-  developer: "Jean-Baptiste Donnette"
+  developer: 'Jean-Baptiste Donnette'
   sprint_length_weeks: 2
   hours_per_week: 10
   hours_per_point: 2
@@ -19,370 +19,378 @@ team:
 
 # Velocity tracking (filled at end of each sprint)
 velocity:
-  sprint_0: null      # Sprint 0 is gated, not measured by velocity
+  sprint_0: null # Sprint 0 is gated, not measured by velocity
   sprint_1: null
   sprint_2: null
   rolling_average: null
 
 # Current state
 current_sprint: 0
-current_sprint_status: "not_started"
-mvp_target: "v0.1.0 in ~9-10 months"
+current_sprint_status: 'in_progress'
+mvp_target: 'v0.1.0 in ~9-10 months'
 
 # Sprint inventory
 sprints:
   - sprint_number: 0
-    name: "Sprint 0 — Gated Infra & POCs"
-    type: "gated"     # not a 2-week sprint, runs until POC #1 and #2 are green
+    name: 'Sprint 0 — Gated Infra & POCs'
+    type: 'gated' # not a 2-week sprint, runs until POC #1 and #2 are green
     start_date: null
     end_date: null
-    capacity_points: 45        # cumulative effort budget, not 10 pts
+    capacity_points: 45 # cumulative effort budget, not 10 pts
     committed_points: 45
-    completed_points: 0
-    status: "not_started"
-    goal: "Repo + CI + ADRs + 4 POCs verts (POC #1 et #2 bloquants). Aucune story applicative."
+    completed_points: 9
+    status: 'in_progress'
+    goal: 'Repo + CI + ADRs + 4 POCs verts (POC #1 et #2 bloquants). Aucune story applicative.'
     gate_criteria:
-      - "POC #1 (perf 500 atomes) verdict = PASS"
-      - "POC #2 (RDKit.js) verdict = PASS ou bascule OpenChemLib actée"
-      - "POC #3 (CDXML) kickoff close (validation finale différée)"
-      - "POC #4 (IUPAC) kickoff close (validation finale pré-V1)"
-      - "INF-001 à INF-009 closes"
-      - "ADR-001 et ADR-002 closes"
-      - "TC-001 close"
-      - "CI verte sur main"
-      - "docker compose up fonctionne"
-    estimated_calendar_weeks: "8-9"
+      - 'POC #1 (perf 500 atomes) verdict = PASS'
+      - 'POC #2 (RDKit.js) verdict = PASS ou bascule OpenChemLib actée'
+      - 'POC #3 (CDXML) kickoff close (validation finale différée)'
+      - 'POC #4 (IUPAC) kickoff close (validation finale pré-V1)'
+      - 'INF-001 à INF-009 closes'
+      - 'ADR-001 et ADR-002 closes'
+      - 'TC-001 close'
+      - 'CI verte sur main'
+      - 'docker compose up fonctionne'
+    estimated_calendar_weeks: '8-9'
     stories:
-      - id: "STORY-INF-001"
-        title: "Scaffolding monorepo pnpm + structure de packages"
+      - id: 'STORY-INF-001'
+        title: 'Scaffolding monorepo pnpm + structure de packages'
         points: 3
-        priority: "must_have"
-        status: "defined"
-        story_doc: "docs/stories/STORY-INF-001.md"
+        priority: 'must_have'
+        status: 'completed'
+        story_doc: 'docs/stories/STORY-INF-001.md'
+        completed_at: '2026-04-12'
         depends_on: []
-      - id: "STORY-INF-002"
-        title: "Backend skeleton FastAPI + uv"
+      - id: 'STORY-INF-002'
+        title: 'Backend skeleton FastAPI + uv'
         points: 3
-        priority: "must_have"
-        status: "not_started"
+        priority: 'must_have'
+        status: 'completed'
+        story_doc: 'docs/stories/STORY-INF-002.md'
+        completed_at: '2026-04-12'
         depends_on: []
-      - id: "STORY-INF-003"
-        title: "Docker setup et docker-compose unique"
+      - id: 'STORY-INF-003'
+        title: 'Docker setup et docker-compose unique'
         points: 2
-        priority: "must_have"
-        status: "not_started"
-        depends_on: ["STORY-INF-001", "STORY-INF-002"]
-      - id: "STORY-INF-004"
-        title: "CI workflow frontend"
+        priority: 'must_have'
+        status: 'completed'
+        story_doc: 'docs/stories/STORY-INF-003.md'
+        completed_at: '2026-04-12'
+        note: 'Files created. docker compose up validation pending Docker Desktop availability.'
+        depends_on: ['STORY-INF-001', 'STORY-INF-002']
+      - id: 'STORY-INF-004'
+        title: 'CI workflow frontend'
         points: 3
-        priority: "must_have"
-        status: "not_started"
-        depends_on: ["STORY-INF-001"]
-      - id: "STORY-INF-005"
-        title: "CI workflow backend"
+        priority: 'must_have'
+        status: 'not_started'
+        depends_on: ['STORY-INF-001']
+      - id: 'STORY-INF-005'
+        title: 'CI workflow backend'
         points: 2
-        priority: "must_have"
-        status: "not_started"
-        depends_on: ["STORY-INF-002"]
-      - id: "STORY-INF-006"
-        title: "License audit setup + LICENSES.md"
+        priority: 'must_have'
+        status: 'not_started'
+        depends_on: ['STORY-INF-002']
+      - id: 'STORY-INF-006'
+        title: 'License audit setup + LICENSES.md'
         points: 1
-        priority: "must_have"
-        status: "not_started"
-        depends_on: ["STORY-INF-004", "STORY-INF-005"]
-      - id: "STORY-INF-007"
-        title: "Repo metadata (LICENSE, CITATION.cff, README, CONTRIBUTING)"
+        priority: 'must_have'
+        status: 'not_started'
+        depends_on: ['STORY-INF-004', 'STORY-INF-005']
+      - id: 'STORY-INF-007'
+        title: 'Repo metadata (LICENSE, CITATION.cff, README, CONTRIBUTING)'
         points: 1
-        priority: "must_have"
-        status: "not_started"
-        depends_on: ["STORY-INF-001"]
-      - id: "STORY-INF-008"
-        title: "Structure docs/ + ADR template"
+        priority: 'must_have'
+        status: 'completed'
+        story_doc: 'docs/stories/STORY-INF-007.md'
+        completed_at: '2026-04-12'
+        depends_on: ['STORY-INF-001']
+      - id: 'STORY-INF-008'
+        title: 'Structure docs/ + ADR template'
         points: 1
-        priority: "must_have"
-        status: "not_started"
+        priority: 'must_have'
+        status: 'not_started'
         depends_on: []
-      - id: "STORY-INF-009"
-        title: ".github/ templates (PR, issue, dependabot, code owners)"
+      - id: 'STORY-INF-009'
+        title: '.github/ templates (PR, issue, dependabot, code owners)'
         points: 1
-        priority: "should_have"
-        status: "not_started"
-        depends_on: ["STORY-INF-001"]
-      - id: "STORY-ADR-001"
-        title: "Rédaction ADRs 001 à 006 (décisions structurantes architecture)"
+        priority: 'should_have'
+        status: 'not_started'
+        depends_on: ['STORY-INF-001']
+      - id: 'STORY-ADR-001'
+        title: 'Rédaction ADRs 001 à 006 (décisions structurantes architecture)'
         points: 3
-        priority: "must_have"
-        status: "not_started"
-        depends_on: ["STORY-INF-008"]
-      - id: "STORY-ADR-002"
-        title: "ADR-007 choix outil de doc statique (mkdocs vs starlight)"
+        priority: 'must_have'
+        status: 'not_started'
+        depends_on: ['STORY-INF-008']
+      - id: 'STORY-ADR-002'
+        title: 'ADR-007 choix outil de doc statique (mkdocs vs starlight)'
         points: 1
-        priority: "should_have"
-        status: "not_started"
-        depends_on: ["STORY-INF-008"]
-      - id: "STORY-POC-001"
-        title: "POC #1 — Performance 500 atomes (BLOQUANT)"
+        priority: 'should_have'
+        status: 'not_started'
+        depends_on: ['STORY-INF-008']
+      - id: 'STORY-POC-001'
+        title: 'POC #1 — Performance 500 atomes (BLOQUANT)'
         points: 8
-        priority: "blocker"
-        status: "not_started"
-        depends_on: ["STORY-INF-001", "STORY-TC-001"]
+        priority: 'blocker'
+        status: 'not_started'
+        depends_on: ['STORY-INF-001', 'STORY-TC-001']
         bloquant_for_sprint_1: true
-      - id: "STORY-POC-002"
-        title: "POC #2 — RDKit.js bundle/latence (BLOQUANT)"
+      - id: 'STORY-POC-002'
+        title: 'POC #2 — RDKit.js bundle/latence (BLOQUANT)'
         points: 5
-        priority: "blocker"
-        status: "not_started"
-        depends_on: ["STORY-INF-001"]
+        priority: 'blocker'
+        status: 'not_started'
+        depends_on: ['STORY-INF-001']
         bloquant_for_sprint_1: true
-      - id: "STORY-POC-003"
-        title: "POC #3 kickoff — CDXML (validation différée)"
+      - id: 'STORY-POC-003'
+        title: 'POC #3 kickoff — CDXML (validation différée)'
         points: 3
-        priority: "should_have"
-        status: "not_started"
-        depends_on: ["STORY-INF-002"]
-        action_day_1: "Envoyer le mail URD Abbaye (template Annexe A de docs/test-corpus-plan.md)"
-      - id: "STORY-POC-004"
-        title: "POC #4 kickoff — couverture IUPAC (validation différée)"
+        priority: 'should_have'
+        status: 'not_started'
+        depends_on: ['STORY-INF-002']
+        action_day_1: 'Envoyer le mail URD Abbaye (template Annexe A de docs/test-corpus-plan.md)'
+      - id: 'STORY-POC-004'
+        title: 'POC #4 kickoff — couverture IUPAC (validation différée)'
         points: 3
-        priority: "should_have"
-        status: "not_started"
-        depends_on: ["STORY-INF-002"]
-      - id: "STORY-TC-001"
-        title: "Test corpus #6 — générateur structures synthétiques perf"
+        priority: 'should_have'
+        status: 'not_started'
+        depends_on: ['STORY-INF-002']
+      - id: 'STORY-TC-001'
+        title: 'Test corpus #6 — générateur structures synthétiques perf'
         points: 2
-        priority: "must_have"
-        status: "not_started"
-        depends_on: ["STORY-INF-001"]
+        priority: 'must_have'
+        status: 'not_started'
+        depends_on: ['STORY-INF-001']
 
   - sprint_number: 1
-    name: "Sprint 1 — Premier slice vertical applicatif"
-    type: "standard"
-    start_date: null     # set when sprint 0 gate is passed
+    name: 'Sprint 1 — Premier slice vertical applicatif'
+    type: 'standard'
+    start_date: null # set when sprint 0 gate is passed
     end_date: null
     capacity_points: 10
     committed_points: 10
     completed_points: 0
-    status: "blocked_on_sprint_0"
-    goal: "Cliquer sur le canvas → un atome apparaît. Pipeline scene → renderer → ui fonctionne end-to-end."
+    status: 'blocked_on_sprint_0'
+    goal: 'Cliquer sur le canvas → un atome apparaît. Pipeline scene → renderer → ui fonctionne end-to-end.'
     stories:
-      - id: "STORY-001"
-        title: "@kendraw/scene — types de base + SceneStore (subscribe/dispatch)"
+      - id: 'STORY-001'
+        title: '@kendraw/scene — types de base + SceneStore (subscribe/dispatch)'
         points: 2
-        priority: "must_have"
-        status: "not_started"
-        depends_on: ["sprint_0_gate"]
-      - id: "STORY-002"
-        title: "@kendraw/scene — Command bus + AddAtom + RemoveAtom"
+        priority: 'must_have'
+        status: 'not_started'
+        depends_on: ['sprint_0_gate']
+      - id: 'STORY-002'
+        title: '@kendraw/scene — Command bus + AddAtom + RemoveAtom'
         points: 2
-        priority: "must_have"
-        status: "not_started"
-        depends_on: ["STORY-001"]
-      - id: "STORY-003"
-        title: "@kendraw/renderer-canvas minimal — render atomes"
+        priority: 'must_have'
+        status: 'not_started'
+        depends_on: ['STORY-001']
+      - id: 'STORY-003'
+        title: '@kendraw/renderer-canvas minimal — render atomes'
         points: 3
-        priority: "must_have"
-        status: "not_started"
-        depends_on: ["STORY-001"]
-      - id: "STORY-004"
-        title: "@kendraw/ui shell + tool controller AddAtom"
+        priority: 'must_have'
+        status: 'not_started'
+        depends_on: ['STORY-001']
+      - id: 'STORY-004'
+        title: '@kendraw/ui shell + tool controller AddAtom'
         points: 3
-        priority: "must_have"
-        status: "not_started"
-        depends_on: ["STORY-001", "STORY-002", "STORY-003"]
+        priority: 'must_have'
+        status: 'not_started'
+        depends_on: ['STORY-001', 'STORY-002', 'STORY-003']
 
   # Sprints 2-18 are placeholders, detailed via /create-story at sprint start
   - sprint_number: 2
-    name: "Sprint 2 — Bonds + persistance manuelle"
-    type: "standard"
+    name: 'Sprint 2 — Bonds + persistance manuelle'
+    type: 'standard'
     capacity_points: 10
-    status: "planned"
-    goal: "Dessiner des liaisons + sauvegarder/recharger explicitement en .kdx"
-    epics: ["EPIC-001", "EPIC-004"]
-    frs: ["FR-003", "save/load IDB partial"]
+    status: 'planned'
+    goal: 'Dessiner des liaisons + sauvegarder/recharger explicitement en .kdx'
+    epics: ['EPIC-001', 'EPIC-004']
+    frs: ['FR-003', 'save/load IDB partial']
     estimated_stories: 3
 
   - sprint_number: 3
-    name: "Sprint 3 — Sélection + Undo/Redo + spatial index"
-    type: "standard"
+    name: 'Sprint 3 — Sélection + Undo/Redo + spatial index'
+    type: 'standard'
     capacity_points: 10
-    status: "planned"
-    goal: "Sélectionner, supprimer, annuler/refaire fonctionnent"
-    epics: ["EPIC-002"]
-    frs: ["FR-008", "FR-009"]
+    status: 'planned'
+    goal: 'Sélectionner, supprimer, annuler/refaire fonctionnent'
+    epics: ['EPIC-002']
+    frs: ['FR-008', 'FR-009']
     estimated_stories: 3
 
   - sprint_number: 4
-    name: "Sprint 4 — Multi-tabs + auto-save worker"
-    type: "standard"
+    name: 'Sprint 4 — Multi-tabs + auto-save worker'
+    type: 'standard'
     capacity_points: 10
-    status: "planned"
-    goal: "Multi-document avec restore-on-reload via worker IDB"
-    epics: ["EPIC-004"]
-    frs: ["FR-016", "FR-017"]
+    status: 'planned'
+    goal: 'Multi-document avec restore-on-reload via worker IDB'
+    epics: ['EPIC-004']
+    frs: ['FR-016', 'FR-017']
     estimated_stories: 3
 
   - sprint_number: 5
-    name: "Sprint 5 — Glasswerk UI baseline + shortcuts initial"
-    type: "standard"
+    name: 'Sprint 5 — Glasswerk UI baseline + shortcuts initial'
+    type: 'standard'
     capacity_points: 10
-    status: "planned"
+    status: 'planned'
     goal: "L'app a son identité visuelle Kendraw + raccourcis ChemDraw-compat"
-    epics: ["EPIC-004"]
-    frs: ["FR-014 (partial)", "FR-019"]
+    epics: ['EPIC-004']
+    frs: ['FR-014 (partial)', 'FR-019']
     estimated_stories: 3
 
   - sprint_number: 6
-    name: "Sprint 6 — Atomes complets + bond styles"
-    type: "standard"
+    name: 'Sprint 6 — Atomes complets + bond styles'
+    type: 'standard'
     capacity_points: 10
-    status: "planned"
-    goal: "Tous les éléments + charges + labels custom + tous les styles de liaisons MVP"
-    epics: ["EPIC-001"]
-    frs: ["FR-002 (full)", "FR-003 (full)", "FR-006"]
+    status: 'planned'
+    goal: 'Tous les éléments + charges + labels custom + tous les styles de liaisons MVP'
+    epics: ['EPIC-001']
+    frs: ['FR-002 (full)', 'FR-003 (full)', 'FR-006']
     estimated_stories: 3
 
   - sprint_number: 7
-    name: "Sprint 7 — Rings + quick chain + valence"
-    type: "standard"
+    name: 'Sprint 7 — Rings + quick chain + valence'
+    type: 'standard'
     capacity_points: 10
-    status: "planned"
+    status: 'planned'
     goal: "Drawing rapide d'un squelette organique avec warnings de valence temps réel"
-    epics: ["EPIC-001"]
-    frs: ["FR-004", "FR-005", "FR-007"]
+    epics: ['EPIC-001']
+    frs: ['FR-004', 'FR-005', 'FR-007']
     estimated_stories: 3
 
   - sprint_number: 8
-    name: "Sprint 8 — Edit operations + clipboard + transforms"
-    type: "standard"
+    name: 'Sprint 8 — Edit operations + clipboard + transforms'
+    type: 'standard'
     capacity_points: 10
-    status: "planned"
-    goal: "Copy/paste/duplicate, rotation, miroir"
-    epics: ["EPIC-002"]
-    frs: ["FR-010"]
+    status: 'planned'
+    goal: 'Copy/paste/duplicate, rotation, miroir'
+    epics: ['EPIC-002']
+    frs: ['FR-010']
     estimated_stories: 3
 
   - sprint_number: 9
-    name: "Sprint 9 — Frontend SMILES + property panel"
-    type: "standard"
+    name: 'Sprint 9 — Frontend SMILES + property panel'
+    type: 'standard'
     capacity_points: 10
-    status: "planned"
-    goal: "Property panel temps réel + paste SMILES"
-    epics: ["EPIC-005", "EPIC-004"]
-    frs: ["FR-018", "FR-015"]
+    status: 'planned'
+    goal: 'Property panel temps réel + paste SMILES'
+    epics: ['EPIC-005', 'EPIC-004']
+    frs: ['FR-018', 'FR-015']
     estimated_stories: 3
 
   - sprint_number: 10
-    name: "Sprint 10 — Backend compute + format conversion MVP"
-    type: "standard"
+    name: 'Sprint 10 — Backend compute + format conversion MVP'
+    type: 'standard'
     capacity_points: 10
-    status: "planned"
-    goal: "Backend up + conversions MOL/SDF/SMILES/InChI"
-    epics: ["EPIC-006"]
-    frs: ["FR-021", "FR-022"]
+    status: 'planned'
+    goal: 'Backend up + conversions MOL/SDF/SMILES/InChI'
+    epics: ['EPIC-006']
+    frs: ['FR-021', 'FR-022']
     estimated_stories: 3
 
   - sprint_number: 11
-    name: "Sprint 11 — File I/O — import + export PNG/SVG"
-    type: "standard"
+    name: 'Sprint 11 — File I/O — import + export PNG/SVG'
+    type: 'standard'
     capacity_points: 10
-    status: "planned"
-    goal: "Drag-drop import + export PNG/SVG via renderer-svg"
-    epics: ["EPIC-007"]
-    frs: ["FR-023", "FR-024 (partial)", "FR-020"]
+    status: 'planned'
+    goal: 'Drag-drop import + export PNG/SVG via renderer-svg'
+    epics: ['EPIC-007']
+    frs: ['FR-023', 'FR-024 (partial)', 'FR-020']
     estimated_stories: 3
 
   - sprint_number: 12
-    name: "Sprint 12 — Reaction arrows + conditions"
-    type: "standard"
+    name: 'Sprint 12 — Reaction arrows + conditions'
+    type: 'standard'
     capacity_points: 10
-    status: "planned"
-    goal: "Schémas réactionnels avec arrows et annotations conditions (sans curly)"
-    epics: ["EPIC-003"]
-    frs: ["FR-011", "FR-013"]
+    status: 'planned'
+    goal: 'Schémas réactionnels avec arrows et annotations conditions (sans curly)'
+    epics: ['EPIC-003']
+    frs: ['FR-011', 'FR-013']
     estimated_stories: 3
 
   - sprint_number: 13
-    name: "Sprint 13 — Curly arrows part 1 (geometry & rendering)"
-    type: "standard"
+    name: 'Sprint 13 — Curly arrows part 1 (geometry & rendering)'
+    type: 'standard'
     capacity_points: 10
-    status: "planned"
-    goal: "Dessiner une flèche incurvée Bézier, contrôler ses points"
-    epics: ["EPIC-003"]
-    frs: ["FR-012 (partial)"]
+    status: 'planned'
+    goal: 'Dessiner une flèche incurvée Bézier, contrôler ses points'
+    epics: ['EPIC-003']
+    frs: ['FR-012 (partial)']
     estimated_stories: 3
-    risk: "high — UX la plus risquée du MVP"
+    risk: 'high — UX la plus risquée du MVP'
 
   - sprint_number: 14
-    name: "Sprint 14 — Curly arrows part 2 (anchoring & serialization)"
-    type: "standard"
+    name: 'Sprint 14 — Curly arrows part 2 (anchoring & serialization)'
+    type: 'standard'
     capacity_points: 10
-    status: "planned"
-    goal: "Ancrage atom/bond/lone-pair + persistance .kdx + extension MOL"
-    epics: ["EPIC-003"]
-    frs: ["FR-012 (complete)"]
+    status: 'planned'
+    goal: 'Ancrage atom/bond/lone-pair + persistance .kdx + extension MOL'
+    epics: ['EPIC-003']
+    frs: ['FR-012 (complete)']
     estimated_stories: 3
-    risk: "high — UX la plus risquée du MVP"
+    risk: 'high — UX la plus risquée du MVP'
 
   - sprint_number: 15
-    name: "Sprint 15 — Citation + EXIF metadata + image clipboard"
-    type: "standard"
+    name: 'Sprint 15 — Citation + EXIF metadata + image clipboard'
+    type: 'standard'
     capacity_points: 10
-    status: "planned"
-    goal: "Splash + About + EXIF/SVG metadata + clipboard image cross-OS"
-    epics: ["EPIC-012", "EPIC-007"]
-    frs: ["FR-025", "FR-026", "FR-027"]
+    status: 'planned'
+    goal: 'Splash + About + EXIF/SVG metadata + clipboard image cross-OS'
+    epics: ['EPIC-012', 'EPIC-007']
+    frs: ['FR-025', 'FR-026', 'FR-027']
     estimated_stories: 3
 
   - sprint_number: 16
-    name: "Sprint 16 — Self-hosted bundle + static demo + i18n scaffold"
-    type: "standard"
+    name: 'Sprint 16 — Self-hosted bundle + static demo + i18n scaffold'
+    type: 'standard'
     capacity_points: 10
-    status: "planned"
-    goal: "docker compose up fonctionne + démo statique GH Pages + Lingui scaffold"
-    epics: ["EPIC-011"]
-    frs: ["FR-028", "FR-029"]
+    status: 'planned'
+    goal: 'docker compose up fonctionne + démo statique GH Pages + Lingui scaffold'
+    epics: ['EPIC-011']
+    frs: ['FR-028', 'FR-029']
     estimated_stories: 3
 
   - sprint_number: 17
-    name: "Sprint 17 — MVP hardening (a11y + cross-browser + perf)"
-    type: "standard"
+    name: 'Sprint 17 — MVP hardening (a11y + cross-browser + perf)'
+    type: 'standard'
     capacity_points: 10
-    status: "planned"
-    goal: "axe-core clean + Playwright cross-browser + perf bench codifié vert"
-    nfrs: ["NFR-001", "NFR-002", "NFR-006"]
+    status: 'planned'
+    goal: 'axe-core clean + Playwright cross-browser + perf bench codifié vert'
+    nfrs: ['NFR-001', 'NFR-002', 'NFR-006']
     estimated_stories: 3
 
   - sprint_number: 18
-    name: "Sprint 18 — Doc publish + release prep v0.1.0"
-    type: "standard"
+    name: 'Sprint 18 — Doc publish + release prep v0.1.0'
+    type: 'standard'
     capacity_points: 10
-    status: "planned"
-    goal: "Tag v0.1.0 + Zenodo DOI + 5 figures de référence MVP validées URD Abbaye"
-    epics: ["EPIC-012"]
-    nfrs: ["NFR-011", "NFR-012"]
+    status: 'planned'
+    goal: 'Tag v0.1.0 + Zenodo DOI + 5 figures de référence MVP validées URD Abbaye'
+    epics: ['EPIC-012']
+    nfrs: ['NFR-011', 'NFR-012']
     estimated_stories: 3
 
 # Re-baseline checkpoints
 rebaseline_checkpoints:
   - after_sprint: 0
-    type: "go_no_go"
-    description: "Verdict POCs. Si POC #1 fail → retour architecture. Si pass → démarrage Sprint 1."
+    type: 'go_no_go'
+    description: 'Verdict POCs. Si POC #1 fail → retour architecture. Si pass → démarrage Sprint 1.'
   - after_sprint: 1
-    type: "velocity_calibration"
-    description: "Première mesure vélocité réelle. Calibration confirmée ou ajustée."
+    type: 'velocity_calibration'
+    description: 'Première mesure vélocité réelle. Calibration confirmée ou ajustée.'
   - after_sprint: 2
-    type: "velocity_confirmation"
-    description: "Confirmation stabilité vélocité. Décision finale 8 vs 10 pts/sprint."
+    type: 'velocity_confirmation'
+    description: 'Confirmation stabilité vélocité. Décision finale 8 vs 10 pts/sprint.'
   - after_sprint: 6
-    type: "mid_mvp_checkpoint"
-    description: "Checkpoint mi-MVP — replan si nécessaire."
+    type: 'mid_mvp_checkpoint'
+    description: 'Checkpoint mi-MVP — replan si nécessaire.'
 
 # Aggregate metrics
 mvp_metrics:
-  total_stories: 67               # 16 sprint 0 + 51 sprints 1-18
-  total_points: 215               # 45 sprint 0 + 170 sprints 1-18
-  total_sprints: 19               # sprint 0 + 18 applicative
-  estimated_calendar_weeks: "44-45"
-  estimated_calendar_months: "9-10"
-  fr_coverage: "29/29"            # all MVP FRs mapped
-  v1_deferred: true               # 20 V1 FRs in separate sprint planning
+  total_stories: 67 # 16 sprint 0 + 51 sprints 1-18
+  total_points: 215 # 45 sprint 0 + 170 sprints 1-18
+  total_sprints: 19 # sprint 0 + 18 applicative
+  estimated_calendar_weeks: '44-45'
+  estimated_calendar_months: '9-10'
+  fr_coverage: '29/29' # all MVP FRs mapped
+  v1_deferred: true # 20 V1 FRs in separate sprint planning

@@ -1,0 +1,33 @@
+services:
+  frontend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.frontend
+    ports:
+      - "${KENDRAW_FRONTEND_PORT:-8080}:80"
+    depends_on:
+      backend:
+        condition: service_started
+    networks:
+      - kendraw-net
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.backend
+      args:
+        GIT_COMMIT: "${GIT_COMMIT:-unknown}"
+    ports:
+      - "${KENDRAW_BACKEND_PORT:-8081}:8081"
+    environment:
+      - KENDRAW_HOST=0.0.0.0
+      - KENDRAW_PORT=8081
+      - KENDRAW_LOG_LEVEL=${KENDRAW_LOG_LEVEL:-info}
+    networks:
+      - kendraw-net
+    restart: unless-stopped
+
+networks:
+  kendraw-net:
+    driver: bridge
