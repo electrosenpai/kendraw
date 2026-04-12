@@ -72,7 +72,32 @@ export function MoleculeSearch({ store, onClose }: MoleculeSearchProps) {
       const parsed = parseSmiles(smiles);
       if (parsed.atoms.length === 0) return;
 
-      for (const a of parsed.atoms) store.dispatch({ type: 'add-atom', atom: a });
+      // Find offset to avoid overlap with existing atoms
+      const page = store.getState().pages[store.getState().activePageIndex];
+      let offsetX = 0;
+      const offsetY = 0;
+      if (page) {
+        const existing = Object.values(page.atoms);
+        if (existing.length > 0) {
+          let maxX = -Infinity;
+          for (const a of existing) {
+            if (a.x > maxX) maxX = a.x;
+          }
+          // Place new molecule to the right of existing content
+          let minParsedX = Infinity;
+          for (const a of parsed.atoms) {
+            if (a.x < minParsedX) minParsedX = a.x;
+          }
+          offsetX = maxX + 80 - minParsedX;
+        }
+      }
+
+      for (const a of parsed.atoms) {
+        store.dispatch({
+          type: 'add-atom',
+          atom: { ...a, x: a.x + offsetX, y: a.y + offsetY },
+        });
+      }
       for (const b of parsed.bonds) store.dispatch({ type: 'add-bond', bond: b });
 
       onClose();
@@ -100,7 +125,20 @@ export function MoleculeSearch({ store, onClose }: MoleculeSearchProps) {
           cx /= parsed.atoms.length;
           cy /= parsed.atoms.length;
         }
-        const offsetX = 400 - cx;
+        // Find free space to the right of existing atoms
+        const page = store.getState().pages[store.getState().activePageIndex];
+        let baseX = 400;
+        if (page) {
+          const existing = Object.values(page.atoms);
+          if (existing.length > 0) {
+            let maxX = -Infinity;
+            for (const ea of existing) {
+              if (ea.x > maxX) maxX = ea.x;
+            }
+            baseX = maxX + 80;
+          }
+        }
+        const offsetX = baseX - cx;
         const offsetY = 300 - cy;
 
         for (const a of parsed.atoms) {
