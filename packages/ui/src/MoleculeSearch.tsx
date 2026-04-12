@@ -12,6 +12,15 @@ import {
 } from '@kendraw/io';
 import type { SceneStore } from '@kendraw/scene';
 
+/** Heuristic: does this string look like a SMILES rather than a molecule name? */
+function looksLikeSmiles(s: string): boolean {
+  if (/[=#()@]/.test(s)) return true;
+  if (s.includes('[') || s.includes(']')) return true;
+  if (/^[A-Za-z0-9.+-]+$/.test(s) && /[0-9]/.test(s) && !/\s/.test(s)) return true;
+  if (s.length <= 10 && /^[CNOSPFIHBrclosn0-9()=#+@]+$/.test(s)) return true;
+  return false;
+}
+
 interface MoleculeSearchProps {
   store: SceneStore;
   onClose: () => void;
@@ -170,7 +179,11 @@ export function MoleculeSearch({ store, onClose }: MoleculeSearchProps) {
             onChange={(e) => handleSearch(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && query.length >= 2) {
-                void searchPubChem(query);
+                if (looksLikeSmiles(query)) {
+                  insertFromSmiles(query);
+                } else {
+                  void searchPubChem(query);
+                }
               }
               if (e.key === 'Escape') onClose();
             }}
@@ -185,6 +198,23 @@ export function MoleculeSearch({ store, onClose }: MoleculeSearchProps) {
             {loading ? '...' : 'PubChem'}
           </button>
         </div>
+
+        {/* Direct SMILES import button */}
+        {query.length >= 2 && looksLikeSmiles(query) && (
+          <button
+            onClick={() => insertFromSmiles(query)}
+            style={{
+              ...searchBtnStyle,
+              width: '100%',
+              marginBottom: 8,
+              background: 'var(--kd-color-success)',
+              textAlign: 'left',
+              padding: '8px 12px',
+            }}
+          >
+            Import as SMILES: {query.length > 40 ? query.slice(0, 40) + '...' : query}
+          </button>
+        )}
 
         {/* Autocomplete suggestions */}
         {suggestions.length > 0 && mode === 'templates' && (
