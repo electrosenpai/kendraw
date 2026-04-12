@@ -4,6 +4,7 @@ import {
   shouldShowLabel,
   buildAtomLabel,
   type LabelSegment,
+  type LabelDisplayOptions,
   NEW_DOCUMENT,
   ptToPx,
 } from '@kendraw/scene';
@@ -16,6 +17,20 @@ export interface GraphicOverlay {
   y2: number;
 }
 
+/** Document-level rendering metrics (from CDXML or style preset). */
+export interface RenderSettings {
+  lineWidth: number;
+  boldWidth: number;
+  marginWidth: number;
+  bondSpacingPx: number;
+  hashSpacing: number;
+  wedgeWide: number;
+  labelSize: number;
+  subScale: number;
+  subShift: number;
+  labelDisplayOptions: LabelDisplayOptions;
+}
+
 export interface Renderer {
   attach(container: HTMLElement): void;
   detach(): void;
@@ -25,20 +40,24 @@ export interface Renderer {
   setViewport(zoom: number, panX: number, panY: number): void;
   setValenceIssues(ids: Set<AtomId>): void;
   setGraphics(graphics: GraphicOverlay[]): void;
+  setDocumentStyle(settings: Partial<RenderSettings>): void;
 }
 
-// Style settings derived from active preset (New Document default)
-const S = {
-  lineWidth: ptToPx(NEW_DOCUMENT.lineWidthPt),
-  boldWidth: ptToPx(NEW_DOCUMENT.boldWidthPt),
-  marginWidth: ptToPx(NEW_DOCUMENT.marginWidthPt),
-  bondSpacingPx: NEW_DOCUMENT.bondSpacing * ptToPx(NEW_DOCUMENT.bondLengthPt),
-  hashSpacing: ptToPx(NEW_DOCUMENT.hashSpacingPt),
-  wedgeWide: ptToPx(1.5 * NEW_DOCUMENT.boldWidthPt),
-  labelSize: ptToPx(NEW_DOCUMENT.labelSizePt),
-  subScale: 0.75, // subscript/superscript scale factor (ref: Section 1.4)
-  subShift: 0.33, // baseline shift as fraction of cap height
-};
+/** Build default RenderSettings from the NEW_DOCUMENT preset. */
+function defaultRenderSettings(): RenderSettings {
+  return {
+    lineWidth: ptToPx(NEW_DOCUMENT.lineWidthPt),
+    boldWidth: ptToPx(NEW_DOCUMENT.boldWidthPt),
+    marginWidth: ptToPx(NEW_DOCUMENT.marginWidthPt),
+    bondSpacingPx: NEW_DOCUMENT.bondSpacing * ptToPx(NEW_DOCUMENT.bondLengthPt),
+    hashSpacing: ptToPx(NEW_DOCUMENT.hashSpacingPt),
+    wedgeWide: ptToPx(1.5 * NEW_DOCUMENT.boldWidthPt),
+    labelSize: ptToPx(NEW_DOCUMENT.labelSizePt),
+    subScale: 0.75, // subscript/superscript scale factor (ref: Section 1.4)
+    subShift: 0.33, // baseline shift as fraction of cap height
+    labelDisplayOptions: {},
+  };
+}
 
 const ATOM_RADIUS = 10; // visual hit radius for selection (not rendering)
 
@@ -55,6 +74,7 @@ export class CanvasRenderer implements Renderer {
   private graphicOverlays: GraphicOverlay[] = [];
   private panX = 0;
   private panY = 0;
+  private S: RenderSettings = defaultRenderSettings();
 
   attach(container: HTMLElement): void {
     this.container = container;
@@ -107,6 +127,11 @@ export class CanvasRenderer implements Renderer {
     if (this.lastDoc) this.render(this.lastDoc);
   }
 
+  setDocumentStyle(settings: Partial<RenderSettings>): void {
+    this.S = { ...this.S, ...settings };
+    if (this.lastDoc) this.render(this.lastDoc);
+  }
+
   render(doc: Document): void {
     const { canvas, ctx } = this;
     if (!canvas || !ctx) return;
@@ -123,11 +148,13 @@ export class CanvasRenderer implements Renderer {
     const page = doc.pages[doc.activePageIndex];
     if (!page) return;
 
+    const S = this.S;
+
     // Precompute which atoms have visible labels
     const labelVisible = new Map<AtomId, boolean>();
     const labelSegments = new Map<AtomId, LabelSegment[]>();
     for (const atom of Object.values(page.atoms)) {
-      const show = shouldShowLabel(page, atom.id);
+      const show = shouldShowLabel(page, atom.id, S.labelDisplayOptions);
       labelVisible.set(atom.id, show);
       if (show) labelSegments.set(atom.id, buildAtomLabel(page, atom.id));
     }
@@ -224,6 +251,7 @@ export class CanvasRenderer implements Renderer {
   ): void {
     const selected = this.selectedAtoms.has(atom.id);
     const valenceWarn = this.valenceIssues.has(atom.id);
+    const S = this.S;
 
     // Valence warning ring
     if (valenceWarn) {
@@ -266,6 +294,7 @@ export class CanvasRenderer implements Renderer {
   }
 
   private measureLabelWidth(ctx: CanvasRenderingContext2D, segments: LabelSegment[]): number {
+    const S = this.S;
     let w = 0;
     for (const seg of segments) {
       const size = seg.style === 'normal' ? S.labelSize : S.labelSize * S.subScale;
@@ -282,6 +311,7 @@ export class CanvasRenderer implements Renderer {
     segments: LabelSegment[],
     element: number,
   ): void {
+    const S = this.S;
     const totalW = this.measureLabelWidth(ctx, segments);
     let x = cx - totalW / 2;
     const color = getColor(element);
@@ -315,6 +345,7 @@ export class CanvasRenderer implements Renderer {
     toHasLabel: boolean,
     page: Page,
   ): void {
+    const S = this.S;
     let x1 = from.x;
     let y1 = from.y;
     let x2 = to.x;
@@ -354,7 +385,7 @@ export class CanvasRenderer implements Renderer {
 
       case 'double': {
         ctx.lineWidth = S.lineWidth;
-        // Determine offset direction (toward ring center if in ring)
+        // Use explicit DoublePosition if available, otherwise detect from ring
         const side = this.getDoubleBondSide(bond, from, to, page);
         if (side === 0) {
           // Center double bond
@@ -546,9 +577,15 @@ export class CanvasRenderer implements Renderer {
   }
 
   /** Determine which side of a bond to place the double-bond offset.
-   *  Returns +1, -1, or 0 (center). For endocyclic bonds, offset toward ring center. */
+   *  Returns +1, -1, or 0 (center).
+   *  Priority: explicit DoublePosition > ring center detection > default right. */
   private getDoubleBondSide(bond: Bond, from: Atom, to: Atom, page: Page): number {
-    // Find atoms bonded to both from and to (ring detection heuristic)
+    // 1. Use explicit DoublePosition from CDXML if available
+    if (bond.doublePosition === 'center') return 0;
+    if (bond.doublePosition === 'left') return -1;
+    if (bond.doublePosition === 'right') return 1;
+
+    // 2. Ring detection: find ALL common neighbors and average their positions
     const fromNeighbors = new Set<AtomId>();
     const toNeighbors = new Set<AtomId>();
     for (const b of Object.values(page.bonds)) {
@@ -558,20 +595,27 @@ export class CanvasRenderer implements Renderer {
       if (b.toAtomId === to.id && b.fromAtomId !== from.id) toNeighbors.add(b.fromAtomId);
     }
 
-    // Common neighbor = likely in a ring → offset toward that neighbor
+    // Average position of all common neighbors (handles larger rings better)
+    let sumDot = 0;
+    let commonCount = 0;
+    const mx = (from.x + to.x) / 2;
+    const my = (from.y + to.y) / 2;
+    const bdx = to.x - from.x;
+    const bdy = to.y - from.y;
+    const perpX = -bdy;
+    const perpY = bdx;
+
     for (const nId of fromNeighbors) {
       if (toNeighbors.has(nId)) {
         const n = page.atoms[nId];
         if (!n) continue;
-        const mx = (from.x + to.x) / 2;
-        const my = (from.y + to.y) / 2;
-        const dx = to.x - from.x;
-        const dy = to.y - from.y;
-        const px = -dy;
-        const py = dx;
-        const dot = (n.x - mx) * px + (n.y - my) * py;
-        return dot > 0 ? 1 : -1;
+        sumDot += (n.x - mx) * perpX + (n.y - my) * perpY;
+        commonCount++;
       }
+    }
+
+    if (commonCount > 0) {
+      return sumDot > 0 ? 1 : -1;
     }
 
     return 1; // default: right side
@@ -596,6 +640,7 @@ export class CanvasRenderer implements Renderer {
     ctx: CanvasRenderingContext2D,
     ann: { x: number; y: number; richText: Array<{ text: string; style?: string }> },
   ): void {
+    const S = this.S;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
     let x = ann.x;

@@ -29,6 +29,7 @@ export type Atom = {
   y: number;
   element: number; // atomic number Z (1..118)
   label?: string;
+  hasExplicitLabel?: boolean; // true when CDXML node had a <t> child
   charge: number;
   radicalCount: 0 | 1 | 2;
   lonePairs: number;
@@ -57,6 +58,7 @@ export type Bond = {
     | 'dative'
     | 'bold';
   stereo?: 'E' | 'Z' | 'unspecified';
+  doublePosition?: 'left' | 'right' | 'center';
 };
 
 export type Arrow = {

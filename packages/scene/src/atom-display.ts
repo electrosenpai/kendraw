@@ -66,24 +66,35 @@ export function getImplicitHydrogens(page: Page, atomId: AtomId): number {
   return 0; // oversaturated
 }
 
+/** Options for controlling carbon label visibility (from CDXML document settings). */
+export interface LabelDisplayOptions {
+  showTerminalCarbonLabels?: boolean;
+  showNonTerminalCarbonLabels?: boolean;
+}
+
 /**
  * Determine if an atom label should be shown (ChemDraw rules).
  * - Carbon with 2+ bonds to heavy atoms → vertex invisible (no label)
  * - Heteroatoms → always visible
  * - Carbon with charge, isotope, or radical → visible
- * - Carbon terminal (0-1 bonds) → visible
+ * - Carbon terminal (0-1 bonds) → visible (unless settings override)
+ *
+ * The optional `opts` parameter allows CDXML document-level settings
+ * (ShowTerminalCarbonLabels, ShowNonTerminalCarbonLabels) to override defaults.
  */
-export function shouldShowLabel(page: Page, atomId: AtomId): boolean {
+export function shouldShowLabel(page: Page, atomId: AtomId, opts?: LabelDisplayOptions): boolean {
   const atom = page.atoms[atomId];
   if (!atom) return false;
 
   // Heteroatoms always show label
   if (atom.element !== 6) return true;
 
-  // Carbon with charge, isotope, radical, or custom label
+  // Carbon with charge, isotope, or radical → always show
   if (atom.charge !== 0) return true;
   if (atom.isotope) return true;
   if (atom.radicalCount > 0) return true;
+
+  // Carbon with an explicit label set by the user (e.g. from CDXML <t> child) → show
   if (atom.label) return true;
 
   // Count bonds to heavy atoms (not H)
@@ -98,8 +109,15 @@ export function shouldShowLabel(page: Page, atomId: AtomId): boolean {
     }
   }
 
-  // Terminal carbon or isolated → show
-  return heavyBonds < 2;
+  const isTerminal = heavyBonds < 2;
+
+  if (isTerminal) {
+    // Respect ShowTerminalCarbonLabels from CDXML settings (default: true)
+    return opts?.showTerminalCarbonLabels ?? true;
+  }
+
+  // Non-terminal carbon: respect ShowNonTerminalCarbonLabels (default: false = implicit vertex)
+  return opts?.showNonTerminalCarbonLabels ?? false;
 }
 
 /**

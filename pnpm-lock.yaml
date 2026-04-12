@@ -76,6 +76,10 @@ importers:
       '@kendraw/scene':
         specifier: workspace:*
         version: link:../scene
+    devDependencies:
+      jsdom:
+        specifier: ^29.0.2
+        version: 29.0.2
 
   packages/persistence:
     dependencies:

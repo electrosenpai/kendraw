@@ -112,4 +112,5 @@ export {
   buildAtomLabel,
   formulaMode,
   type LabelSegment,
+  type LabelDisplayOptions,
 } from './atom-display.js';

@@ -12,5 +12,8 @@
   },
   "dependencies": {
     "@kendraw/scene": "workspace:*"
+  },
+  "devDependencies": {
+    "jsdom": "^29.0.2"
   }
 }

@@ -31,7 +31,7 @@ import { CanvasRenderer } from '@kendraw/renderer-canvas';
 import { ToolPalette, DEFAULT_TOOL_STATE, type ToolState } from './ToolPalette';
 import { PropertyPanel } from './PropertyPanel';
 import { StatusBar } from './StatusBar';
-import { getGraphicOverlays, onGraphicOverlaysChange } from './graphic-overlays';
+import { getGraphicOverlays, getCdxmlDocumentSettings, toRenderSettings, onGraphicOverlaysChange } from './graphic-overlays';
 
 const ATOM_RADIUS = 14;
 
@@ -173,10 +173,14 @@ export function Canvas({
     rendererRef.current?.setValenceIssues(valenceIssues);
   }, [valenceIssues]);
 
-  // Sync graphic overlays from CDXML imports
+  // Sync graphic overlays and document settings from CDXML imports
   useEffect(() => {
     const update = () => {
       rendererRef.current?.setGraphics(getGraphicOverlays());
+      const settings = getCdxmlDocumentSettings();
+      if (settings) {
+        rendererRef.current?.setDocumentStyle(toRenderSettings(settings));
+      }
     };
     update();
     return onGraphicOverlaysChange(update);
