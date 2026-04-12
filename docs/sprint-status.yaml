@@ -38,7 +38,7 @@ sprints:
     end_date: null
     capacity_points: 45 # cumulative effort budget, not 10 pts
     committed_points: 45
-    completed_points: 19
+    completed_points: 20
     status: 'in_progress'
     goal: 'Repo + CI + ADRs + 4 POCs verts (POC #1 et #2 bloquants). Aucune story applicative.'
     gate_criteria:
@@ -136,7 +136,9 @@ sprints:
         title: 'ADR-007 choix outil de doc statique (mkdocs vs starlight)'
         points: 1
         priority: 'should_have'
-        status: 'not_started'
+        status: 'completed'
+        story_doc: 'docs/stories/STORY-ADR-002.md'
+        completed_at: '2026-04-12'
         depends_on: ['STORY-INF-008']
       - id: 'STORY-POC-001'
         title: 'POC #1 — Performance 500 atomes (BLOQUANT)'
