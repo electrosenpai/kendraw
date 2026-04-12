@@ -17,7 +17,7 @@
   "packageManager": "pnpm@10.33.0",
   "scripts": {
     "typecheck": "pnpm -r typecheck",
-    "test": "vitest run --passWithNoTests",
+    "test": "pnpm -r --workspace-concurrency=4 test",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "lint": "eslint .",
