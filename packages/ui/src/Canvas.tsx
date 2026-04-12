@@ -1,6 +1,5 @@
 import { useRef, useEffect, useCallback, useState, useSyncExternalStore } from 'react';
 import {
-  createSceneStore,
   createAtom,
   SpatialIndex,
   createSelection,
@@ -8,47 +7,39 @@ import {
   toggleInSelection,
   clearSelection,
   type SceneStore,
-  type Document,
   type Selection,
 } from '@kendraw/scene';
 import { CanvasRenderer } from '@kendraw/renderer-canvas';
 
 type Tool = 'select' | 'add-atom';
 
-// Singleton store — lives outside React to be framework-agnostic
-const store: SceneStore = createSceneStore();
-const spatialIndex = new SpatialIndex();
-
-// Expose store for E2E testing in dev mode
-if (import.meta.env.DEV) {
-  (window as unknown as Record<string, unknown>).__kendraw_store__ = store;
-}
-
-function subscribeToStore(onStoreChange: () => void) {
-  return store.subscribe(onStoreChange);
-}
-
-function getSnapshot(): Document {
-  return store.getState();
-}
-
 const ATOM_RADIUS = 14;
 
-export function Canvas() {
+interface CanvasProps {
+  store: SceneStore;
+}
+
+export function Canvas({ store }: CanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<CanvasRenderer | null>(null);
+  const spatialIndexRef = useRef(new SpatialIndex());
   const [tool, setTool] = useState<Tool>('add-atom');
   const [selection, setSelection] = useState<Selection>(createSelection());
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
   const isDraggingRef = useRef(false);
 
-  // Subscribe to store via useSyncExternalStore (React 18 concurrent-safe)
-  const doc = useSyncExternalStore(subscribeToStore, getSnapshot);
+  const subscribe = useCallback(
+    (onStoreChange: () => void) => store.subscribe(onStoreChange),
+    [store],
+  );
+  const getSnapshot = useCallback(() => store.getState(), [store]);
+
+  const doc = useSyncExternalStore(subscribe, getSnapshot);
 
   // Rebuild spatial index when doc changes
   useEffect(() => {
     const page = doc.pages[doc.activePageIndex];
-    if (page) spatialIndex.rebuild(page);
+    if (page) spatialIndexRef.current.rebuild(page);
   }, [doc]);
 
   // Sync selection to renderer
@@ -64,15 +55,13 @@ export function Canvas() {
     const renderer = new CanvasRenderer();
     renderer.attach(container);
     rendererRef.current = renderer;
-
-    // Initial render
     renderer.render(store.getState());
 
     return () => {
       renderer.detach();
       rendererRef.current = null;
     };
-  }, []);
+  }, [store]);
 
   // Re-render when document changes
   useEffect(() => {
@@ -84,21 +73,18 @@ export function Canvas() {
     function handleKeyDown(e: KeyboardEvent) {
       const isMod = e.ctrlKey || e.metaKey;
 
-      // Ctrl+Z: undo
       if (isMod && e.key === 'z' && !e.shiftKey) {
         e.preventDefault();
         store.undo();
         setSelection(clearSelection(selection));
         return;
       }
-      // Ctrl+Y or Ctrl+Shift+Z: redo
       if (isMod && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
         e.preventDefault();
         store.redo();
         setSelection(clearSelection(selection));
         return;
       }
-      // Delete or Backspace: remove selected atoms
       if (e.key === 'Delete' || e.key === 'Backspace') {
         if (selection.atomIds.length > 0) {
           e.preventDefault();
@@ -109,26 +95,23 @@ export function Canvas() {
         }
         return;
       }
-      // Escape: clear selection or switch to select tool
       if (e.key === 'Escape') {
         setSelection(clearSelection(selection));
         return;
       }
-      // V: switch to select tool
-      if (e.key === 'v' || e.key === 'V') {
-        if (!isMod) setTool('select');
+      if ((e.key === 'v' || e.key === 'V') && !isMod) {
+        setTool('select');
         return;
       }
-      // A: switch to add-atom tool
-      if (e.key === 'a' || e.key === 'A') {
-        if (!isMod) setTool('add-atom');
+      if ((e.key === 'a' || e.key === 'A') && !isMod) {
+        setTool('add-atom');
         return;
       }
     }
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selection]);
+  }, [selection, store]);
 
   const getCanvasCoords = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -169,15 +152,13 @@ export function Canvas() {
       const { x, y } = getCanvasCoords(e);
 
       if (tool === 'add-atom') {
-        const atom = createAtom(x, y, 6); // carbon
+        const atom = createAtom(x, y, 6);
         store.dispatch({ type: 'add-atom', atom });
         return;
       }
 
-      // Select tool
       if (isDraggingRef.current && dragStartRef.current) {
-        // Rectangle selection
-        const atomIds = spatialIndex.searchRect(
+        const atomIds = spatialIndexRef.current.searchRect(
           dragStartRef.current.x,
           dragStartRef.current.y,
           x,
@@ -190,8 +171,7 @@ export function Canvas() {
         }
         rendererRef.current?.setSelectionRect(null);
       } else {
-        // Single click selection
-        const hitId = spatialIndex.hitTest(x, y, ATOM_RADIUS);
+        const hitId = spatialIndexRef.current.hitTest(x, y, ATOM_RADIUS);
         if (hitId) {
           if (e.shiftKey) {
             setSelection((s) => toggleInSelection(s, { atomIds: [hitId] }));
@@ -206,11 +186,11 @@ export function Canvas() {
       dragStartRef.current = null;
       isDraggingRef.current = false;
     },
-    [tool, getCanvasCoords],
+    [tool, getCanvasCoords, store],
   );
 
   return (
-    <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
+    <div style={{ width: '100%', height: '100%', position: 'relative' }}>
       {/* Tool indicator bar */}
       <div
         style={{
