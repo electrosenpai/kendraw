@@ -38,7 +38,7 @@ sprints:
     end_date: null
     capacity_points: 45 # cumulative effort budget, not 10 pts
     committed_points: 45
-    completed_points: 30
+    completed_points: 35
     status: 'in_progress'
     goal: 'Repo + CI + ADRs + 4 POCs verts (POC #1 et #2 bloquants). Aucune story applicative.'
     gate_criteria:
@@ -155,7 +155,11 @@ sprints:
         title: 'POC #2 — RDKit.js bundle/latence (BLOQUANT)'
         points: 5
         priority: 'blocker'
-        status: 'not_started'
+        status: 'completed'
+        story_doc: 'docs/stories/STORY-POC-002.md'
+        poc_report: 'docs/poc/poc-002-rdkit-js.md'
+        completed_at: '2026-04-12'
+        verdict: 'PASS'
         depends_on: ['STORY-INF-001']
         bloquant_for_sprint_1: true
       - id: 'STORY-POC-003'
