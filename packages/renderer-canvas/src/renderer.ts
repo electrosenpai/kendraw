@@ -1,4 +1,5 @@
-import type { AtomId, Document, SceneDiff } from '@kendraw/scene';
+import type { AtomId, Document, SceneDiff, Bond, Atom } from '@kendraw/scene';
+import { getColor, getSymbol } from '@kendraw/scene';
 
 export interface Renderer {
   attach(container: HTMLElement): void;
@@ -7,51 +8,6 @@ export interface Renderer {
   setSelectedAtoms(ids: Set<AtomId>): void;
   setSelectionRect(rect: { x1: number; y1: number; x2: number; y2: number } | null): void;
 }
-
-// CPK-inspired color palette keyed by atomic number
-const CPK_COLORS: Record<number, string> = {
-  1: '#ffffff', // H — white
-  6: '#333333', // C — dark gray (not pure black, better on dark bg)
-  7: '#3050f8', // N — blue
-  8: '#ff0000', // O — red
-  9: '#90e050', // F — green
-  15: '#ff8000', // P — orange
-  16: '#ffff30', // S — yellow
-  17: '#1ff01f', // Cl — green
-  35: '#a62929', // Br — dark red
-  53: '#940094', // I — purple
-};
-
-const DEFAULT_COLOR = '#808080';
-
-// Element symbols keyed by atomic number (common subset)
-const ELEMENT_SYMBOLS: Record<number, string> = {
-  1: 'H',
-  2: 'He',
-  3: 'Li',
-  4: 'Be',
-  5: 'B',
-  6: 'C',
-  7: 'N',
-  8: 'O',
-  9: 'F',
-  10: 'Ne',
-  11: 'Na',
-  12: 'Mg',
-  13: 'Al',
-  14: 'Si',
-  15: 'P',
-  16: 'S',
-  17: 'Cl',
-  18: 'Ar',
-  19: 'K',
-  20: 'Ca',
-  26: 'Fe',
-  29: 'Cu',
-  30: 'Zn',
-  35: 'Br',
-  53: 'I',
-};
 
 const ATOM_RADIUS = 14;
 const FONT_SIZE = 12;
@@ -127,10 +83,19 @@ export class CanvasRenderer implements Renderer {
     const page = doc.pages[doc.activePageIndex];
     if (!page) return;
 
+    // Render bonds first (under atoms)
+    for (const bond of Object.values(page.bonds)) {
+      const fromAtom = page.atoms[bond.fromAtomId];
+      const toAtom = page.atoms[bond.toAtomId];
+      if (fromAtom && toAtom) {
+        this.renderBond(ctx, bond, fromAtom, toAtom);
+      }
+    }
+
     // Render all atoms
     for (const atom of Object.values(page.atoms)) {
-      const color = CPK_COLORS[atom.element] ?? DEFAULT_COLOR;
-      const label = atom.label ?? ELEMENT_SYMBOLS[atom.element] ?? '?';
+      const color = getColor(atom.element);
+      const label = atom.label ?? getSymbol(atom.element);
       const selected = this.selectedAtoms.has(atom.id);
 
       // Selection highlight ring
@@ -154,6 +119,22 @@ export class CanvasRenderer implements Renderer {
       ctx.textBaseline = 'middle';
       ctx.fillStyle = this.isLightColor(color) ? '#000000' : '#ffffff';
       ctx.fillText(label, atom.x, atom.y);
+
+      // Charge indicator
+      if (atom.charge !== 0) {
+        const chargeStr =
+          atom.charge > 0
+            ? atom.charge === 1
+              ? '+'
+              : `${atom.charge}+`
+            : atom.charge === -1
+              ? '\u2013'
+              : `${Math.abs(atom.charge)}\u2013`;
+        ctx.font = `${FONT_SIZE - 3}px system-ui, sans-serif`;
+        ctx.fillStyle = atom.charge > 0 ? '#ff6b6b' : '#4dabf7';
+        ctx.textAlign = 'left';
+        ctx.fillText(chargeStr, atom.x + ATOM_RADIUS - 2, atom.y - ATOM_RADIUS + 4);
+      }
     }
 
     // Draw selection rectangle
@@ -167,6 +148,81 @@ export class CanvasRenderer implements Renderer {
       ctx.fillRect(x1, y1, x2 - x1, y2 - y1);
       ctx.setLineDash([]);
     }
+  }
+
+  private renderBond(ctx: CanvasRenderingContext2D, bond: Bond, from: Atom, to: Atom): void {
+    const dx = to.x - from.x;
+    const dy = to.y - from.y;
+    const len = Math.sqrt(dx * dx + dy * dy);
+    if (len === 0) return;
+
+    // Perpendicular offset for double/triple bonds
+    const px = (-dy / len) * 3;
+    const py = (dx / len) * 3;
+
+    ctx.strokeStyle = '#888888';
+    ctx.lineWidth = bond.style === 'bold' ? 3 : 1.5;
+
+    if (bond.style === 'wedge') {
+      // Filled wedge (stereo)
+      ctx.beginPath();
+      ctx.moveTo(from.x, from.y);
+      ctx.lineTo(to.x + px * 2, to.y + py * 2);
+      ctx.lineTo(to.x - px * 2, to.y - py * 2);
+      ctx.closePath();
+      ctx.fillStyle = '#888888';
+      ctx.fill();
+      return;
+    }
+
+    if (bond.style === 'dash' || bond.style === 'wavy') {
+      ctx.setLineDash(bond.style === 'dash' ? [4, 3] : [2, 2]);
+    }
+
+    switch (bond.order) {
+      case 1:
+      case 1.5:
+        ctx.beginPath();
+        ctx.moveTo(from.x, from.y);
+        ctx.lineTo(to.x, to.y);
+        ctx.stroke();
+        if (bond.order === 1.5) {
+          // Dashed inner line for aromatic
+          ctx.setLineDash([3, 3]);
+          ctx.beginPath();
+          ctx.moveTo(from.x + px, from.y + py);
+          ctx.lineTo(to.x + px, to.y + py);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+        break;
+      case 2:
+        ctx.beginPath();
+        ctx.moveTo(from.x + px, from.y + py);
+        ctx.lineTo(to.x + px, to.y + py);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(from.x - px, from.y - py);
+        ctx.lineTo(to.x - px, to.y - py);
+        ctx.stroke();
+        break;
+      case 3:
+        ctx.beginPath();
+        ctx.moveTo(from.x, from.y);
+        ctx.lineTo(to.x, to.y);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(from.x + px * 1.5, from.y + py * 1.5);
+        ctx.lineTo(to.x + px * 1.5, to.y + py * 1.5);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(from.x - px * 1.5, from.y - py * 1.5);
+        ctx.lineTo(to.x - px * 1.5, to.y - py * 1.5);
+        ctx.stroke();
+        break;
+    }
+
+    ctx.setLineDash([]);
   }
 
   private syncCanvasSize(): void {

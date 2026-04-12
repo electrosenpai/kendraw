@@ -24,13 +24,27 @@ export type {
   AddAtomCommand,
   RemoveAtomCommand,
   MoveAtomCommand,
+  UpdateAtomCommand,
+  AddBondCommand,
+  RemoveBondCommand,
+  CycleBondCommand,
   SceneDiff,
 } from './commands.js';
 
 export type { SceneStore, Unsubscribe, SceneListener } from './store.js';
 export { createSceneStore, createEmptyDocument } from './store.js';
 
-export { createAtom } from './helpers.js';
+export { createAtom, createBond } from './helpers.js';
+
+export {
+  getElement,
+  getElementBySymbol,
+  getSymbol,
+  getColor,
+  getAllElements,
+  COMMON_ELEMENTS,
+  type ElementData,
+} from './periodic-table.js';
 
 export { NotImplementedError } from './errors.js';
 

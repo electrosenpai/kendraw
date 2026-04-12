@@ -1,5 +1,5 @@
 import { produce } from 'immer';
-import type { Document, Page } from './types.js';
+import type { Bond, Document, Page } from './types.js';
 import type { Command, SceneDiff } from './commands.js';
 
 export type Unsubscribe = () => void;
@@ -77,6 +77,62 @@ function applyCommand(state: Document, command: Command): { next: Document; diff
         }
       });
       return { next, diff: { type: 'atom-moved', id: command.id } };
+    }
+    case 'update-atom': {
+      const next = produce(state, (draft) => {
+        const page = draft.pages[pageIndex];
+        if (page) {
+          const atom = page.atoms[command.id];
+          if (atom) {
+            Object.assign(atom, command.changes);
+          }
+        }
+      });
+      return { next, diff: { type: 'atom-updated', id: command.id } };
+    }
+    case 'add-bond': {
+      const next = produce(state, (draft) => {
+        const page = draft.pages[pageIndex];
+        if (page) {
+          page.bonds[command.bond.id] = command.bond;
+        }
+      });
+      return { next, diff: { type: 'bond-added', id: command.bond.id } };
+    }
+    case 'remove-bond': {
+      const next = produce(state, (draft) => {
+        const page = draft.pages[pageIndex];
+        if (page) {
+          const { [command.id]: _, ...rest } = page.bonds;
+          page.bonds = rest as typeof page.bonds;
+        }
+      });
+      return { next, diff: { type: 'bond-removed', id: command.id } };
+    }
+    case 'cycle-bond': {
+      const next = produce(state, (draft) => {
+        const page = draft.pages[pageIndex];
+        if (page) {
+          const bond = page.bonds[command.id];
+          if (bond) {
+            const cycleMap: Record<string, { order: Bond['order']; style: Bond['style'] }> = {
+              single: { order: 2, style: 'double' },
+              double: { order: 3, style: 'triple' },
+              triple: { order: 1, style: 'single' },
+              aromatic: { order: 1, style: 'single' },
+              wedge: { order: 1, style: 'dash' },
+              dash: { order: 1, style: 'single' },
+              wavy: { order: 1, style: 'single' },
+              dative: { order: 1, style: 'single' },
+              bold: { order: 1, style: 'single' },
+            };
+            const cycled = cycleMap[bond.style] ?? { order: 1 as const, style: 'single' as const };
+            bond.order = cycled.order;
+            bond.style = cycled.style;
+          }
+        }
+      });
+      return { next, diff: { type: 'bond-cycled', id: command.id } };
     }
   }
 }
