@@ -7,4 +7,5 @@ packages:
   - 'packages/io'
   - 'packages/api-client'
   - 'packages/ui'
+  - 'packages/constraints'
   - 'packages/scene-poc' # Throwaway POC #1 — remove after Sprint 0

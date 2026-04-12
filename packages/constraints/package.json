@@ -1,0 +1,16 @@
+{
+  "name": "@kendraw/constraints",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Molecular geometry constraints engine (bond lengths, angles, steric)",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@kendraw/scene": "workspace:*"
+  }
+}

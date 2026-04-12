@@ -65,6 +65,12 @@ importers:
         specifier: workspace:*
         version: link:../scene
 
+  packages/constraints:
+    dependencies:
+      '@kendraw/scene':
+        specifier: workspace:*
+        version: link:../scene
+
   packages/io:
     dependencies:
       '@kendraw/scene':
