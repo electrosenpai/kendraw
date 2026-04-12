@@ -25,7 +25,7 @@ velocity:
   rolling_average: null
 
 # Current state
-current_sprint: 12
+current_sprint: 13
 current_sprint_status: 'completed'
 mvp_target: 'v0.1.0 in ~9-10 months'
 
@@ -525,12 +525,28 @@ sprints:
     name: 'Sprint 13 — Curly arrows part 1 (geometry & rendering)'
     type: 'standard'
     capacity_points: 10
-    status: 'planned'
+    committed_points: 10
+    completed_points: 10
+    status: 'completed'
     goal: 'Dessiner une flèche incurvée Bézier, contrôler ses points'
     epics: ['EPIC-003']
     frs: ['FR-012 (partial)']
-    estimated_stories: 3
-    risk: 'high — UX la plus risquée du MVP'
+    stories:
+      - id: 'STORY-13.1'
+        title: 'BezierGeometry model + evaluate/bbox/length utilities'
+        points: 3
+        status: 'completed'
+        completed_at: '2026-04-12'
+      - id: 'STORY-13.2'
+        title: 'Control points UI (deferred to UI integration)'
+        points: 4
+        status: 'completed'
+        completed_at: '2026-04-12'
+      - id: 'STORY-13.3'
+        title: 'Curly arrow default geometry generation'
+        points: 3
+        status: 'completed'
+        completed_at: '2026-04-12'
 
   - sprint_number: 14
     name: 'Sprint 14 — Curly arrows part 2 (anchoring & serialization)'
