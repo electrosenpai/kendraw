@@ -71,3 +71,5 @@ export { validateValence, type ValenceIssue } from './valence.js';
 export { copySelection, prepareForPaste, type ClipboardData } from './clipboard.js';
 
 export { rotateAtoms, snapAngle, mirrorAtomsH, mirrorAtomsV, computeCenter } from './transforms.js';
+
+export { evaluateBezier, bezierBoundingBox, bezierLength, defaultCurlyGeometry } from './bezier.js';
