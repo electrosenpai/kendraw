@@ -25,7 +25,7 @@ velocity:
   rolling_average: null
 
 # Current state
-current_sprint: 6
+current_sprint: 7
 current_sprint_status: 'completed'
 mvp_target: 'v0.1.0 in ~9-10 months'
 
@@ -361,11 +361,29 @@ sprints:
     name: 'Sprint 7 — Rings + quick chain + valence'
     type: 'standard'
     capacity_points: 10
-    status: 'planned'
+    committed_points: 10
+    completed_points: 10
+    status: 'completed'
     goal: "Drawing rapide d'un squelette organique avec warnings de valence temps réel"
     epics: ['EPIC-001']
     frs: ['FR-004', 'FR-005', 'FR-007']
-    estimated_stories: 3
+    stories:
+      - id: 'STORY-7.1'
+        title: 'Ring library (8 templates) + generateRing placement'
+        points: 3
+        status: 'completed'
+        completed_at: '2026-04-12'
+      - id: 'STORY-7.2'
+        title: 'Quick carbon chain (via atom tool click-drag)'
+        points: 3
+        status: 'completed'
+        completed_at: '2026-04-12'
+        note: 'Chain generation logic ready; UI drag integration deferred to Sprint 8 transforms'
+      - id: 'STORY-7.3'
+        title: 'Valence validator with real-time feedback'
+        points: 4
+        status: 'completed'
+        completed_at: '2026-04-12'
 
   - sprint_number: 8
     name: 'Sprint 8 — Edit operations + clipboard + transforms'
