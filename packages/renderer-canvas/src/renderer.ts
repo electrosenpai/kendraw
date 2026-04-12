@@ -770,7 +770,7 @@ export class CanvasRenderer implements Renderer {
   ): void {
     const { start, c1, c2, end } = arrow.geometry;
     const isCurly = arrow.type === 'curly-pair' || arrow.type === 'curly-radical';
-    const color = isCurly ? '#e06633' : '#000000';
+    const color = isCurly ? '#e06633' : '#ffffff';
 
     // Default arrowhead config: curly arrows always have head, reaction arrows use parsed config
     const headType = arrow.arrowheadHead ?? (isCurly ? 'full' : 'full');
