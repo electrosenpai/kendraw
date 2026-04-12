@@ -1,0 +1,13 @@
+{
+  "name": "@kendraw/scene",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Immutable scene model, command bus, undo/redo, validators, spatial index",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  }
+}

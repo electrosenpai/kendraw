@@ -1,0 +1,33 @@
+FROM python:3.11-slim
+
+# Create non-root user
+RUN groupadd -g 1001 kendraw && \
+    useradd -u 1001 -g kendraw -m kendraw
+
+# Install uv from official image
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
+WORKDIR /app
+
+# Copy dependency files first (layer caching)
+COPY backend/pyproject.toml backend/uv.lock ./
+
+# Install production dependencies only (no dev deps)
+RUN uv sync --frozen --no-dev --no-install-project
+
+# Copy application source code
+COPY backend/kendraw_api/ kendraw_api/
+COPY backend/kendraw_chem/ kendraw_chem/
+COPY backend/kendraw_settings/ kendraw_settings/
+COPY backend/kendraw_observability/ kendraw_observability/
+
+# Switch to non-root user
+USER kendraw:kendraw
+
+# Git commit SHA passed at build time
+ARG GIT_COMMIT=unknown
+ENV KENDRAW_GIT_COMMIT=${GIT_COMMIT}
+
+EXPOSE 8081
+
+CMD ["uv", "run", "uvicorn", "kendraw_api.main:app", "--host", "0.0.0.0", "--port", "8081"]

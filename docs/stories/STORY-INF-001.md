@@ -30,6 +30,7 @@ Cette story est la **toute première action de code** du projet. Elle crée la f
 ### Périmètre
 
 **Inclus :**
+
 - Initialisation du repo Git (branche `main`, pas de `master`).
 - `pnpm-workspace.yaml` déclarant les 8 packages frontend.
 - Squelette de chaque package (package.json, tsconfig.json, src/index.ts placeholder).
@@ -40,6 +41,7 @@ Cette story est la **toute première action de code** du projet. Elle crée la f
 - Vitest configuré globalement (workspace mode), stub de test dans chaque package.
 
 **Exclus (stories séparées) :**
+
 - Backend Python (STORY-INF-002).
 - Docker (STORY-INF-003).
 - CI GitHub Actions (STORY-INF-004).
@@ -274,6 +276,7 @@ C'est intentionnel : ne pas câbler les dépendances inter-packages tant que le 
 ### Choix technique : husky vs simple-git-hooks
 
 **Recommandation : `husky`.**
+
 - Plus populaire, mieux documenté, setup `npx husky init` auto-crée `.husky/`.
 - `simple-git-hooks` est plus léger mais l'avantage est négligeable pour un projet de cette taille.
 - Si JB préfère `simple-git-hooks` (config dans `package.json`, pas de `.husky/` dir) : changement trivial.
@@ -291,9 +294,11 @@ Avec `strict-peer-dependencies=true` dans `.npmrc`, il faut que toutes les peer-
 ## Dépendances
 
 ### Stories prérequises
+
 - **Aucune.** C'est la première story du projet.
 
 ### Stories bloquées par celle-ci
+
 - **STORY-INF-002** (backend skeleton) — peut être développée en parallèle, mais conceptuellement le repo doit exister.
 - **STORY-INF-003** (Docker) — dépend d'INF-001 + INF-002.
 - **STORY-INF-004** (CI frontend) — dépend d'INF-001.
@@ -304,6 +309,7 @@ Avec `strict-peer-dependencies=true` dans `.npmrc`, il faut que toutes les peer-
 - **STORY-TC-001** (test corpus perf) — dépend d'INF-001.
 
 ### Dépendances externes
+
 - **Compte GitHub** avec repo créé (public, MIT).
 - **Node.js ≥ 20** installé localement.
 - **pnpm ≥ 9** installé globalement (`corepack enable && corepack prepare pnpm@latest --activate`).
@@ -342,6 +348,7 @@ Avec `strict-peer-dependencies=true` dans `.npmrc`, il faut que toutes les peer-
 ### Premier commit du projet
 
 Le message du premier commit doit être :
+
 ```
 chore: init monorepo pnpm workspaces + 8 packages frontend
 
@@ -370,6 +377,7 @@ Cette story **ne fait rien de visible pour un utilisateur**. C'est 100 % de l'in
 ## Suivi
 
 **Historique :**
+
 - 2026-04-12 : Créé par Scrum Master (Jean-Baptiste Donnette)
 
 **Effort réel :** TBD (renseigné après implémentation)
@@ -378,4 +386,4 @@ Cette story **ne fait rien de visible pour un utilisateur**. C'est 100 % de l'in
 
 **Cette story a été créée selon la BMAD Method v6 — Phase 4 (Implementation Planning).**
 
-*Pour implémenter : `/dev-story STORY-INF-001`*
+_Pour implémenter : `/dev-story STORY-INF-001`_

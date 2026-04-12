@@ -12,14 +12,16 @@
 
 This UX Design Document is the visual & interaction baseline for **Kendraw**, the open-source modern web successor to ChemDraw. It is derived from `prd-kendraw-2026-04-12.md` and resolves two PRD open questions explicitly deferred to UX (curly arrow geometry model, multi-structure SDF UX).
 
-It is the bridge between the PRD and the architecture phase: the architect must satisfy the FRs *and* the UX commitments locked here.
+It is the bridge between the PRD and the architecture phase: the architect must satisfy the FRs _and_ the UX commitments locked here.
 
 **Related Documents:**
+
 - Product Brief: `docs/product-brief-kendraw-2026-04-12.md`
 - PRD: `docs/prd-kendraw-2026-04-12.md`
 - Workflow status: `docs/bmm-workflow-status.yaml`
 
 **Reading guide:**
+
 - **Part 1** locks scope, personas, design principles.
 - **Part 2** documents the 10 user flows.
 - **Part 3** documents the 22 surfaces (top-level screens + editor states + overlays).
@@ -35,23 +37,24 @@ It is the bridge between the PRD and the architecture phase: the architect must 
 
 ### 1.1 Scope
 
-| Dimension          | Decision                                                                          | Source             |
-|--------------------|-----------------------------------------------------------------------------------|--------------------|
-| Target platforms   | Web desktop only — Chrome/Firefox/Safari/Edge latest 2 versions                   | NFR-002            |
-| Viewport min/max   | 1280×720 (min usable), 1920×1080 (reference), 2560×1440 (high-DPI)                | UX choice          |
-| Tablet/mobile      | **Out of scope** for MVP and V1 (V2+)                                             | PRD §Out of Scope  |
-| Fidelity           | Comprehensive — flows + wireframes + interactions + components + tokens + handoff | UX session         |
-| Accessibility      | WCAG 2.1 AA on non-canvas UI (canvas exempt per NFR-006)                          | NFR-006            |
-| Visual identity    | Glassmorphism, dark mode default + light mode alternate, 60 fps target            | FR-014             |
-| Design system      | New — "Glasswerk" tokens (defined in Part 6)                                      | UX session         |
-| Languages          | English only at MVP, i18n keys throughout                                         | NFR-007            |
-| Telemetry          | None — no usage analytics, no calls home                                          | NFR-008            |
+| Dimension        | Decision                                                                          | Source            |
+| ---------------- | --------------------------------------------------------------------------------- | ----------------- |
+| Target platforms | Web desktop only — Chrome/Firefox/Safari/Edge latest 2 versions                   | NFR-002           |
+| Viewport min/max | 1280×720 (min usable), 1920×1080 (reference), 2560×1440 (high-DPI)                | UX choice         |
+| Tablet/mobile    | **Out of scope** for MVP and V1 (V2+)                                             | PRD §Out of Scope |
+| Fidelity         | Comprehensive — flows + wireframes + interactions + components + tokens + handoff | UX session        |
+| Accessibility    | WCAG 2.1 AA on non-canvas UI (canvas exempt per NFR-006)                          | NFR-006           |
+| Visual identity  | Glassmorphism, dark mode default + light mode alternate, 60 fps target            | FR-014            |
+| Design system    | New — "Glasswerk" tokens (defined in Part 6)                                      | UX session        |
+| Languages        | English only at MVP, i18n keys throughout                                         | NFR-007           |
+| Telemetry        | None — no usage analytics, no calls home                                          | NFR-008           |
 
 ### 1.2 Personas
 
 Inherited from the Product Brief and re-anchored for design purposes.
 
 **⭐ Compass persona — URD Abbaye PhD student (Élise, 27, organic synthesis):**
+
 - 3rd-year PhD in organic synthesis, Linux/macOS, screens ≥ 24" 1440p, double-monitor common.
 - Has used ChemDraw for 4+ years; muscle memory is the dominant input method.
 - Draws 5–20 structures/day; 1–3 reactions/day; mechanisms once or twice a week.
@@ -61,6 +64,7 @@ Inherited from the Product Brief and re-anchored for design purposes.
 - **Design tie-breaker:** when in doubt, optimise for Élise's third action of the morning, not for the new user's first action.
 
 **Primary personas:**
+
 - **Chemistry teacher (Marc, 45, prep classes):** prepares LaTeX/Beamer handouts; mechanisms with curly arrows are weekly. Cares about export quality and copy-paste fidelity. Uses keyboard less, menus more.
 - **Master's student (Yara, 23, medicinal chemistry):** lower volume than Élise, much higher sensitivity to "does this feel modern". This persona makes or breaks the "wow" reaction.
 - **Cheminformatics user (Jonas, 33, computational chemistry):** lives in SMILES; wants paste-SMILES → render → copy-canonical-SMILES with zero ceremony.
@@ -119,18 +123,21 @@ Ten flows. Flows F1–F5 are MVP. F6–F10 are V1. Each flow lists entry, happy 
 **Entry:** User loads Kendraw URL for the first time on this browser.
 
 **Happy path:**
+
 1. Welcome screen (S1) renders with the Kendraw mark, one-line tagline, and the citation block.
 2. User reads or skims; clicks **"Start drawing"** (primary CTA).
 3. Welcome screen dismisses; Main Editor (S2-A, empty state) renders.
-4. A subtle one-time hint card appears in the bottom-right: *"Press `?` to see all keyboard shortcuts."*
+4. A subtle one-time hint card appears in the bottom-right: _"Press `?` to see all keyboard shortcuts."_
 5. The "first-launch acknowledged" flag is persisted in localStorage.
 
 **Decision points:**
+
 - At step 2: user can click **"Read citation guidance →"** which deep-links to About page (S3) and returns.
 - At step 2: user can click **"Try without reading"** secondary affordance — this is the same as "Start drawing" but tracked separately for self-reflection (no telemetry, just localStorage marker).
 
 **Error cases:**
-- Storage unavailable (private mode): show inline notice *"Auto-save and session restore are disabled in private browsing"* and continue. Welcome will reappear next time, which is acceptable.
+
+- Storage unavailable (private mode): show inline notice _"Auto-save and session restore are disabled in private browsing"_ and continue. Welcome will reappear next time, which is acceptable.
 
 **Exit:** Main Editor (S2-A).
 
@@ -161,6 +168,7 @@ Ten flows. Flows F1–F5 are MVP. F6–F10 are V1. Each flow lists entry, happy 
 **Entry:** Kendraw is already open, often from yesterday's session restore.
 
 **Happy path:**
+
 1. S2-C with restored tabs renders. Élise hits `Ctrl+T` → new tab (S2-A becomes S2-B).
 2. Types `B` (benzene shortcut) → ring placed at cursor. Single click commits.
 3. Hovers existing atom → presses `O` → oxygen replaces carbon.
@@ -174,14 +182,17 @@ Ten flows. Flows F1–F5 are MVP. F6–F10 are V1. Each flow lists entry, happy 
 11. Auto-save fires throughout (max 5 s after last edit, FR-017).
 
 **Decision points:**
+
 - At step 5: if structure has a valence violation, the offending atom shows a red ring and a hover tooltip explains the violation in plain English. The export still succeeds (FR-007 §AC4).
 - At step 7: if Élise prefers vector, she selects SVG instead of PNG. SVG export embeds the same citation in `<metadata>` and as an HTML comment.
 
 **Error cases:**
+
 - Storage quota exhausted (FR-017 §AC5): toast appears with "Free up space" affordance opening the session-restore manager.
 - PNG export fails (browser canvas error): inline error in the export dialog, action retains state, user can retry without redrawing.
 
 **Exit:**
+
 - Success: PNG downloaded, structure remains in tab, auto-saved.
 - Cancel: export dialog dismissed via Escape, no file written.
 
@@ -216,6 +227,7 @@ Ten flows. Flows F1–F5 are MVP. F6–F10 are V1. Each flow lists entry, happy 
 **Entry:** New tab in Main Editor.
 
 **Happy path:**
+
 1. Marc draws reactant on the left half of the canvas.
 2. Selects the reaction-arrow tool from the palette → click-drag horizontally → forward arrow placed.
 3. Clicks the arrow with the text tool → annotation slots appear above and below the arrow.
@@ -229,10 +241,12 @@ Ten flows. Flows F1–F5 are MVP. F6–F10 are V1. Each flow lists entry, happy 
 11. Marc embeds in Beamer/LaTeX `\includegraphics{}`.
 
 **Decision points:**
+
 - At step 7: if endpoint snaps to wrong anchor, Marc drags it to the correct one without losing curvature.
 - At step 4: rich text uses `_2` for subscript, `^2` for superscript via the inline annotation toolbar (chemistry-aware).
 
 **Error cases:**
+
 - Curly arrow with no valid endpoint anchor: arrow renders as dashed gray "draft" until both ends snap to a valid target.
 - SVG export contains metadata but Marc's LaTeX strips it on render — the file metadata footprint persists (FR-027 §AC2).
 
@@ -245,6 +259,7 @@ Ten flows. Flows F1–F5 are MVP. F6–F10 are V1. Each flow lists entry, happy 
 **Persona:** Jonas (cheminformatics user).
 
 **Happy path:**
+
 1. Jonas opens Kendraw, focuses the SMILES input field in the property panel header.
 2. Pastes `CC(=O)OC1=CC=CC=C1C(=O)O` (aspirin).
 3. Frontend parser renders the structure within < 200 ms (FR-018 §AC1).
@@ -253,10 +268,12 @@ Ten flows. Flows F1–F5 are MVP. F6–F10 are V1. Each flow lists entry, happy 
 6. Switches to terminal, pastes.
 
 **Decision points:**
+
 - If the SMILES fails to parse: input field gains a red outline, error tooltip describes the failure with character offset; no canvas change.
 - If the structure exceeds 100 atoms: render is allowed up to ~ 500 atoms with degraded latency budget per FR-015 §AC2; > 500 shows a warning toast.
 
 **Error cases:**
+
 - Frontend lib unavailable (rare): fallback to backend canonicalization with a 1 s timeout; if both fail, error toast.
 
 **Exit:** Canonical SMILES on clipboard.
@@ -268,17 +285,20 @@ Ten flows. Flows F1–F5 are MVP. F6–F10 are V1. Each flow lists entry, happy 
 **Entry:** User reloads the page (deliberately or after a crash).
 
 **Happy path:**
+
 1. Page loads.
-2. M8 (restore prompt) appears centred on a dimmed background: *"Restore your previous session? 4 tabs, last saved 12 seconds ago."*
+2. M8 (restore prompt) appears centred on a dimmed background: _"Restore your previous session? 4 tabs, last saved 12 seconds ago."_
 3. User clicks **Restore session**.
 4. All 4 tabs reappear with full state: structure, selection, undo history (FR-016 §AC5).
 5. The tab that was active becomes active again.
 
 **Decision points:**
+
 - User clicks **Start fresh** instead → previous session is archived (one revision back, recoverable from About → "Recover archived session" for 7 days), new empty editor opens.
 - Auto-save data is older than 30 days → restore prompt still appears but shows the timestamp prominently with a "this is older than usual" hint.
 
 **Error cases:**
+
 - Storage corrupted: restore prompt shows the affected tabs with an error icon; user can attempt per-tab restore. Failed tabs are isolated, never blocking.
 
 **Exit:** Either restored editor (S2-C) or fresh editor (S2-A).
@@ -290,6 +310,7 @@ Ten flows. Flows F1–F5 are MVP. F6–F10 are V1. Each flow lists entry, happy 
 **Persona:** Yara (master's student) drawing a glycine structure for a homework set.
 
 **Happy path:**
+
 1. Press `T` to open Templates browser (M2).
 2. Type "glyc" in the search field.
 3. Glycine template highlights; Enter or click inserts at cursor as a single undoable action.
@@ -297,11 +318,13 @@ Ten flows. Flows F1–F5 are MVP. F6–F10 are V1. Each flow lists entry, happy 
 5. Continues drawing.
 
 **Decision points:**
+
 - Three tabs in the browser: **Rings** (MVP, FR-004), **Built-in** (V1, FR-035 + FR-036), **My templates** (V1, FR-037).
 - Right-click on a built-in template offers "Insert" / "Insert + recentre canvas".
 - For "My templates", right-click offers "Rename" / "Delete" / "Export as JSON".
 
 **Error cases:**
+
 - Custom template JSON import fails schema validation: import dialog reports the offending field.
 
 **Exit:** Template inserted at cursor.
@@ -313,6 +336,7 @@ Ten flows. Flows F1–F5 are MVP. F6–F10 are V1. Each flow lists entry, happy 
 **Persona:** Marc importing a `.cdxml` file from a colleague's ChemDraw library.
 
 **Happy path:**
+
 1. Marc drags `library.cdxml` from his file manager onto the Kendraw window.
 2. Drop overlay (M13) confirms the file type and shows "Importing CDXML…".
 3. Import succeeds → file opens in a new tab.
@@ -320,9 +344,11 @@ Ten flows. Flows F1–F5 are MVP. F6–F10 are V1. Each flow lists entry, happy 
 5. Marc edits, then exports back to CDXML via M4.
 
 **Decision points:**
+
 - If import fails entirely: error toast names the failure and offers "Send anonymized to Kendraw for parsing improvement" (off by default — opt-in only, respects NFR-008).
 
 **Error cases:**
+
 - Format detected but version unsupported: warning lists the version, file still opens with a "best-effort" badge in the tab title.
 
 **Exit:** Document open with optional warnings panel.
@@ -334,16 +360,19 @@ Ten flows. Flows F1–F5 are MVP. F6–F10 are V1. Each flow lists entry, happy 
 **Persona:** Jonas needing to verify a name from a paper.
 
 **Happy path:**
+
 1. Jonas opens the IUPAC input via `Ctrl+I` or via the property panel's "Name → structure" tab.
 2. Pastes "(2S)-2-amino-3-(1H-indol-3-yl)propanoic acid".
 3. Backend (RDKit + OPSIN fallback) returns the structure within ~ 1 s.
 4. Structure renders on canvas; Jonas can edit, export, etc.
 
 **Decision points:**
+
 - If the parser returns multiple candidates with low confidence: a chooser panel shows up to 3 candidates with thumbnails.
 
 **Error cases:**
-- Name unrecognized: error toast — *"Couldn't parse this IUPAC name. Try simplifying or pasting SMILES instead."*
+
+- Name unrecognized: error toast — _"Couldn't parse this IUPAC name. Try simplifying or pasting SMILES instead."_
 
 **Exit:** Structure on canvas.
 
@@ -354,6 +383,7 @@ Ten flows. Flows F1–F5 are MVP. F6–F10 are V1. Each flow lists entry, happy 
 **Persona:** Élise preparing a JACS submission figure.
 
 **Happy path:**
+
 1. Selects the substructure to export (or selects nothing for whole canvas).
 2. `Ctrl+Shift+E` opens M4.
 3. Picks "PDF (vector, V1)" → DPI/size/font/citation-footprint options reveal.
@@ -362,9 +392,11 @@ Ten flows. Flows F1–F5 are MVP. F6–F10 are V1. Each flow lists entry, happy 
 6. Opens in Illustrator → edits without rasterization issues.
 
 **Decision points:**
+
 - Citation footprint is **on by default** but can be toggled per-export via a clearly labelled checkbox. Toggling off fires an unobtrusive reminder of the citation ask, without blocking.
 
 **Error cases:**
+
 - PDF export library failure: fallback to SVG with a notice; user retries.
 
 **Exit:** Vector file downloaded.
@@ -376,6 +408,7 @@ Ten flows. Flows F1–F5 are MVP. F6–F10 are V1. Each flow lists entry, happy 
 **Persona:** Marc remapping `B` from "benzene" to "bond" to match his old ChemDraw config.
 
 **Happy path:**
+
 1. Opens Settings (S4) via `Ctrl+,`.
 2. Settings → Keyboard shortcuts tab.
 3. Searches "benzene".
@@ -384,6 +417,7 @@ Ten flows. Flows F1–F5 are MVP. F6–F10 are V1. Each flow lists entry, happy 
 6. "Reset to defaults" remains accessible at all times.
 
 **Decision points:**
+
 - If new chord conflicts with another binding: dialog shows the conflict and asks the user to resolve (re-bind one or reset).
 
 **Error cases:** none — all changes are reversible via "Reset to defaults".
@@ -437,6 +471,7 @@ Ten flows. Flows F1–F5 are MVP. F6–F10 are V1. Each flow lists entry, happy 
 ```
 
 **Layout:**
+
 - Centered modal-like card on dark glass background. 640 px wide, vertical centre.
 - Blur backdrop (24 px radius). Falls back to opaque dark surface on Safari < 17 / `prefers-reduced-transparency`.
 - Logo: animated mark (subtle 0.5 s fade + scale, respects `prefers-reduced-motion`).
@@ -445,17 +480,20 @@ Ten flows. Flows F1–F5 are MVP. F6–F10 are V1. Each flow lists entry, happy 
 - Two text links below the CTA, smaller font.
 
 **Interactions:**
+
 - `Enter` confirms primary CTA.
 - `Esc` is bound to "Try without reading" (same effect as primary, but flagged for self-reflection).
 - Click outside the card does **not** dismiss (modal-like, intentional friction).
 
 **States:**
+
 - Default
 - Focused (CTA outline visible)
 - Loading (backend optional probe for Zenodo DOI on first run; if present, show DOI under citation block)
 - Storage-unavailable (inline notice)
 
 **Accessibility:**
+
 - `role="dialog" aria-modal="true" aria-labelledby="welcome-title"`.
 - Focus trap on the card; tab order: Copy BibTeX → primary CTA → Read guidance → Try without reading.
 
@@ -496,6 +534,7 @@ Ten flows. Flows F1–F5 are MVP. F6–F10 are V1. Each flow lists entry, happy 
 ```
 
 **Top-down inventory:**
+
 1. **Menu bar** — 32 px, glass surface, full width. Logo + main menus + theme toggle + cheatsheet + settings.
 2. **Tab bar** — 40 px, glass surface, full width below menu. Active tab visible in the canvas area only.
 3. **Tool palette** — 64 px wide, full editor height, glass surface, **left-anchored**. Vertical strip of tool icons grouped by category.
@@ -504,6 +543,7 @@ Ten flows. Flows F1–F5 are MVP. F6–F10 are V1. Each flow lists entry, happy 
 6. **Status bar** — 28 px, full width, glass surface. Live atom/bond count, valence status, auto-save timestamp, demo-mode badge if applicable.
 
 **Default proportions on a 1920×1080 viewport:**
+
 - Menu + tab + status = 100 px vertical chrome.
 - Tool palette = 64 px left chrome.
 - Property panel = 320 px right chrome (collapsible).
@@ -533,10 +573,11 @@ Ten flows. Flows F1–F5 are MVP. F6–F10 are V1. Each flow lists entry, happy 
 ```
 
 **Behaviour:**
+
 - Three quick-start tiles in the canvas; clicking inserts the corresponding template at canvas centre.
 - Drop a file anywhere → import flow (F2 + F7).
 - Property panel shows em-dashes for all fields; SMILES input is focused.
-- The hint card "*Press `?` to see all keyboard shortcuts*" appears on first launch only.
+- The hint card "_Press `?` to see all keyboard shortcuts_" appears on first launch only.
 
 #### S2-B — Active drawing state
 
@@ -545,6 +586,7 @@ This is the most-used state. All interaction details are documented per palette 
 #### S2-C — Multi-document tabs state
 
 Tab bar shows all open tabs left-to-right. Tabs are draggable to reorder. Each tab has:
+
 - Document name (truncated at 24 chars with ellipsis + tooltip on hover).
 - Unsaved-changes dot `●` to the right of the name.
 - Close button `×` on hover or focus.
@@ -586,6 +628,7 @@ A `+` button at the right end opens a new blank tab. `Ctrl+T` keyboard equivalen
 ```
 
 **Specs:**
+
 - 64 px wide.
 - Each tool button: 48×48 px (44×44 minimum touch target per WCAG, 48 chosen for grid harmony).
 - 4 px gap between buttons; 8 px gap between groups (dividers).
@@ -635,6 +678,7 @@ A `+` button at the right end opens a new blank tab. `Ctrl+T` keyboard equivalen
 ```
 
 **Specs:**
+
 - 320 px wide. Collapses to 0 px (button shifts to a 24 px peek tab anchored to the editor edge).
 - Glass surface with 16 px backdrop blur, 90% opacity.
 - Internal padding: 16 px horizontal, 12 px vertical.
@@ -645,6 +689,7 @@ A `+` button at the right end opens a new blank tab. `Ctrl+T` keyboard equivalen
 - Document section at the bottom shows save status, warnings, and per-import warnings (CDXML, etc.).
 
 **Accessibility:**
+
 - `role="complementary" aria-label="Structure properties"`.
 - All copy buttons: `aria-label="Copy SMILES to clipboard"` etc.
 - Live region for save status: `aria-live="polite"`.
@@ -715,6 +760,7 @@ Single-line bar at the very bottom.
 ```
 
 **Specs:**
+
 - Full-window page (not a modal). Replaces editor content. "Back to editor" returns without state loss.
 - Centered column 720 px wide, padding 48 px.
 - Headings: H1 (Kendraw), H2 (Citation, Credits, etc.), H3 inside as needed.
@@ -753,6 +799,7 @@ Single-line bar at the very bottom.
 ```
 
 **Specs:**
+
 - Two-column layout: 240 px nav, flex content.
 - Each row in the shortcut table is editable inline by clicking the binding cell → records next chord.
 - Conflict detection in real time; "Save" disabled while unresolved conflicts exist.
@@ -791,6 +838,7 @@ Single-line bar at the very bottom.
 ```
 
 **Specs:**
+
 - Modal popover, anchored to the canvas (not floating).
 - Each element cell: 40×40 px, atomic number top-left, symbol large centre, mass small bottom.
 - Hover shows full element name + electronegativity + atomic radius.
@@ -830,6 +878,7 @@ Single-line bar at the very bottom.
 ```
 
 **Specs:**
+
 - Tabs across top: Rings (always), Built-in (V1), My templates (V1).
 - Grid: 6 cards per row, each 88×88 px with 80×60 thumbnail and 8 px label.
 - Search filters within active tab; matches highlight name.
@@ -870,6 +919,7 @@ Single-line bar at the very bottom.
 ```
 
 **Specs:**
+
 - Three input methods: file picker, drop zone (entire dialog), paste.
 - Format auto-detection from MIME type or content sniffing; user can override.
 - "Open in new tab" defaults ON to protect current work.
@@ -910,6 +960,7 @@ Single-line bar at the very bottom.
 ```
 
 **Specs:**
+
 - Format strip is a horizontal radio group; V1 formats appear with a "(V1)" badge until they ship.
 - Quality preset dropdown: Web / Print / Publication / Custom.
 - Size fields are bound to the preset; switching to Custom unlocks them.
@@ -960,6 +1011,7 @@ Single-line bar at the very bottom.
 ```
 
 **Specs:**
+
 - Modal centred, 720×640 px.
 - Search filters live.
 - Sections collapsible.
@@ -987,6 +1039,7 @@ Single-line bar at the very bottom.
 ```
 
 **Behaviour:**
+
 - When selected, the arrow shows: 2 endpoint handles + 2 control point handles + a faint dashed reference line from each control point to its associated endpoint.
 - Drag any handle to reshape; system enforces curvature continuity (no self-intersection).
 - Drag an endpoint near another atom/bond/lone-pair → that target highlights → release snaps. The control points adapt proportionally so the visual curvature is preserved.
@@ -994,18 +1047,20 @@ Single-line bar at the very bottom.
 - Esc deselects the arrow without committing intermediate changes.
 
 **Visual states:**
+
 - Selected: arrow stroke 2.5 px primary colour, handles visible.
 - Default: arrow stroke 2 px neutral-700 (dark mode) / neutral-300 (light mode).
 - Drafting (one endpoint not anchored): dashed gray stroke + warning icon at the orphan end.
 - Hover: subtle glow.
 
 **Snap targets and visual feedback:**
+
 - Bond → bond midpoint highlights with a 6 px primary dot.
 - Atom → atom outline lights up.
 - Lone pair → the lone pair dots pulse once.
 - Empty space → no snap; the endpoint becomes a free anchor (allowed but flagged as "dangling" in property panel warnings).
 
-**Why this matters:** the PRD calls curly arrows "non-negotiable for the URD Abbaye PhD persona." This interaction is the *one* the project cannot afford to ship awkwardly. The 2-control-point Bézier model plus snap-aware endpoint dragging is the pareto choice between expressiveness and learnability.
+**Why this matters:** the PRD calls curly arrows "non-negotiable for the URD Abbaye PhD persona." This interaction is the _one_ the project cannot afford to ship awkwardly. The 2-control-point Bézier model plus snap-aware endpoint dragging is the pareto choice between expressiveness and learnability.
 
 ---
 
@@ -1027,6 +1082,7 @@ Single-line bar at the very bottom.
 ```
 
 **Specs:**
+
 - Two slots per arrow: above and below. Each slot has independent rich-text content.
 - Slots are anchored to the arrow; moving the arrow moves the slots in lockstep.
 - Inline mini-toolbar (appears when a slot is focused): bold, italic, subscript, superscript, Greek symbol palette.
@@ -1063,6 +1119,7 @@ Single-line bar at the very bottom.
 ```
 
 **Specs:**
+
 - Modal centred over a dimmed editor.
 - Lists tab names with the last-active tab highlighted.
 - "Restore session" is the primary CTA, focused by default.
@@ -1090,6 +1147,7 @@ Single-line bar at the very bottom.
 ```
 
 **Specs:**
+
 - Strip appears only when the active document has > 1 page.
 - 64 px tall, full canvas width.
 - Each thumbnail: 48×48 px.
@@ -1131,6 +1189,7 @@ Single-line bar at the very bottom.
 ```
 
 **Specs:**
+
 - Three query modes; "Substructure (draw)" opens an inset mini-canvas.
 - Results are keyboard-navigable; Enter activates → switches to tab and highlights matched atoms.
 - Search scope checkboxes default to all on.
@@ -1246,20 +1305,24 @@ Per NFR-006: full WCAG 2.1 AA on the non-canvas UI; the canvas itself is exempt 
 ### 4.1 Perceivable
 
 **Contrast (AA, 4.5:1 for text, 3:1 for UI):**
+
 - All text against its background ≥ 4.5:1 in both dark and light modes. Verified by automated scanner in CI (NFR-006 §AC1).
 - UI components (buttons, icons, focus rings) ≥ 3:1.
 - Glass surfaces fall back to opaque equivalents under `prefers-reduced-transparency`; opaque equivalents independently verified for contrast.
 
 **Information not by colour alone:**
+
 - Valence violations (FR-007): red ring + tooltip (text). Never colour alone.
 - Save status: text label + icon. Never icon alone.
 - Reaction arrow types: distinct geometries, not just colours.
 
 **Text scaling:**
+
 - All UI text resizes to 200% without horizontal scrolling on a 1280 px viewport.
 - Property panel content uses logical units (rem) so user font size preference is honoured.
 
 **Alt text:**
+
 - Logo: `alt="Kendraw"`.
 - Tool palette icons: each has `aria-label` matching its name and shortcut.
 - Decorative ASCII flourishes: `aria-hidden="true"`.
@@ -1267,6 +1330,7 @@ Per NFR-006: full WCAG 2.1 AA on the non-canvas UI; the canvas itself is exempt 
 ### 4.2 Operable
 
 **Keyboard navigation (full coverage on non-canvas UI):**
+
 - Tab order across the editor:
   1. Menu bar items (left to right)
   2. Tab bar tabs (left to right) + new-tab button
@@ -1280,10 +1344,12 @@ Per NFR-006: full WCAG 2.1 AA on the non-canvas UI; the canvas itself is exempt 
 **Touch targets:** 44×44 px minimum (we use 48×48 by default).
 
 **Animations:**
+
 - All transitions ≤ 200 ms.
 - `@media (prefers-reduced-motion: reduce)` disables non-essential animations: welcome card scale, tab-open slide, modal fade. Critical feedback (focus ring transitions, valence-error pulses) remains.
 
 **Skip-canvas link:**
+
 - The first focusable element in the editor is `Skip to property panel`. Sighted keyboard users get this via `Tab` from the URL bar.
 
 ### 4.3 Understandable
@@ -1293,8 +1359,9 @@ Per NFR-006: full WCAG 2.1 AA on the non-canvas UI; the canvas itself is exempt 
 **Form labels:** every input has a visible label or `aria-label`.
 
 **Error messages:**
+
 - Plain English, no jargon, actionable.
-- Example: *"This atom has 5 bonds — most carbons should have 4. Click to dismiss this warning, or change a bond to a single bond."*
+- Example: _"This atom has 5 bonds — most carbons should have 4. Click to dismiss this warning, or change a bond to a single bond."_
 
 **Consistent navigation:** menu bar, tab bar, palette, property panel are in the same place on every screen. About and Settings open as full pages with a single "Back to editor" affordance.
 
@@ -1303,6 +1370,7 @@ Per NFR-006: full WCAG 2.1 AA on the non-canvas UI; the canvas itself is exempt 
 ### 4.4 Robust
 
 **Semantic HTML:**
+
 - `<header>` for menu bar
 - `<nav aria-label="Tools">` for tool palette
 - `<main>` wraps the canvas
@@ -1312,6 +1380,7 @@ Per NFR-006: full WCAG 2.1 AA on the non-canvas UI; the canvas itself is exempt 
 **ARIA landmarks:** the above mapping provides 5 landmarks; screen reader users navigate them with rotor/`D` key.
 
 **ARIA states:**
+
 - Tool palette buttons: `aria-pressed="true"` on the active tool.
 - Property panel sections: `aria-expanded` on collapsible chevrons.
 - Modals: `role="dialog" aria-modal="true" aria-labelledby` referencing the title.
@@ -1320,6 +1389,7 @@ Per NFR-006: full WCAG 2.1 AA on the non-canvas UI; the canvas itself is exempt 
 **Form validation:** all inputs use `aria-invalid="true"` and `aria-describedby` pointing to the error message.
 
 **Tested with:**
+
 - NVDA on Windows + Chrome
 - VoiceOver on macOS + Safari
 - axe DevTools (zero AA failures gate in CI)
@@ -1328,6 +1398,7 @@ Per NFR-006: full WCAG 2.1 AA on the non-canvas UI; the canvas itself is exempt 
 ### 4.5 Canvas exemption (documented limitation)
 
 The 2D drawing canvas itself is **not** WCAG-conformant:
+
 - Screen readers cannot meaningfully describe a structural diagram in real time.
 - Keyboard-only drawing is supported via shortcuts but not via Tab navigation across atoms.
 - Colour-coding is intrinsic to chemistry (CPK colours, bond types).
@@ -1351,6 +1422,7 @@ Eleven first-class components. Every screen above is composed from these.
 **States:** Default, Hover, Focus, Active, Disabled, Loading.
 
 **Specs:**
+
 - Primary: filled background `--color-primary`, white text, no border.
 - Secondary: 1px border `--color-primary`, transparent fill, primary text.
 - Tertiary: no border, primary text, hover background neutral-100/700.
@@ -1369,6 +1441,7 @@ Eleven first-class components. Every screen above is composed from these.
 Specialized icon button for the tool palette.
 
 **Specs:**
+
 - 48×48 px square.
 - Icon size: 24×24 px centred.
 - Active state: filled background `--color-primary-12`, primary 4 px left accent bar, icon `--color-primary`.
@@ -1383,6 +1456,7 @@ Specialized icon button for the tool palette.
 A single document tab in the tab bar.
 
 **Specs:**
+
 - Height 40 px (matches tab bar).
 - Min-width 120 px, max-width 240 px, content truncated with ellipsis.
 - Active: glass lift, 2 px primary top border, document name in regular weight.
@@ -1398,6 +1472,7 @@ A single document tab in the tab bar.
 The base surface used by menu bar, tab bar, palette, property panel, status bar, and all modals.
 
 **Specs:**
+
 - `background: var(--surface-glass)` (rgba with alpha)
 - `backdrop-filter: blur(16px) saturate(140%)`
 - `border: 1px solid var(--surface-glass-border)`
@@ -1411,6 +1486,7 @@ The base surface used by menu bar, tab bar, palette, property panel, status bar,
 For text input (SMILES, IUPAC, search, settings).
 
 **Specs:**
+
 - Height 40 px (medium), 48 px (large).
 - Border 1 px `--neutral-300` (light) / `--neutral-700` (dark).
 - Focus: 2 px outline `--color-primary`, offset 0.
@@ -1427,6 +1503,7 @@ For text input (SMILES, IUPAC, search, settings).
 Standard centred modal used by M1–M5, M8, M10, M15.
 
 **Specs:**
+
 - Centred on a dimmed (`rgba(0,0,0,0.5)`) backdrop.
 - Width by content; max-width 720 px (wider for periodic table).
 - Header: 56 px, bottom border, title left, close button right.
@@ -1442,6 +1519,7 @@ Standard centred modal used by M1–M5, M8, M10, M15.
 Non-blocking ephemeral notification.
 
 **Specs:**
+
 - Top-right of viewport, 16 px from edges.
 - Width 360 px, content-driven height.
 - Auto-dismiss after 5 seconds (success), 8 seconds (warning), persist (error — manual dismiss).
@@ -1456,6 +1534,7 @@ Non-blocking ephemeral notification.
 Contextual hint on hover or focus.
 
 **Specs:**
+
 - Appears after 400 ms hover, immediately on focus.
 - Background: solid (NOT glass — readability priority), `--neutral-900` in light mode, `--neutral-100` in dark.
 - Padding: 8 px horizontal, 6 px vertical.
@@ -1471,6 +1550,7 @@ Contextual hint on hover or focus.
 For tile grids in templates browser, quick-start tiles in S2-A, settings sections.
 
 **Specs:**
+
 - Glass surface (C4).
 - Padding 16 px.
 - Border radius 12 px.
@@ -1485,6 +1565,7 @@ For tile grids in templates browser, quick-start tiles in S2-A, settings section
 A label-value row in the property panel.
 
 **Specs:**
+
 - Height 32 px.
 - Label left, monospace value right, copy button far right.
 - Hover: subtle background highlight.
@@ -1497,6 +1578,7 @@ A label-value row in the property panel.
 For M9 multi-page SDF navigator and templates grid.
 
 **Specs:**
+
 - 48×48 (M9) or 80×60 (M2 templates).
 - Bordered container with structure preview rendered at low DPI.
 - Active: 2 px primary border.
@@ -1512,75 +1594,77 @@ The new token system. Named "Glasswerk" because it's glass-first and German-engi
 
 #### Primary palette
 
-| Token              | Dark mode value | Light mode value | Use                              |
-|--------------------|-----------------|------------------|----------------------------------|
-| `--color-primary`  | `#7AB8FF`       | `#0066CC`        | Buttons, focus, active states    |
-| `--color-primary-h`| `#A8D0FF`       | `#0052A3`        | Hover                            |
-| `--color-primary-12`| `rgba(122,184,255,0.12)` | `rgba(0,102,204,0.12)` | Subtle accent backgrounds |
+| Token                | Dark mode value          | Light mode value       | Use                           |
+| -------------------- | ------------------------ | ---------------------- | ----------------------------- |
+| `--color-primary`    | `#7AB8FF`                | `#0066CC`              | Buttons, focus, active states |
+| `--color-primary-h`  | `#A8D0FF`                | `#0052A3`              | Hover                         |
+| `--color-primary-12` | `rgba(122,184,255,0.12)` | `rgba(0,102,204,0.12)` | Subtle accent backgrounds     |
 
 **Contrast verified:**
+
 - Dark mode primary on dark surface: 4.78:1 (AA pass)
 - Light mode primary on white: 4.57:1 (AA pass)
 
 #### Semantic palette
 
-| Token             | Dark           | Light          | Contrast (text on white) |
-|-------------------|----------------|----------------|--------------------------|
-| `--color-success` | `#5BD18A`      | `#00872B`      | 5.05:1 ✓                 |
-| `--color-warning` | `#FFB454`      | `#A85C00`      | 5.21:1 ✓                 |
-| `--color-error`   | `#FF7A7A`      | `#C5252D`      | 4.78:1 ✓                 |
-| `--color-info`    | `#7AB8FF`      | `#0066CC`      | 4.57:1 ✓                 |
+| Token             | Dark      | Light     | Contrast (text on white) |
+| ----------------- | --------- | --------- | ------------------------ |
+| `--color-success` | `#5BD18A` | `#00872B` | 5.05:1 ✓                 |
+| `--color-warning` | `#FFB454` | `#A85C00` | 5.21:1 ✓                 |
+| `--color-error`   | `#FF7A7A` | `#C5252D` | 4.78:1 ✓                 |
+| `--color-info`    | `#7AB8FF` | `#0066CC` | 4.57:1 ✓                 |
 
 #### Neutral palette (Glasswerk gradient)
 
 Dark mode (default):
 
-| Token             | Value      | Use                                |
-|-------------------|------------|------------------------------------|
-| `--bg-base`       | `#0B0D12`  | App background (behind glass)     |
-| `--bg-elevated`   | `#13161D`  | Reduced-transparency fallback      |
-| `--surface-glass` | `rgba(20,24,32,0.62)` | Glass panels             |
-| `--surface-glass-border` | `rgba(255,255,255,0.08)` | Glass borders     |
-| `--neutral-100`   | `#E8EAF0`  | Headings, primary text             |
-| `--neutral-300`   | `#B0B6C2`  | Secondary text                     |
-| `--neutral-500`   | `#6E7585`  | Tertiary text, placeholders        |
-| `--neutral-700`   | `#3A3F4B`  | Borders, dividers                  |
-| `--neutral-900`   | `#1C2029`  | Inverse text on light backgrounds  |
+| Token                    | Value                    | Use                               |
+| ------------------------ | ------------------------ | --------------------------------- |
+| `--bg-base`              | `#0B0D12`                | App background (behind glass)     |
+| `--bg-elevated`          | `#13161D`                | Reduced-transparency fallback     |
+| `--surface-glass`        | `rgba(20,24,32,0.62)`    | Glass panels                      |
+| `--surface-glass-border` | `rgba(255,255,255,0.08)` | Glass borders                     |
+| `--neutral-100`          | `#E8EAF0`                | Headings, primary text            |
+| `--neutral-300`          | `#B0B6C2`                | Secondary text                    |
+| `--neutral-500`          | `#6E7585`                | Tertiary text, placeholders       |
+| `--neutral-700`          | `#3A3F4B`                | Borders, dividers                 |
+| `--neutral-900`          | `#1C2029`                | Inverse text on light backgrounds |
 
 Light mode:
 
-| Token             | Value      | Use                                |
-|-------------------|------------|------------------------------------|
-| `--bg-base`       | `#F4F6FA`  | App background                     |
-| `--bg-elevated`   | `#FFFFFF`  | Reduced-transparency fallback      |
-| `--surface-glass` | `rgba(255,255,255,0.72)` | Glass panels             |
-| `--surface-glass-border` | `rgba(0,0,0,0.06)` | Glass borders            |
-| `--neutral-100`   | `#1C2029`  | Headings, primary text             |
-| `--neutral-300`   | `#3A3F4B`  | Secondary text                     |
-| `--neutral-500`   | `#6E7585`  | Tertiary text, placeholders        |
-| `--neutral-700`   | `#B0B6C2`  | Borders, dividers                  |
-| `--neutral-900`   | `#E8EAF0`  | Inverse text on dark backgrounds   |
+| Token                    | Value                    | Use                              |
+| ------------------------ | ------------------------ | -------------------------------- |
+| `--bg-base`              | `#F4F6FA`                | App background                   |
+| `--bg-elevated`          | `#FFFFFF`                | Reduced-transparency fallback    |
+| `--surface-glass`        | `rgba(255,255,255,0.72)` | Glass panels                     |
+| `--surface-glass-border` | `rgba(0,0,0,0.06)`       | Glass borders                    |
+| `--neutral-100`          | `#1C2029`                | Headings, primary text           |
+| `--neutral-300`          | `#3A3F4B`                | Secondary text                   |
+| `--neutral-500`          | `#6E7585`                | Tertiary text, placeholders      |
+| `--neutral-700`          | `#B0B6C2`                | Borders, dividers                |
+| `--neutral-900`          | `#E8EAF0`                | Inverse text on dark backgrounds |
 
 **Token symmetry:** dark and light modes share the same token names; only values flip. Components reference tokens, not values.
 
 #### Canvas-specific colours (CPK-inspired, contrast-tuned)
 
-| Element | Canvas dark   | Canvas light   |
-|---------|---------------|----------------|
-| C       | `#E8EAF0`     | `#1C2029`      |
-| H       | `#FFFFFF`     | `#3A3F4B`      |
-| O       | `#FF7A7A`     | `#C5252D`      |
-| N       | `#7AB8FF`     | `#0066CC`      |
-| S       | `#FFD96B`     | `#9C7400`      |
-| P       | `#FFB454`     | `#A85C00`      |
-| F       | `#A8E07A`     | `#3F8000`      |
-| Cl      | `#5BD18A`     | `#007A2D`      |
-| Br      | `#C58353`     | `#7A4824`      |
-| I       | `#9E7AFF`     | `#5C2EAA`      |
+| Element | Canvas dark | Canvas light |
+| ------- | ----------- | ------------ |
+| C       | `#E8EAF0`   | `#1C2029`    |
+| H       | `#FFFFFF`   | `#3A3F4B`    |
+| O       | `#FF7A7A`   | `#C5252D`    |
+| N       | `#7AB8FF`   | `#0066CC`    |
+| S       | `#FFD96B`   | `#9C7400`    |
+| P       | `#FFB454`   | `#A85C00`    |
+| F       | `#A8E07A`   | `#3F8000`    |
+| Cl      | `#5BD18A`   | `#007A2D`    |
+| Br      | `#C58353`   | `#7A4824`    |
+| I       | `#9E7AFF`   | `#5C2EAA`    |
 
 ### 6.2 Typography
 
 **Font families:**
+
 - UI: `'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif`
 - Monospace (SMILES, InChI, code): `'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace`
 - Chemistry overlays (atom labels on canvas): `'IBM Plex Sans', 'Inter', sans-serif` (slightly wider for atom symbols)
@@ -1590,7 +1674,7 @@ All chosen fonts are open-source / OFL / MIT-compatible (NFR-003).
 **Type scale (base 16 px):**
 
 | Token       | Size  | Line height | Weight | Use                          |
-|-------------|-------|-------------|--------|------------------------------|
+| ----------- | ----- | ----------- | ------ | ---------------------------- |
 | `--t-h1`    | 32 px | 1.25        | 600    | Welcome, About, Settings     |
 | `--t-h2`    | 24 px | 1.3         | 600    | Section titles               |
 | `--t-h3`    | 18 px | 1.4         | 600    | Sub-sections                 |
@@ -1606,7 +1690,7 @@ All chosen fonts are open-source / OFL / MIT-compatible (NFR-003).
 8 px grid.
 
 | Token   | Value |
-|---------|-------|
+| ------- | ----- |
 | `--s-1` | 4 px  |
 | `--s-2` | 8 px  |
 | `--s-3` | 12 px |
@@ -1617,6 +1701,7 @@ All chosen fonts are open-source / OFL / MIT-compatible (NFR-003).
 | `--s-8` | 64 px |
 
 **Layout constants:**
+
 - Menu bar height: 32 px
 - Tab bar height: 40 px
 - Tool palette width: 64 px
@@ -1629,49 +1714,49 @@ All chosen fonts are open-source / OFL / MIT-compatible (NFR-003).
 
 Glass surfaces use blur + alpha; shadows are subtle and used sparingly.
 
-| Token              | Value                                          | Use                |
-|--------------------|------------------------------------------------|--------------------|
-| `--elev-0`         | `none`                                         | Inline elements    |
-| `--elev-1`         | `0 1px 2px rgba(0,0,0,0.12)`                   | Cards, panels      |
-| `--elev-2`         | `0 4px 12px rgba(0,0,0,0.18)`                  | Modals, popovers   |
-| `--elev-3`         | `0 16px 40px rgba(0,0,0,0.24)`                 | Welcome, restore   |
-| `--blur-glass-sm`  | `blur(8px) saturate(140%)`                     | Tooltips (rare)    |
-| `--blur-glass-md`  | `blur(16px) saturate(140%)`                    | All chrome glass   |
-| `--blur-glass-lg`  | `blur(24px) saturate(160%)`                    | Welcome screen     |
+| Token             | Value                          | Use              |
+| ----------------- | ------------------------------ | ---------------- |
+| `--elev-0`        | `none`                         | Inline elements  |
+| `--elev-1`        | `0 1px 2px rgba(0,0,0,0.12)`   | Cards, panels    |
+| `--elev-2`        | `0 4px 12px rgba(0,0,0,0.18)`  | Modals, popovers |
+| `--elev-3`        | `0 16px 40px rgba(0,0,0,0.24)` | Welcome, restore |
+| `--blur-glass-sm` | `blur(8px) saturate(140%)`     | Tooltips (rare)  |
+| `--blur-glass-md` | `blur(16px) saturate(140%)`    | All chrome glass |
+| `--blur-glass-lg` | `blur(24px) saturate(160%)`    | Welcome screen   |
 
 ### 6.5 Radius
 
-| Token    | Value |
-|----------|-------|
-| `--r-sm` | 6 px  |
-| `--r-md` | 8 px  |
-| `--r-lg` | 12 px |
-| `--r-xl` | 16 px |
+| Token      | Value   |
+| ---------- | ------- |
+| `--r-sm`   | 6 px    |
+| `--r-md`   | 8 px    |
+| `--r-lg`   | 12 px   |
+| `--r-xl`   | 16 px   |
 | `--r-full` | 9999 px |
 
 Chrome bars use radius 0 (full-width). Modals and cards use `--r-lg`.
 
 ### 6.6 Motion
 
-| Token           | Value                          |
-|-----------------|--------------------------------|
-| `--ease-out`    | `cubic-bezier(0.16, 1, 0.3, 1)` |
+| Token           | Value                            |
+| --------------- | -------------------------------- |
+| `--ease-out`    | `cubic-bezier(0.16, 1, 0.3, 1)`  |
 | `--ease-in-out` | `cubic-bezier(0.65, 0, 0.35, 1)` |
-| `--dur-fast`    | 120 ms                         |
-| `--dur-base`    | 200 ms                         |
-| `--dur-slow`    | 320 ms                         |
+| `--dur-fast`    | 120 ms                           |
+| `--dur-base`    | 200 ms                           |
+| `--dur-slow`    | 320 ms                           |
 
 Under `prefers-reduced-motion: reduce`, all durations clamp to 0.01 ms (i.e., effectively off) except critical state transitions (focus rings, valence error pulses).
 
 ### 6.7 Z-index
 
-| Token         | Value | Layer                               |
-|---------------|-------|-------------------------------------|
-| `--z-base`    | 0     | Canvas content                      |
+| Token         | Value | Layer                                 |
+| ------------- | ----- | ------------------------------------- |
+| `--z-base`    | 0     | Canvas content                        |
 | `--z-chrome`  | 10    | Menu / tab / palette / panel / status |
-| `--z-overlay` | 100   | Drag-drop overlay, demo banner      |
-| `--z-modal`   | 1000  | M1–M15                              |
-| `--z-toast`   | 2000  | Toasts                              |
+| `--z-overlay` | 100   | Drag-drop overlay, demo banner        |
+| `--z-modal`   | 1000  | M1–M15                                |
+| `--z-toast`   | 2000  | Toasts                                |
 
 ---
 
@@ -1680,6 +1765,7 @@ Under `prefers-reduced-motion: reduce`, all durations clamp to 0.01 ms (i.e., ef
 ### 7.1 Implementation order (recommended)
 
 **Sprint 1 — Glasswerk foundation**
+
 1. Set up CSS custom properties for all tokens (Part 6).
 2. Implement dark/light theme toggle with localStorage persistence.
 3. Implement `prefers-reduced-transparency` and `prefers-reduced-motion` media queries.
@@ -1687,6 +1773,7 @@ Under `prefers-reduced-motion: reduce`, all durations clamp to 0.01 ms (i.e., ef
 5. Storybook (or equivalent) entries for each component.
 
 **Sprint 2 — Editor chrome**
+
 1. Implement S2 macro layout (menu / tab / palette / canvas slot / panel / status).
 2. Build C4 (Glass Panel), C2 (Tool Button), C3 (Tab), C10 (Property Row).
 3. Wire menu bar items to placeholder actions; theme toggle live.
@@ -1694,6 +1781,7 @@ Under `prefers-reduced-motion: reduce`, all durations clamp to 0.01 ms (i.e., ef
 5. Welcome screen (S1) renders on first load only.
 
 **Sprint 3 — Drawing core**
+
 1. Canvas mounts (architecture POC #1 result determines substrate).
 2. Tool palette tools wired: select, single bond, atoms (C/N/O/H), benzene template.
 3. Property panel updates on canvas changes (FR-015).
@@ -1701,18 +1789,21 @@ Under `prefers-reduced-motion: reduce`, all durations clamp to 0.01 ms (i.e., ef
 5. M5 (cheatsheet) reachable from `?`.
 
 **Sprint 4 — Reactions, mechanisms, multi-tab**
+
 1. Reaction arrow tool + M7 annotation editor.
 2. Curly arrow tool + M6 inline editor (the riskiest interaction — alone in a sprint).
 3. Multi-tab support (FR-016) + M15 unsaved-changes prompt.
 4. M8 restore prompt on reload.
 
 **Sprint 5 — Import / Export / Citation**
+
 1. M3 import dialog + drag-drop (M13).
 2. M4 export dialog with PNG/SVG/MOL/SDF/SMILES/InChI.
 3. EXIF metadata embedding (FR-027).
 4. S3 About page with citation block.
 
 **Sprint 6 — Polish, accessibility, demo**
+
 1. Full keyboard navigation pass (skip links, focus traps, tab order).
 2. axe DevTools sweep, fix all AA failures.
 3. Contrast scanner CI gate.
@@ -1725,71 +1816,89 @@ Under `prefers-reduced-motion: reduce`, all durations clamp to 0.01 ms (i.e., ef
 /* tokens.css */
 :root {
   /* Colours — dark mode is default */
-  --color-primary: #7AB8FF;
-  --color-primary-h: #A8D0FF;
-  --color-primary-12: rgba(122,184,255,0.12);
-  --color-success: #5BD18A;
-  --color-warning: #FFB454;
-  --color-error: #FF7A7A;
-  --color-info: #7AB8FF;
+  --color-primary: #7ab8ff;
+  --color-primary-h: #a8d0ff;
+  --color-primary-12: rgba(122, 184, 255, 0.12);
+  --color-success: #5bd18a;
+  --color-warning: #ffb454;
+  --color-error: #ff7a7a;
+  --color-info: #7ab8ff;
 
-  --bg-base: #0B0D12;
-  --bg-elevated: #13161D;
-  --surface-glass: rgba(20,24,32,0.62);
-  --surface-glass-border: rgba(255,255,255,0.08);
+  --bg-base: #0b0d12;
+  --bg-elevated: #13161d;
+  --surface-glass: rgba(20, 24, 32, 0.62);
+  --surface-glass-border: rgba(255, 255, 255, 0.08);
 
-  --neutral-100: #E8EAF0;
-  --neutral-300: #B0B6C2;
-  --neutral-500: #6E7585;
-  --neutral-700: #3A3F4B;
-  --neutral-900: #1C2029;
+  --neutral-100: #e8eaf0;
+  --neutral-300: #b0b6c2;
+  --neutral-500: #6e7585;
+  --neutral-700: #3a3f4b;
+  --neutral-900: #1c2029;
 
   /* Typography */
   --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace;
-  --t-h1: 32px; --t-h2: 24px; --t-h3: 18px;
-  --t-body: 14px; --t-small: 13px; --t-tiny: 11px; --t-mono: 13px;
+  --t-h1: 32px;
+  --t-h2: 24px;
+  --t-h3: 18px;
+  --t-body: 14px;
+  --t-small: 13px;
+  --t-tiny: 11px;
+  --t-mono: 13px;
 
   /* Spacing */
-  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px;
-  --s-5: 24px; --s-6: 32px; --s-7: 48px; --s-8: 64px;
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 48px;
+  --s-8: 64px;
 
   /* Elevation */
-  --elev-1: 0 1px 2px rgba(0,0,0,0.12);
-  --elev-2: 0 4px 12px rgba(0,0,0,0.18);
-  --elev-3: 0 16px 40px rgba(0,0,0,0.24);
+  --elev-1: 0 1px 2px rgba(0, 0, 0, 0.12);
+  --elev-2: 0 4px 12px rgba(0, 0, 0, 0.18);
+  --elev-3: 0 16px 40px rgba(0, 0, 0, 0.24);
   --blur-glass-md: blur(16px) saturate(140%);
   --blur-glass-lg: blur(24px) saturate(160%);
 
   /* Radius */
-  --r-sm: 6px; --r-md: 8px; --r-lg: 12px; --r-xl: 16px;
+  --r-sm: 6px;
+  --r-md: 8px;
+  --r-lg: 12px;
+  --r-xl: 16px;
 
   /* Motion */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --dur-fast: 120ms; --dur-base: 200ms;
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
 
   /* Z */
-  --z-chrome: 10; --z-overlay: 100; --z-modal: 1000; --z-toast: 2000;
+  --z-chrome: 10;
+  --z-overlay: 100;
+  --z-modal: 1000;
+  --z-toast: 2000;
 }
 
-[data-theme="light"] {
-  --color-primary: #0066CC;
-  --color-primary-h: #0052A3;
-  --color-primary-12: rgba(0,102,204,0.12);
-  --color-success: #00872B;
-  --color-warning: #A85C00;
-  --color-error: #C5252D;
+[data-theme='light'] {
+  --color-primary: #0066cc;
+  --color-primary-h: #0052a3;
+  --color-primary-12: rgba(0, 102, 204, 0.12);
+  --color-success: #00872b;
+  --color-warning: #a85c00;
+  --color-error: #c5252d;
 
-  --bg-base: #F4F6FA;
-  --bg-elevated: #FFFFFF;
-  --surface-glass: rgba(255,255,255,0.72);
-  --surface-glass-border: rgba(0,0,0,0.06);
+  --bg-base: #f4f6fa;
+  --bg-elevated: #ffffff;
+  --surface-glass: rgba(255, 255, 255, 0.72);
+  --surface-glass-border: rgba(0, 0, 0, 0.06);
 
-  --neutral-100: #1C2029;
-  --neutral-300: #3A3F4B;
-  --neutral-500: #6E7585;
-  --neutral-700: #B0B6C2;
-  --neutral-900: #E8EAF0;
+  --neutral-100: #1c2029;
+  --neutral-300: #3a3f4b;
+  --neutral-500: #6e7585;
+  --neutral-700: #b0b6c2;
+  --neutral-900: #e8eaf0;
 }
 
 @media (prefers-reduced-transparency: reduce) {
@@ -1801,7 +1910,9 @@ Under `prefers-reduced-motion: reduce`, all durations clamp to 0.01 ms (i.e., ef
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
   }
@@ -1834,26 +1945,38 @@ Under `prefers-reduced-motion: reduce`, all durations clamp to 0.01 ms (i.e., ef
   background: var(--color-primary);
   color: var(--bg-base);
 }
-.btn-primary:hover { background: var(--color-primary-h); }
-.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-primary:hover {
+  background: var(--color-primary-h);
+}
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 
 /* tool-button.css */
 .tool-btn {
-  width: 48px; height: 48px;
-  display: grid; place-items: center;
-  border: none; background: transparent;
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border: none;
+  background: transparent;
   border-radius: var(--r-md);
   position: relative;
   cursor: pointer;
 }
-.tool-btn[aria-pressed="true"] {
+.tool-btn[aria-pressed='true'] {
   background: var(--color-primary-12);
   color: var(--color-primary);
 }
-.tool-btn[aria-pressed="true"]::before {
-  content: "";
-  position: absolute; left: 0; top: 8px; bottom: 8px;
-  width: 3px; border-radius: 0 2px 2px 0;
+.tool-btn[aria-pressed='true']::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 0 2px 2px 0;
   background: var(--color-primary);
 }
 .tool-btn:focus-visible {
@@ -1868,13 +1991,12 @@ Under `prefers-reduced-motion: reduce`, all durations clamp to 0.01 ms (i.e., ef
 // PropertyPanel.tsx
 export function PropertyPanel({ structure }: { structure: Structure | null }) {
   return (
-    <aside
-      className="property-panel glass-panel"
-      aria-label="Structure properties"
-    >
+    <aside className="property-panel glass-panel" aria-label="Structure properties">
       <header className="panel-header">
         <h2 className="t-h3">Properties</h2>
-        <button aria-label="Collapse panel" onClick={collapse}>⌃</button>
+        <button aria-label="Collapse panel" onClick={collapse}>
+          ⌃
+        </button>
       </header>
       <SmilesInput value={structure?.smiles ?? ''} onParse={handleParse} />
       <PropertyRow label="Formula" value={structure?.formula ?? '—'} copy />
@@ -1884,11 +2006,7 @@ export function PropertyPanel({ structure }: { structure: Structure | null }) {
       <PropertyRow label="Atoms" value={structure?.atomCount ?? '—'} />
       <PropertyRow label="Bonds" value={structure?.bondCount ?? '—'} />
       <PropertyRow label="Charge (net)" value={structure?.netCharge ?? '—'} />
-      <PropertyRow
-        label="Valence"
-        value={structure?.valenceStatus ?? '—'}
-        statusIcon
-      />
+      <PropertyRow label="Valence" value={structure?.valenceStatus ?? '—'} statusIcon />
       {/* V1 collapsible sections... */}
     </aside>
   );
@@ -1898,36 +2016,40 @@ export function PropertyPanel({ structure }: { structure: Structure | null }) {
 ### 7.4 Assets needed
 
 **Logo & marks:**
+
 - `kendraw-mark.svg` — the ⬡⬡⬡ trio mark (primary identity)
 - `kendraw-wordmark.svg` — wordmark for header
 - Favicon set: 16, 32, 180 (Apple), 192, 512 (PWA-ready for V2)
 
 **Icons (24×24 SVG, single-colour, currentColor):**
+
 - Tool palette (14 icons): select, lasso, single/double/triple/aromatic/wedge/dash bonds, atom, periodic table, benzene, templates, reaction arrow, curly arrow, text annotation, undo, redo
 - Menu icons: file, edit, view, insert, tools, help
 - Status icons: check, warning, error, info, save, copy, lock, drag-handle, close, chevron-up/down/left/right
 
 **Fonts (self-hosted, MIT/OFL):**
+
 - Inter (variable weights)
 - JetBrains Mono (regular + bold)
 - IBM Plex Sans (regular + medium) — for canvas atom labels
 
 **Reference structures (for empty-state quick-start tiles):**
+
 - `benzene.mol`, `hexane.mol`, `aspirin.mol` — bundled and used by S2-A.
 
 ### 7.5 Performance budgets (UX-imposed)
 
-| Operation                                       | Budget   | Source            |
-|------------------------------------------------|----------|-------------------|
-| Property panel update (≤ 100 atoms)            | 100 ms   | FR-015 §AC1       |
-| Property panel update (≤ 500 atoms)            | 500 ms   | FR-015 §AC2       |
-| SMILES parse + render (≤ 100 atoms)            | 200 ms   | FR-018 §AC1       |
-| Bond draw on 500-atom molecule                 | 16 ms    | NFR-001 §AC1      |
-| Pan/zoom on 500-atom molecule                  | ≥ 30 fps | NFR-001 §AC2      |
-| Tab switch                                      | 100 ms   | UX commitment     |
-| Modal open/close                                | 200 ms   | UX commitment     |
-| Theme toggle                                    | 200 ms   | UX commitment     |
-| Auto-save trigger                               | ≤ 5 s after edit | FR-017 §AC1 |
+| Operation                           | Budget           | Source        |
+| ----------------------------------- | ---------------- | ------------- |
+| Property panel update (≤ 100 atoms) | 100 ms           | FR-015 §AC1   |
+| Property panel update (≤ 500 atoms) | 500 ms           | FR-015 §AC2   |
+| SMILES parse + render (≤ 100 atoms) | 200 ms           | FR-018 §AC1   |
+| Bond draw on 500-atom molecule      | 16 ms            | NFR-001 §AC1  |
+| Pan/zoom on 500-atom molecule       | ≥ 30 fps         | NFR-001 §AC2  |
+| Tab switch                          | 100 ms           | UX commitment |
+| Modal open/close                    | 200 ms           | UX commitment |
+| Theme toggle                        | 200 ms           | UX commitment |
+| Auto-save trigger                   | ≤ 5 s after edit | FR-017 §AC1   |
 
 ### 7.6 What the architect must validate (UX → architecture)
 
@@ -1945,83 +2067,83 @@ export function PropertyPanel({ structure }: { structure: Structure | null }) {
 
 Every MVP FR (FR-001 → FR-029) is mapped to at least one surface or interaction. Cells marked `(canvas)` are handled by direct canvas rendering without a dedicated chrome surface.
 
-| FR     | Title                                             | Surface(s)                  |
-|--------|---------------------------------------------------|-----------------------------|
-| FR-001 | Interactive 2D Drawing Canvas                     | S2 (canvas), M9             |
-| FR-002 | Atom & Element Placement                          | S2 palette, M1              |
-| FR-003 | Basic Bond Types                                  | S2 palette, (canvas)        |
-| FR-004 | Predefined Ring Library — MVP Set                 | S2 palette, M2 (Rings tab)  |
-| FR-005 | Quick Carbon Chain Drawing                        | (canvas drag interaction)   |
-| FR-006 | Wedge / Dash Stereochemistry Display              | S2 palette, (canvas)        |
-| FR-007 | Real-time Valence Validation                      | (canvas) + property panel   |
-| FR-008 | Selection Tools — MVP Set                         | S2 palette, (canvas)        |
-| FR-009 | Unlimited Undo / Redo                             | S2 palette + Ctrl+Z/Y       |
-| FR-010 | Standard Edit Operations                          | S2 menu Edit + shortcuts    |
-| FR-011 | Reaction Arrows                                   | S2 palette, (canvas)        |
-| FR-012 | Curly Arrows for Mechanisms                       | S2 palette, M6 inline editor |
-| FR-013 | Reaction Condition Annotations                    | M7                          |
-| FR-014 | Glassmorphism UI with Dark/Light Mode             | All surfaces; tokens Part 6 |
-| FR-015 | Real-time Property Panel                          | S2 property panel           |
-| FR-016 | Multi-document Tabs                               | S2 tab bar (S2-C), M15      |
-| FR-017 | Local Auto-save                                   | S2 status bar, M8           |
-| FR-018 | Frontend SMILES Parsing & Rendering               | Property panel SMILES input |
-| FR-019 | ChemDraw-Compatible Keyboard Shortcuts            | All editor + M5 cheatsheet  |
-| FR-020 | Drag & Drop File Import                           | M13 overlay + M3            |
-| FR-021 | RDKit Backend Compute API                         | (backend) + property panel  |
-| FR-022 | Format Conversion (MVP Set)                       | M3, M4                      |
-| FR-023 | MVP File Import                                   | M3, M9                      |
-| FR-024 | MVP File Export                                   | M4                          |
-| FR-025 | Image Copy-Paste to Office Suites                 | S2 menu Edit + Ctrl+C       |
-| FR-026 | Citation Splash Screen / About Page               | S1, S3                      |
-| FR-027 | EXIF / Metadata Citation Footprint in Exports     | M4 toggle + (background)    |
-| FR-028 | Self-hostable Deployment Bundle                   | (deployment, no UX)         |
-| FR-029 | Static Frontend-only Demo Mode                    | M14 banner + status badge   |
+| FR     | Title                                         | Surface(s)                   |
+| ------ | --------------------------------------------- | ---------------------------- |
+| FR-001 | Interactive 2D Drawing Canvas                 | S2 (canvas), M9              |
+| FR-002 | Atom & Element Placement                      | S2 palette, M1               |
+| FR-003 | Basic Bond Types                              | S2 palette, (canvas)         |
+| FR-004 | Predefined Ring Library — MVP Set             | S2 palette, M2 (Rings tab)   |
+| FR-005 | Quick Carbon Chain Drawing                    | (canvas drag interaction)    |
+| FR-006 | Wedge / Dash Stereochemistry Display          | S2 palette, (canvas)         |
+| FR-007 | Real-time Valence Validation                  | (canvas) + property panel    |
+| FR-008 | Selection Tools — MVP Set                     | S2 palette, (canvas)         |
+| FR-009 | Unlimited Undo / Redo                         | S2 palette + Ctrl+Z/Y        |
+| FR-010 | Standard Edit Operations                      | S2 menu Edit + shortcuts     |
+| FR-011 | Reaction Arrows                               | S2 palette, (canvas)         |
+| FR-012 | Curly Arrows for Mechanisms                   | S2 palette, M6 inline editor |
+| FR-013 | Reaction Condition Annotations                | M7                           |
+| FR-014 | Glassmorphism UI with Dark/Light Mode         | All surfaces; tokens Part 6  |
+| FR-015 | Real-time Property Panel                      | S2 property panel            |
+| FR-016 | Multi-document Tabs                           | S2 tab bar (S2-C), M15       |
+| FR-017 | Local Auto-save                               | S2 status bar, M8            |
+| FR-018 | Frontend SMILES Parsing & Rendering           | Property panel SMILES input  |
+| FR-019 | ChemDraw-Compatible Keyboard Shortcuts        | All editor + M5 cheatsheet   |
+| FR-020 | Drag & Drop File Import                       | M13 overlay + M3             |
+| FR-021 | RDKit Backend Compute API                     | (backend) + property panel   |
+| FR-022 | Format Conversion (MVP Set)                   | M3, M4                       |
+| FR-023 | MVP File Import                               | M3, M9                       |
+| FR-024 | MVP File Export                               | M4                           |
+| FR-025 | Image Copy-Paste to Office Suites             | S2 menu Edit + Ctrl+C        |
+| FR-026 | Citation Splash Screen / About Page           | S1, S3                       |
+| FR-027 | EXIF / Metadata Citation Footprint in Exports | M4 toggle + (background)     |
+| FR-028 | Self-hostable Deployment Bundle               | (deployment, no UX)          |
+| FR-029 | Static Frontend-only Demo Mode                | M14 banner + status badge    |
 
 **29 of 29 MVP FRs covered.** No gaps.
 
 ### 8.2 V1 FR coverage (high-level)
 
-| FR     | Title                                              | Surface(s)             |
-|--------|----------------------------------------------------|------------------------|
-| FR-030 | Advanced Bond Types                                | S2 palette extension   |
-| FR-031 | Lone Pairs and Radicals                            | (canvas) + atom popover |
-| FR-032 | R/S and E/Z Stereo Computation                     | Property panel toggle  |
-| FR-033 | Lasso Selection and Advanced Layout                | S2 palette + Tools menu|
-| FR-034 | Resonance Arrows and Multi-step Schemes            | S2 palette + (canvas)  |
-| FR-035 | Built-in Biomolecule Template Library              | M2 (Built-in tab)      |
-| FR-036 | Common Molecule and Protecting Group Templates     | M2 (Built-in tab)      |
-| FR-037 | User-Defined Custom Templates                      | M2 (My templates tab)  |
-| FR-038 | Drug-Likeness and Physicochemical Properties       | Property panel section |
-| FR-039 | Full Molecular Descriptor Suite                    | Property panel section |
-| FR-040 | IUPAC Name-to-Structure                            | Property panel + Ctrl+I|
-| FR-041 | Structure-to-IUPAC Name                            | Property panel section |
-| FR-042 | Elemental Analysis and Stoichiometry               | Property panel section |
-| FR-043 | CDXML Import / Export                              | M3, M4                 |
-| FR-044 | Additional Chemistry Formats                       | M3, M4                 |
-| FR-045 | Publication-Quality Vector Export                  | M4                     |
-| FR-046 | Customizable Tool Palette                          | S4 Settings → Palette  |
-| FR-047 | Customizable Keyboard Shortcuts                    | S4 Settings → Shortcuts|
-| FR-048 | Integrated Structure Search                        | M10                    |
-| FR-049 | Embedded Chemical Data Tables                      | M11                    |
+| FR     | Title                                          | Surface(s)              |
+| ------ | ---------------------------------------------- | ----------------------- |
+| FR-030 | Advanced Bond Types                            | S2 palette extension    |
+| FR-031 | Lone Pairs and Radicals                        | (canvas) + atom popover |
+| FR-032 | R/S and E/Z Stereo Computation                 | Property panel toggle   |
+| FR-033 | Lasso Selection and Advanced Layout            | S2 palette + Tools menu |
+| FR-034 | Resonance Arrows and Multi-step Schemes        | S2 palette + (canvas)   |
+| FR-035 | Built-in Biomolecule Template Library          | M2 (Built-in tab)       |
+| FR-036 | Common Molecule and Protecting Group Templates | M2 (Built-in tab)       |
+| FR-037 | User-Defined Custom Templates                  | M2 (My templates tab)   |
+| FR-038 | Drug-Likeness and Physicochemical Properties   | Property panel section  |
+| FR-039 | Full Molecular Descriptor Suite                | Property panel section  |
+| FR-040 | IUPAC Name-to-Structure                        | Property panel + Ctrl+I |
+| FR-041 | Structure-to-IUPAC Name                        | Property panel section  |
+| FR-042 | Elemental Analysis and Stoichiometry           | Property panel section  |
+| FR-043 | CDXML Import / Export                          | M3, M4                  |
+| FR-044 | Additional Chemistry Formats                   | M3, M4                  |
+| FR-045 | Publication-Quality Vector Export              | M4                      |
+| FR-046 | Customizable Tool Palette                      | S4 Settings → Palette   |
+| FR-047 | Customizable Keyboard Shortcuts                | S4 Settings → Shortcuts |
+| FR-048 | Integrated Structure Search                    | M10                     |
+| FR-049 | Embedded Chemical Data Tables                  | M11                     |
 
 **20 of 20 V1 FRs covered.**
 
 ### 8.3 NFR coverage
 
-| NFR     | Coverage in this design                                                  |
-|---------|--------------------------------------------------------------------------|
-| NFR-001 | Performance budgets §7.5; canvas-substrate validation §7.6              |
-| NFR-002 | Desktop scope locked §1.1                                                |
-| NFR-003 | Fonts and assets §7.4 are MIT/OFL                                        |
-| NFR-004 | Demo mode (M14) + self-host parity in S3                                 |
-| NFR-005 | M4 export presets (publication, JACS preset)                             |
-| NFR-006 | Part 4 — full WCAG 2.1 AA on non-canvas UI                               |
-| NFR-007 | i18n keys note in §1.1; locale switching deferred to V2                  |
-| NFR-008 | No telemetry — Welcome S1 + Privacy in S4 → Privacy panel                |
+| NFR     | Coverage in this design                                                     |
+| ------- | --------------------------------------------------------------------------- |
+| NFR-001 | Performance budgets §7.5; canvas-substrate validation §7.6                  |
+| NFR-002 | Desktop scope locked §1.1                                                   |
+| NFR-003 | Fonts and assets §7.4 are MIT/OFL                                           |
+| NFR-004 | Demo mode (M14) + self-host parity in S3                                    |
+| NFR-005 | M4 export presets (publication, JACS preset)                                |
+| NFR-006 | Part 4 — full WCAG 2.1 AA on non-canvas UI                                  |
+| NFR-007 | i18n keys note in §1.1; locale switching deferred to V2                     |
+| NFR-008 | No telemetry — Welcome S1 + Privacy in S4 → Privacy panel                   |
 | NFR-009 | n/a (design-side); component library + tokens enable contributor onboarding |
-| NFR-010 | M8 restore prompt + status bar live region + 5 s auto-save               |
-| NFR-011 | S1 + S3 + M4 footprint toggle                                            |
-| NFR-012 | Cheatsheet M5 is one of the five doc artefacts                           |
+| NFR-010 | M8 restore prompt + status bar live region + 5 s auto-save                  |
+| NFR-011 | S1 + S3 + M4 footprint toggle                                               |
+| NFR-012 | Cheatsheet M5 is one of the five doc artefacts                              |
 
 ### 8.4 Open issues remaining for architecture
 
@@ -2051,6 +2173,7 @@ The following items are tracked here but cannot be resolved at UX phase. They fl
 - [x] Design tokens defined (Glasswerk system).
 
 **Sign-off:**
+
 - [x] Product Owner / Designer / Engineering Lead — Jean-Baptiste Donnette (single-person sign-off; this is a solo project)
 - [ ] URD Abbaye review (informal, post-MVP-prototype)
 - [ ] Architecture phase consumer (Phase 3)
@@ -2059,9 +2182,9 @@ The following items are tracked here but cannot be resolved at UX phase. They fl
 
 ## Revision History
 
-| Version | Date       | Author                  | Changes                                                       |
-|---------|------------|-------------------------|---------------------------------------------------------------|
-| 1.0     | 2026-04-12 | Jean-Baptiste Donnette  | Initial UX design covering MVP + V1 across 22 surfaces.       |
+| Version | Date       | Author                 | Changes                                                 |
+| ------- | ---------- | ---------------------- | ------------------------------------------------------- |
+| 1.0     | 2026-04-12 | Jean-Baptiste Donnette | Initial UX design covering MVP + V1 across 22 surfaces. |
 
 ---
 
@@ -2079,5 +2202,5 @@ The following items are tracked here but cannot be resolved at UX phase. They fl
 
 ---
 
-*Generated by BMAD Method v6 — UX Designer workflow.*
-*Design date: 2026-04-12.*
+_Generated by BMAD Method v6 — UX Designer workflow._
+_Design date: 2026-04-12._

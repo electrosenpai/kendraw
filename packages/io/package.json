@@ -1,0 +1,13 @@
+{
+  "name": "@kendraw/io",
+  "version": "0.0.0",
+  "private": true,
+  "description": "File format parsers and writers (MOL, SDF, SMILES, CDXML)",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  }
+}

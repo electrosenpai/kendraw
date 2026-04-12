@@ -28,23 +28,25 @@ Ce document liste les 6 test sets nécessaires, leur cible quantitative, leur m�
 **Cible quantitative :** 100 structures.
 **Composition recommandée :**
 
-| Catégorie                              | Quantité | Notes                                                          |
-|----------------------------------------|----------|----------------------------------------------------------------|
-| Petites molécules organiques (< 30 atomes) | 30       | Aspirine, caféine, paracétamol, glucose, etc.                  |
-| Aromatiques fusionnés                   | 15       | Naphtalène, anthracène, pyrène, indole, quinoléine, etc.       |
-| Stéréochimie complexe                   | 15       | Cholestérol, taxol fragments, β-lactames, sucres avec α/β      |
-| Charges et isotopes                     | 10       | Sels (Na+, Cl-), zwitterions (acides aminés), deutériums       |
-| Hétérocycles inhabituels                | 10       | Imidazoles, triazoles, thiadiazoles, oxazoles                  |
-| Grandes molécules (200-500 atomes)      | 10       | Vancomycine, érythromycine, peptides cycliques courts          |
-| Cas limites / bugs connus de RDKit     | 10       | Aromaticité Hückel ambigüe, kekulisation difficile, etc.       |
+| Catégorie                                  | Quantité | Notes                                                     |
+| ------------------------------------------ | -------- | --------------------------------------------------------- |
+| Petites molécules organiques (< 30 atomes) | 30       | Aspirine, caféine, paracétamol, glucose, etc.             |
+| Aromatiques fusionnés                      | 15       | Naphtalène, anthracène, pyrène, indole, quinoléine, etc.  |
+| Stéréochimie complexe                      | 15       | Cholestérol, taxol fragments, β-lactames, sucres avec α/β |
+| Charges et isotopes                        | 10       | Sels (Na+, Cl-), zwitterions (acides aminés), deutériums  |
+| Hétérocycles inhabituels                   | 10       | Imidazoles, triazoles, thiadiazoles, oxazoles             |
+| Grandes molécules (200-500 atomes)         | 10       | Vancomycine, érythromycine, peptides cycliques courts     |
+| Cas limites / bugs connus de RDKit         | 10       | Aromaticité Hückel ambigüe, kekulisation difficile, etc.  |
 
 **Sources de curation :**
+
 - **PubChem** : structures publiques, libre droit, format SDF natif. Filtrer par molecular weight et complexité.
 - **ChEBI** : ontologie chimique, métadonnées riches (utiles pour étiqueter les test cases).
 - **DrugBank (free tier)** : médicaments approuvés, avec InChI/SMILES de référence.
 - **Curation manuelle** : ajouts ciblés pour les cas limites.
 
 **Format de stockage :**
+
 ```
 tests/fixtures/conversions/
 ├── small/                    # 1-50 atomes
@@ -58,6 +60,7 @@ tests/fixtures/conversions/
 ```
 
 **Critères d'acceptation pour le test set lui-même :**
+
 - Chaque structure existe dans les 3 formats (MOL, SMILES, InChI) avec versions cohérentes.
 - Le `manifest.json` documente : source, licence, MW, formula, canonical SMILES, InChIKey.
 - Aucune licence non MIT-compatible (filtrer DrugBank en conséquence — ils sont CC BY-NC, **interdit** ; utiliser les InChI publics uniquement, qui sont des données factuelles non protégées).
@@ -82,12 +85,14 @@ tests/fixtures/conversions/
 **Source unique :** URD Abbaye. Pas de substitut public satisfaisant — les CDXML synthétiques ne reproduisent pas la réalité d'usage.
 
 **Contraintes légales et éthiques :**
+
 - **Anonymisation** : retirer ou pseudonymiser tout nom de doctorant, chercheur, projet sensible, brevets en cours, données non publiées.
 - **Consentement explicite** des contributeurs URD Abbaye, par écrit (email suffit).
 - **Licence du corpus** : à déterminer avec URD Abbaye. Recommandation : **CC0** ou **CC BY 4.0** sur les fichiers anonymisés, hébergés séparément du repo principal (pas dans `tests/fixtures/` directement, mais téléchargés via script depuis un mirror).
 - **Hors Git** : le corpus ne doit pas être committé dans le repo public. Hébergement séparé (Zenodo dataset, ou bucket S3 avec accès lecture libre, ou simplement un tarball sur le serveur URD Abbaye).
 
 **Format de stockage local (gitignored) :**
+
 ```
 tests/fixtures/cdxml-corpus/
 ├── urd-abbaye/               # gitignored — téléchargé via scripts/fetch-cdxml-corpus.sh
@@ -99,6 +104,7 @@ tests/fixtures/cdxml-corpus/
 ```
 
 **Critères d'acceptation pour le corpus :**
+
 - ≥ 50 fichiers anonymisés et consentis.
 - Couverture d'au moins 3 versions ChemDraw distinctes.
 - Au moins 10 fichiers contenant des curly arrows (test critique pour FR-012 + FR-043).
@@ -117,23 +123,25 @@ tests/fixtures/cdxml-corpus/
 **Cible quantitative :** 200 noms IUPAC avec leur structure de référence.
 **Composition recommandée :**
 
-| Catégorie                              | Quantité | Difficulté                              |
-|----------------------------------------|----------|-----------------------------------------|
-| Alcanes / alcènes / alcynes simples    | 30       | Trivial                                 |
-| Cycliques simples                       | 30       | Facile                                  |
-| Aromatiques substitués                  | 30       | Moyen                                   |
-| Hétérocycles nommés                     | 30       | Moyen                                   |
-| Stéréo (R/S, E/Z)                       | 30       | Difficile                               |
-| Médicaments INN / pharmacopée           | 30       | Difficile (noms longs, multi-stéréo)    |
-| Produits naturels complexes             | 20       | Très difficile                          |
+| Catégorie                           | Quantité | Difficulté                           |
+| ----------------------------------- | -------- | ------------------------------------ |
+| Alcanes / alcènes / alcynes simples | 30       | Trivial                              |
+| Cycliques simples                   | 30       | Facile                               |
+| Aromatiques substitués              | 30       | Moyen                                |
+| Hétérocycles nommés                 | 30       | Moyen                                |
+| Stéréo (R/S, E/Z)                   | 30       | Difficile                            |
+| Médicaments INN / pharmacopée       | 30       | Difficile (noms longs, multi-stéréo) |
+| Produits naturels complexes         | 20       | Très difficile                       |
 
 **Sources de curation :**
+
 - **PubChem** : exposer les CID, récupérer les noms IUPAC officiels via leur API.
 - **ChemSpider** (si licence permet, vérifier) : noms et synonymes.
 - **Wikipedia chemistry** : noms IUPAC pour les molécules notables, généralement bien sourcés.
 - **Validation croisée par un chimiste** : faire relire 20-30 cas tordus par un PhD organicien (un contact URD Abbaye serait idéal).
 
 **Format de stockage :**
+
 ```
 tests/fixtures/iupac/
 ├── names-to-structures.json  # [{ name, expected_smiles, expected_inchi, source, difficulty }]
@@ -154,6 +162,7 @@ tests/fixtures/iupac/
 **Source recommandée :** **mêmes 200 structures** que le test set #3, vérifiées dans les deux directions. Économie d'effort de curation, et test de la réversibilité.
 
 **Format de stockage :**
+
 ```
 tests/fixtures/iupac/
 ├── structures-to-names.json  # [{ smiles, expected_name, accepted_synonyms[], source }]
@@ -172,24 +181,22 @@ tests/fixtures/iupac/
 **Composition recommandée :**
 
 **MVP (5 figures) :**
+
 1. Schéma de réaction simple SN2 avec conditions et arrows.
 2. Mécanisme avec curly arrows électron-pushing (le test critique pour FR-012).
 3. Structure complexe avec stéréochimie wedge/dash.
 4. Schéma multi-étapes avec produits intermédiaires.
 5. Figure annotée pour handout pédagogique (style chimiste enseignant).
 
-**V1 (5 figures additionnelles) :**
-6. Schéma de résonance avec arrows résonance.
-7. Biomolécule complexe (peptide, sucre) à partir des templates.
-8. Figure publication-quality JACS-like avec typographie soignée.
-9. Schéma multi-page extrait d'un fichier SDF.
-10. Figure incluant annotations rich-text (sub/super, lettres grecques).
+**V1 (5 figures additionnelles) :** 6. Schéma de résonance avec arrows résonance. 7. Biomolécule complexe (peptide, sucre) à partir des templates. 8. Figure publication-quality JACS-like avec typographie soignée. 9. Schéma multi-page extrait d'un fichier SDF. 10. Figure incluant annotations rich-text (sub/super, lettres grecques).
 
 **Sources :**
+
 - **Articles JACS / Angewandte / Org. Lett.** récents (style benchmarks visuels).
 - **Cours URD Abbaye** : si Marc (persona enseignant) peut partager des handouts existants comme référence stylistique.
 
 **Format de stockage :**
+
 ```
 tests/fixtures/reference-figures/
 ├── mvp/
@@ -213,10 +220,12 @@ tests/fixtures/reference-figures/
 **Cible quantitative :** 4 ensembles de structures à 100, 250, 500, 750 atomes.
 
 **Composition recommandée :**
+
 - **Synthétiques générées** (acceptable) : algorithme déterministe générant des structures aléatoires de taille cible (chaînes carbonées, fused rings, sucres polymérisés). Reproductible, déterministe, versionnable.
 - **Réelles** (idéal pour les grosses tailles) : protéines courtes, polysaccharides, dendrimères. Issu de PubChem ou PDB (PDB convertible vers MOL via RDKit).
 
 **Format de stockage :**
+
 ```
 tests/fixtures/perf-benchmarks/
 ├── synthetic/
@@ -233,6 +242,7 @@ tests/fixtures/perf-benchmarks/
 ```
 
 **Critères d'acceptation pour les benchmarks :**
+
 - Au moins 5 structures par taille cible (pour mesurer une moyenne, pas un cas pathologique).
 - Reproductibilité : si générées, le seed et l'algo sont versionnés dans le repo.
 - Mesures bench codifiées : `packages/scene/bench/perf-500.bench.ts` (référencé en §10.2 du doc d'architecture).
@@ -243,14 +253,14 @@ tests/fixtures/perf-benchmarks/
 
 ## 2. Récapitulatif effort & calendrier
 
-| Test set                          | Effort dev | Effort calendrier  | Bloque               | Démarrage   |
-|-----------------------------------|------------|--------------------|-----------------------|-------------|
-| #1 — Conversions (100)            | 1-2 j      | 1 semaine          | Tests CI continus    | Sprint 1    |
-| #2 — CDXML URD Abbaye (50-100)    | 0.5 j      | **2-4 semaines**  | POC #3 / V1          | **Maintenant** |
-| #3 — IUPAC names → struct (200)   | 2-3 j      | 1 semaine          | POC #4 / V1          | Pré-V1      |
-| #4 — IUPAC struct → names (200)   | mutualisé  | mutualisé          | POC #4 / V1          | Pré-V1      |
-| #5 — Figures publication (10)     | 2-3 j      | 1 semaine          | NFR-005 / release    | Post-MVP    |
-| #6 — Perf benchmarks (4 tailles)  | 1.5 j      | quelques jours     | POC #1 / dev MVP     | Sprint 1    |
+| Test set                         | Effort dev | Effort calendrier | Bloque            | Démarrage      |
+| -------------------------------- | ---------- | ----------------- | ----------------- | -------------- |
+| #1 — Conversions (100)           | 1-2 j      | 1 semaine         | Tests CI continus | Sprint 1       |
+| #2 — CDXML URD Abbaye (50-100)   | 0.5 j      | **2-4 semaines**  | POC #3 / V1       | **Maintenant** |
+| #3 — IUPAC names → struct (200)  | 2-3 j      | 1 semaine         | POC #4 / V1       | Pré-V1         |
+| #4 — IUPAC struct → names (200)  | mutualisé  | mutualisé         | POC #4 / V1       | Pré-V1         |
+| #5 — Figures publication (10)    | 2-3 j      | 1 semaine         | NFR-005 / release | Post-MVP       |
+| #6 — Perf benchmarks (4 tailles) | 1.5 j      | quelques jours    | POC #1 / dev MVP  | Sprint 1       |
 
 **Items à démarrer immédiatement (avant ou pendant Sprint 1) :**
 
@@ -295,6 +305,7 @@ kendraw/
 ```
 
 `.gitignore` ajoute :
+
 ```
 tests/fixtures/cdxml-corpus/urd-abbaye/
 ```
@@ -320,11 +331,13 @@ Le README de `tests/fixtures/cdxml-corpus/` documentera la procédure de téléc
 > Concrètement, je sollicite votre aide pour constituer un **corpus de 50 à 100 fichiers `.cdxml`** issus de votre travail courant ou archivé, qui serviront de banc d'essai à un POC de fidélité de conversion.
 >
 > **Ce dont j'ai besoin idéalement :**
+>
 > - Des fichiers `.cdxml` couvrant : structures complexes, schémas réactionnels, mécanismes avec flèches courbes, schémas multi-étapes, annotations.
 > - Des fichiers générés par plusieurs versions de ChemDraw si vous en avez (les anciennes versions sont précieuses).
 > - Une diversité de chimie représentative de vos travaux (synthèse organique, médicinale, etc.).
 >
 > **Engagements de ma part :**
+>
 > - **Anonymisation complète** : tous les noms, références internes, projets sensibles, brevets en cours, données non publiées seront retirés ou pseudonymisés avant tout usage. Je peux faire l'anonymisation moi-même si vous me fournissez les fichiers, ou vous indiquer comment le faire avant transfert — comme vous préférez.
 > - **Consentement explicite par écrit** : un simple email de votre part suffit, je n'ai besoin d'aucun document formel.
 > - **Usage strictement limité** au test set du projet Kendraw. Pas de redistribution publique sans votre accord explicite.
@@ -355,14 +368,14 @@ Le README de `tests/fixtures/cdxml-corpus/` documentera la procédure de téléc
 
 ## Annexe B — Vérification licence pour les sources publiques
 
-| Source        | Licence des données  | MIT-compat ?              | Usage Kendraw                                          |
-|---------------|----------------------|---------------------------|--------------------------------------------------------|
-| **PubChem**   | Domaine public       | ✓                          | Test sets #1, #3, #4 — sans restriction                |
-| **ChEBI**     | CC BY 4.0           | ✓ (avec attribution)       | Test set #1 — citer dans `manifest.json`               |
-| **DrugBank**  | CC BY-NC 4.0        | ✗ pour usage commercial   | **Interdit** dans Kendraw OSS — utiliser PubChem à la place |
-| **PDB**       | CC0                  | ✓                          | Test set #6 (perf, structures réelles)                  |
-| **ChemSpider**| Restrictions API     | ⚠ vérifier au cas par cas | Préférer PubChem si possible                            |
-| **Wikipedia** | CC BY-SA 3.0        | ✓ (avec attribution)       | Référence pour test set #3 — citer la source            |
+| Source         | Licence des données | MIT-compat ?              | Usage Kendraw                                               |
+| -------------- | ------------------- | ------------------------- | ----------------------------------------------------------- |
+| **PubChem**    | Domaine public      | ✓                         | Test sets #1, #3, #4 — sans restriction                     |
+| **ChEBI**      | CC BY 4.0           | ✓ (avec attribution)      | Test set #1 — citer dans `manifest.json`                    |
+| **DrugBank**   | CC BY-NC 4.0        | ✗ pour usage commercial   | **Interdit** dans Kendraw OSS — utiliser PubChem à la place |
+| **PDB**        | CC0                 | ✓                         | Test set #6 (perf, structures réelles)                      |
+| **ChemSpider** | Restrictions API    | ⚠ vérifier au cas par cas | Préférer PubChem si possible                                |
+| **Wikipedia**  | CC BY-SA 3.0        | ✓ (avec attribution)      | Référence pour test set #3 — citer la source                |
 
 **Règle générale :** seules les sources avec licence permettant la redistribution dans un projet OSS MIT sont utilisables. Si un test set utilise des données CC BY ou CC BY-SA, le `manifest.json` doit citer la source ligne par ligne.
 
@@ -370,4 +383,4 @@ Le README de `tests/fixtures/cdxml-corpus/` documentera la procédure de téléc
 
 **Statut :** Ce plan est l'output de la recommandation R3 du Solutioning Gate Check. Il est approuvé pour exécution dès le démarrage de Phase 4. La constitution effective des test sets sera trackée dans les stories du Sprint Planning (§ next).
 
-*Pour suite : `/sprint-planning` pour décomposer les 12 epics en stories, en intégrant les stories de constitution de test sets dans les premiers sprints.*
+_Pour suite : `/sprint-planning` pour décomposer les 12 epics en stories, en intégrant les stories de constitution de test sets dans les premiers sprints._

@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+title: Kendraw
+message: >-
+  If you use Kendraw in your research, please cite it using
+  the metadata from this file.
+type: software
+authors:
+  - given-names: Jean-Baptiste
+    family-names: Donnette
+    orcid: ''
+repository-code: 'https://github.com/electrosenpai/kendraw'
+url: 'https://github.com/electrosenpai/kendraw'
+license: MIT
+version: 0.0.0
+date-released: '2026-04-12'
+keywords:
+  - chemistry
+  - molecular-editor
+  - chemdraw
+  - open-source
+  - web-application
+  - rdkit

@@ -1,0 +1,13 @@
+{
+  "name": "@kendraw/renderer-canvas",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Canvas 2D screen renderer",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  }
+}

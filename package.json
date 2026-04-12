@@ -1,0 +1,45 @@
+{
+  "name": "kendraw",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Open-source modern web successor to ChemDraw",
+  "author": "Jean-Baptiste Donnette <electrosenpai@users.noreply.github.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/electrosenpai/kendraw.git"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@10.33.0",
+  "scripts": {
+    "typecheck": "pnpm -r typecheck",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint .",
+    "build": "pnpm --filter @kendraw/ui build",
+    "dev": "pnpm --filter @kendraw/ui dev",
+    "format": "prettier --write \"**/*.{ts,tsx,json,md,yml,yaml}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,json,md,yml,yaml}\"",
+    "prepare": "husky"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^20.5.0",
+    "@commitlint/config-conventional": "^20.5.0",
+    "@vitest/coverage-v8": "^4.1.4",
+    "eslint": "^10.2.0",
+    "husky": "^9.1.7",
+    "prettier": "^3.8.2",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.4"
+  }
+}

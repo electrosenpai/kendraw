@@ -1,0 +1,40 @@
+# Auto detect text files and normalise line endings
+* text=auto
+
+# Force LF for web source files
+*.ts text eol=lf
+*.tsx text eol=lf
+*.js text eol=lf
+*.jsx text eol=lf
+*.json text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# Python
+*.py text eol=lf
+
+# Chemistry file formats — treat as text for better diffs
+*.mol text eol=lf
+*.sdf text eol=lf
+*.smi text eol=lf
+*.cml text eol=lf
+*.rxn text eol=lf
+*.cdxml text eol=lf
+
+# Binary
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+*.wasm binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+
+# Lock files — generated, don't diff
+pnpm-lock.yaml -diff
+uv.lock -diff

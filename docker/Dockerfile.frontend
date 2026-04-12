@@ -1,0 +1,46 @@
+# Stage 1: Build the Vite frontend bundle
+FROM node:20-alpine AS build
+
+# Enable pnpm via corepack
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+WORKDIR /app
+
+# Copy workspace config first (layer caching)
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
+
+# Copy all package.json files for dependency resolution
+COPY packages/scene/package.json packages/scene/package.json
+COPY packages/chem/package.json packages/chem/package.json
+COPY packages/renderer-canvas/package.json packages/renderer-canvas/package.json
+COPY packages/renderer-svg/package.json packages/renderer-svg/package.json
+COPY packages/persistence/package.json packages/persistence/package.json
+COPY packages/io/package.json packages/io/package.json
+COPY packages/api-client/package.json packages/api-client/package.json
+COPY packages/ui/package.json packages/ui/package.json
+
+# Install dependencies (cached unless lockfile changes)
+RUN pnpm install --frozen-lockfile
+
+# Copy source code
+COPY packages/ packages/
+COPY tsconfig.base.json ./
+
+# Build the UI package
+RUN pnpm --filter @kendraw/ui build
+
+
+# Stage 2: Serve with nginx
+FROM nginx:alpine
+
+# Remove default nginx config
+RUN rm /etc/nginx/conf.d/default.conf
+
+# Copy our nginx config
+COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
+
+# Copy built frontend from build stage
+COPY --from=build /app/packages/ui/dist /usr/share/nginx/html
+
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]

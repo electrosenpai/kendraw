@@ -1,0 +1,12 @@
+import { defineWorkspace } from 'vitest/config';
+
+export default defineWorkspace([
+  'packages/scene',
+  'packages/chem',
+  'packages/renderer-canvas',
+  'packages/renderer-svg',
+  'packages/persistence',
+  'packages/io',
+  'packages/api-client',
+  'packages/ui',
+]);

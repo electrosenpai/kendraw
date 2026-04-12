@@ -16,12 +16,14 @@ Ce document définit l'architecture technique de **Kendraw**, le successeur web 
 L'architecture est résolument pragmatique : elle reflète la réalité d'un projet **OSS, MIT, solo (au démarrage), auto-hébergé, sans cloud, sans télémétrie, sans comptes utilisateur**. Les sections "scaling horizontal", "multi-AZ", "auto-scaling", "DR" présentes dans le template d'architecture standard sont délibérément réduites — elles n'ont pas de sens pour Kendraw — et leurs équivalents pertinents (perf frontend, optimisation RDKit, dégradation gracieuse, auto-save sans perte) sont en revanche traités en profondeur.
 
 **Documents liés :**
+
 - Product Brief : `docs/product-brief-kendraw-2026-04-12.md`
 - Product Requirements Document : `docs/prd-kendraw-2026-04-12.md`
 - UX Design : `docs/ux-design-kendraw-2026-04-12.md`
 - Workflow status : `docs/bmm-workflow-status.yaml`
 
 **Guide de lecture :**
+
 - §1–2 : synthèse, drivers architecturaux validés.
 - §3 : pattern, diagramme, flux de données principal.
 - §4 : stack technologique justifiée poste par poste.
@@ -64,16 +66,16 @@ L'architecture est pensée autour d'un seul critère existentiel : **fluidité d
 
 Les drivers architecturaux sont les exigences (essentiellement non-fonctionnelles) qui forcent des décisions structurantes. Validés avec le Product Owner avant la rédaction du document.
 
-| #     | Driver                                                       | Origine             | Conséquence architecturale                                                                                                                                                                                                            |
-|-------|--------------------------------------------------------------|---------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **D1** | Fluidité 500 atomes (≥30 fps, frame budget < 16 ms)         | NFR-001             | Modèle de scène immuable + diff incrémental ; rendu Canvas 2D ; spatial index ; zéro round-trip réseau dans la boucle d'édition ; web workers pour les opérations lourdes hors UI thread. **Driver principal — un échec ici tue le projet.** |
-| **D2** | Auto-hébergement, zéro cloud obligatoire                    | NFR-004 + NFR-008   | Aucun service géré, aucun broker, aucune base externe. Une seule unité déployable (`docker compose up`). Toute "scalability" est verticale et par instance.                                                                          |
-| **D3** | Compatibilité licence MIT                                   | NFR-003             | Audit licences en CI (`license-checker` frontend, `pip-licenses` backend). Filtre dur sur GPL/LGPL/AGPL. Choix RDKit (BSD-3) et OPSIN (Apache-2) explicitement validés.                                                              |
-| **D4** | Mode démo frontend-only sur GitHub Pages                    | FR-029              | Le frontend doit fonctionner sans backend. Deux profils de build (`full` / `static-demo`) pilotés par feature flags compile-time. Les features RDKit-backend sont désactivées gracieusement avec UI explicite.                       |
-| **D5** | Qualité vectorielle publication (JACS / Angewandte)         | NFR-005 + FR-024 + FR-045 | Pipeline d'export SVG dédié (`renderer-svg` séparé du `renderer-canvas`). Polices embarquées, géométrie propre, pas de couches rasterisées. Métadonnées de citation (FR-027) injectées en dernier maillon.                          |
-| **D6** | Auto-save sans perte (< 5 s)                                 | NFR-010 + FR-017    | IndexedDB (jamais localStorage), write-ahead via worker dédié, scheduler debounced, restore-on-reload one-click.                                                                                                                      |
-| **D7** | Codebase appropriable par contributeurs externes            | NFR-009             | Frontières strictes par packages, dépendances unidirectionnelles, abstractions explicites (`Renderer`, `ChemAdapter`, `PersistenceStore`), tests > 80 % sur les chemins compute, CI complète, `CONTRIBUTING.md`. **Mitigation directe du risque #1 du brief : burnout solo.** |
-| **D8** | i18n sans refacto                                            | NFR-007             | `t('clé')` partout dès le MVP via Lingui (extraction statique), locale EN canonique, interdiction des chaînes hardcodées dans les composants.                                                                                       |
+| #      | Driver                                              | Origine                   | Conséquence architecturale                                                                                                                                                                                                                                                    |
+| ------ | --------------------------------------------------- | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **D1** | Fluidité 500 atomes (≥30 fps, frame budget < 16 ms) | NFR-001                   | Modèle de scène immuable + diff incrémental ; rendu Canvas 2D ; spatial index ; zéro round-trip réseau dans la boucle d'édition ; web workers pour les opérations lourdes hors UI thread. **Driver principal — un échec ici tue le projet.**                                  |
+| **D2** | Auto-hébergement, zéro cloud obligatoire            | NFR-004 + NFR-008         | Aucun service géré, aucun broker, aucune base externe. Une seule unité déployable (`docker compose up`). Toute "scalability" est verticale et par instance.                                                                                                                   |
+| **D3** | Compatibilité licence MIT                           | NFR-003                   | Audit licences en CI (`license-checker` frontend, `pip-licenses` backend). Filtre dur sur GPL/LGPL/AGPL. Choix RDKit (BSD-3) et OPSIN (Apache-2) explicitement validés.                                                                                                       |
+| **D4** | Mode démo frontend-only sur GitHub Pages            | FR-029                    | Le frontend doit fonctionner sans backend. Deux profils de build (`full` / `static-demo`) pilotés par feature flags compile-time. Les features RDKit-backend sont désactivées gracieusement avec UI explicite.                                                                |
+| **D5** | Qualité vectorielle publication (JACS / Angewandte) | NFR-005 + FR-024 + FR-045 | Pipeline d'export SVG dédié (`renderer-svg` séparé du `renderer-canvas`). Polices embarquées, géométrie propre, pas de couches rasterisées. Métadonnées de citation (FR-027) injectées en dernier maillon.                                                                    |
+| **D6** | Auto-save sans perte (< 5 s)                        | NFR-010 + FR-017          | IndexedDB (jamais localStorage), write-ahead via worker dédié, scheduler debounced, restore-on-reload one-click.                                                                                                                                                              |
+| **D7** | Codebase appropriable par contributeurs externes    | NFR-009                   | Frontières strictes par packages, dépendances unidirectionnelles, abstractions explicites (`Renderer`, `ChemAdapter`, `PersistenceStore`), tests > 80 % sur les chemins compute, CI complète, `CONTRIBUTING.md`. **Mitigation directe du risque #1 du brief : burnout solo.** |
+| **D8** | i18n sans refacto                                   | NFR-007                   | `t('clé')` partout dès le MVP via Lingui (extraction statique), locale EN canonique, interdiction des chaînes hardcodées dans les composants.                                                                                                                                 |
 
 **NFR traités comme contraintes plutôt que drivers** (n'imposent pas de choix structurel mais doivent être satisfaites) :
 
@@ -228,28 +230,28 @@ Choix systématique avec justification poste par poste. Toute alternative envisa
 
 ### 4.1 Frontend
 
-| Élément                        | Choix                                                       | Licence       |
-|--------------------------------|-------------------------------------------------------------|---------------|
-| Langage                        | **TypeScript 5.x** (strict mode, `noUncheckedIndexedAccess`) | Apache-2      |
-| Framework UI                   | **React 18.x**                                              | MIT           |
-| Build / dev server             | **Vite 5.x**                                                | MIT           |
-| State manager (UI)             | **Zustand 4.x**                                             | MIT           |
-| State manager (cache backend)  | **TanStack Query 5.x**                                      | MIT           |
-| State manager (domaine)        | **Custom store** (`@kendraw/scene`) + `useSyncExternalStore` + **Immer** | MIT |
-| Lib chimie                     | **RDKit.js (WASM)** — fallback **OpenChemLib JS** en démo  | BSD-3 / BSD-2 |
-| Rendu écran                    | **Canvas 2D natif** (pas de lib) — abstraction `Renderer`  | n/a           |
-| Rendu export                   | **SVG natif** (génération directe via DOM-less builder)    | n/a           |
-| Persistance locale             | **IndexedDB via Dexie 4.x**                                | Apache-2      |
-| i18n                           | **Lingui 4.x** (extraction statique, ICU)                  | MIT           |
-| Routing                        | **React Router 6.x**                                        | MIT           |
-| Styling                        | **CSS Modules** + **CSS variables** (tokens "Glasswerk")   | n/a           |
-| Animation                      | **Framer Motion** (lazy-loadé, hors hot path canvas)       | MIT           |
-| Tests unitaires                | **Vitest**                                                  | MIT           |
-| Tests E2E                      | **Playwright**                                              | Apache-2      |
-| Tests visuels                  | **Playwright snapshots**                                    | Apache-2      |
-| Linter                         | **ESLint** + plugin TS strict                               | MIT           |
-| Formatter                      | **Prettier** (config minimale, défaut)                     | MIT           |
-| Package manager                | **pnpm 9.x** (workspaces)                                  | MIT           |
+| Élément                       | Choix                                                                    | Licence       |
+| ----------------------------- | ------------------------------------------------------------------------ | ------------- |
+| Langage                       | **TypeScript 5.x** (strict mode, `noUncheckedIndexedAccess`)             | Apache-2      |
+| Framework UI                  | **React 18.x**                                                           | MIT           |
+| Build / dev server            | **Vite 5.x**                                                             | MIT           |
+| State manager (UI)            | **Zustand 4.x**                                                          | MIT           |
+| State manager (cache backend) | **TanStack Query 5.x**                                                   | MIT           |
+| State manager (domaine)       | **Custom store** (`@kendraw/scene`) + `useSyncExternalStore` + **Immer** | MIT           |
+| Lib chimie                    | **RDKit.js (WASM)** — fallback **OpenChemLib JS** en démo                | BSD-3 / BSD-2 |
+| Rendu écran                   | **Canvas 2D natif** (pas de lib) — abstraction `Renderer`                | n/a           |
+| Rendu export                  | **SVG natif** (génération directe via DOM-less builder)                  | n/a           |
+| Persistance locale            | **IndexedDB via Dexie 4.x**                                              | Apache-2      |
+| i18n                          | **Lingui 4.x** (extraction statique, ICU)                                | MIT           |
+| Routing                       | **React Router 6.x**                                                     | MIT           |
+| Styling                       | **CSS Modules** + **CSS variables** (tokens "Glasswerk")                 | n/a           |
+| Animation                     | **Framer Motion** (lazy-loadé, hors hot path canvas)                     | MIT           |
+| Tests unitaires               | **Vitest**                                                               | MIT           |
+| Tests E2E                     | **Playwright**                                                           | Apache-2      |
+| Tests visuels                 | **Playwright snapshots**                                                 | Apache-2      |
+| Linter                        | **ESLint** + plugin TS strict                                            | MIT           |
+| Formatter                     | **Prettier** (config minimale, défaut)                                   | MIT           |
+| Package manager               | **pnpm 9.x** (workspaces)                                                | MIT           |
 
 **Justifications notables :**
 
@@ -261,20 +263,20 @@ Choix systématique avec justification poste par poste. Toute alternative envisa
 
 ### 4.2 Backend
 
-| Élément                  | Choix                                              | Licence       |
-|--------------------------|----------------------------------------------------|---------------|
-| Langage                  | **Python 3.11+** (PEP 604, `match`, perf)         | PSF           |
-| Framework API            | **FastAPI 0.110+**                                 | MIT           |
-| ASGI server              | **Uvicorn** (workers via gunicorn en prod)        | BSD-3         |
-| Validation               | **Pydantic 2.x** (strict mode)                    | MIT           |
-| Lib chimie               | **RDKit (Python bindings)** version pinnée        | BSD-3         |
-| Nomenclature IUPAC (V1)  | **OPSIN** via `py2opsin` ou sidecar JVM (POC #4)  | Apache-2      |
-| Configuration            | **Pydantic Settings**                              | MIT           |
-| Logging                  | **structlog** (JSON en prod, pretty en dev)       | Apache-2/MIT  |
-| Tests                    | **pytest** + **pytest-asyncio** + **hypothesis**  | MIT           |
-| Linter / formatter       | **Ruff** (lint + format en un seul outil)         | MIT           |
-| Type checker             | **mypy strict**                                    | MIT           |
-| Dependency management    | **uv** (pip-compatible, ultra-rapide)             | Apache-2/MIT  |
+| Élément                 | Choix                                            | Licence      |
+| ----------------------- | ------------------------------------------------ | ------------ |
+| Langage                 | **Python 3.11+** (PEP 604, `match`, perf)        | PSF          |
+| Framework API           | **FastAPI 0.110+**                               | MIT          |
+| ASGI server             | **Uvicorn** (workers via gunicorn en prod)       | BSD-3        |
+| Validation              | **Pydantic 2.x** (strict mode)                   | MIT          |
+| Lib chimie              | **RDKit (Python bindings)** version pinnée       | BSD-3        |
+| Nomenclature IUPAC (V1) | **OPSIN** via `py2opsin` ou sidecar JVM (POC #4) | Apache-2     |
+| Configuration           | **Pydantic Settings**                            | MIT          |
+| Logging                 | **structlog** (JSON en prod, pretty en dev)      | Apache-2/MIT |
+| Tests                   | **pytest** + **pytest-asyncio** + **hypothesis** | MIT          |
+| Linter / formatter      | **Ruff** (lint + format en un seul outil)        | MIT          |
+| Type checker            | **mypy strict**                                  | MIT          |
+| Dependency management   | **uv** (pip-compatible, ultra-rapide)            | Apache-2/MIT |
 
 **Justifications notables :**
 
@@ -286,27 +288,27 @@ Choix systématique avec justification poste par poste. Toute alternative envisa
 
 ### 4.3 Persistance & données
 
-| Élément                  | Choix                                       | Notes                                                        |
-|--------------------------|---------------------------------------------|--------------------------------------------------------------|
-| Persistance frontend     | **IndexedDB via Dexie 4.x**                 | Documents, onglets, historique d'undo, templates utilisateur, paramètres |
-| Format d'échange interne | **JSON `.kdx`** (Kendraw eXchange)          | Sérialisation canonique du modèle de scène                  |
-| Format public principal  | **MOL v2000 + SDF + SMILES + InChI**        | Round-trip MVP                                               |
-| Format public V1         | **CDXML, CML, RXN**                         | Round-trip via backend                                       |
-| Format export            | **PNG, SVG (MVP), PDF, EPS (V1)**           | Pipeline `renderer-svg` + post-processing                    |
-| Backend                  | **Stateless** — aucune base                 | Voir §6.4 pour la justification                              |
-| (V1+ optionnel)          | **SQLite** pour templates partagés institutionnels | Optionnel, désactivé par défaut, monté en volume Docker       |
+| Élément                  | Choix                                              | Notes                                                                    |
+| ------------------------ | -------------------------------------------------- | ------------------------------------------------------------------------ |
+| Persistance frontend     | **IndexedDB via Dexie 4.x**                        | Documents, onglets, historique d'undo, templates utilisateur, paramètres |
+| Format d'échange interne | **JSON `.kdx`** (Kendraw eXchange)                 | Sérialisation canonique du modèle de scène                               |
+| Format public principal  | **MOL v2000 + SDF + SMILES + InChI**               | Round-trip MVP                                                           |
+| Format public V1         | **CDXML, CML, RXN**                                | Round-trip via backend                                                   |
+| Format export            | **PNG, SVG (MVP), PDF, EPS (V1)**                  | Pipeline `renderer-svg` + post-processing                                |
+| Backend                  | **Stateless** — aucune base                        | Voir §6.4 pour la justification                                          |
+| (V1+ optionnel)          | **SQLite** pour templates partagés institutionnels | Optionnel, désactivé par défaut, monté en volume Docker                  |
 
 ### 4.4 Infrastructure & déploiement
 
-| Élément                  | Choix                                           | Notes                                                              |
-|--------------------------|-------------------------------------------------|--------------------------------------------------------------------|
-| Conteneurisation         | **Docker** (deux images : frontend nginx + backend uvicorn) | Image backend basée sur `python:3.11-slim`                         |
-| Orchestration            | **docker-compose** (un seul `docker-compose.yml`) | Pas de Kubernetes. Pas de Swarm. Une commande, deux services.      |
-| Reverse proxy / TLS      | **À la charge de l'utilisateur** (Caddy / nginx / Traefik) | Documentation fournie, mais non bundlée                            |
-| Cible cloud              | **Aucune obligatoire**                          | Tournera sur n'importe quel laptop, NUC, VM, Raspberry Pi 4/5      |
-| Démo publique            | **GitHub Pages** (frontend statique uniquement) | Profil de build `static-demo`, déployé via GitHub Actions          |
-| Monitoring               | **Optionnel** — `/health` exposé par le backend, l'utilisateur branche ce qu'il veut | Pas de Datadog, pas de Prometheus bundlé                           |
-| Logging                  | **stdout structuré** (JSON via structlog)       | L'utilisateur récupère via `docker logs` ou son agrégateur de choix |
+| Élément             | Choix                                                                                | Notes                                                               |
+| ------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------- |
+| Conteneurisation    | **Docker** (deux images : frontend nginx + backend uvicorn)                          | Image backend basée sur `python:3.11-slim`                          |
+| Orchestration       | **docker-compose** (un seul `docker-compose.yml`)                                    | Pas de Kubernetes. Pas de Swarm. Une commande, deux services.       |
+| Reverse proxy / TLS | **À la charge de l'utilisateur** (Caddy / nginx / Traefik)                           | Documentation fournie, mais non bundlée                             |
+| Cible cloud         | **Aucune obligatoire**                                                               | Tournera sur n'importe quel laptop, NUC, VM, Raspberry Pi 4/5       |
+| Démo publique       | **GitHub Pages** (frontend statique uniquement)                                      | Profil de build `static-demo`, déployé via GitHub Actions           |
+| Monitoring          | **Optionnel** — `/health` exposé par le backend, l'utilisateur branche ce qu'il veut | Pas de Datadog, pas de Prometheus bundlé                            |
+| Logging             | **stdout structuré** (JSON via structlog)                                            | L'utilisateur récupère via `docker logs` ou son agrégateur de choix |
 
 **Pas de Kubernetes, pas de cloud provider, pas d'IaC (Terraform/Pulumi).** C'est délibéré : l'utilisateur cible (PhD chimiste) doit pouvoir lancer Kendraw sans rien savoir de tout ça.
 
@@ -316,27 +318,27 @@ Choix systématique avec justification poste par poste. Toute alternative envisa
 
 **Services tiers utilisés par le projet (pas par l'instance utilisateur) :**
 
-| Service         | Usage                                                | Obligatoire pour l'utilisateur ?     |
-|-----------------|------------------------------------------------------|---------------------------------------|
-| GitHub          | Hébergement code, issues, PRs, Actions CI            | Non — fork possible, mirror possible  |
-| GitHub Pages    | Démo statique frontend-only                          | Non — usage demo seulement            |
-| GitHub Actions  | CI (lint, tests, build, license-scan, release)      | Non — local CI possible via `act`     |
-| Zenodo          | DOI minting pour les releases (citation académique) | Non — feature optionnelle             |
-| Docker Hub / GHCR | Distribution des images Docker                     | Non — build local possible            |
+| Service           | Usage                                               | Obligatoire pour l'utilisateur ?     |
+| ----------------- | --------------------------------------------------- | ------------------------------------ |
+| GitHub            | Hébergement code, issues, PRs, Actions CI           | Non — fork possible, mirror possible |
+| GitHub Pages      | Démo statique frontend-only                         | Non — usage demo seulement           |
+| GitHub Actions    | CI (lint, tests, build, license-scan, release)      | Non — local CI possible via `act`    |
+| Zenodo            | DOI minting pour les releases (citation académique) | Non — feature optionnelle            |
+| Docker Hub / GHCR | Distribution des images Docker                      | Non — build local possible           |
 
 ### 4.6 Outillage dev & CI/CD
 
-| Élément                  | Choix                                     | Notes                                                              |
-|--------------------------|-------------------------------------------|--------------------------------------------------------------------|
-| Versionning              | **Git** + **GitHub**                      | Branche `main`, PRs avec review, conventional commits              |
-| CI                       | **GitHub Actions**                        | Voir §12.3 pour le pipeline détaillé                               |
-| Audit licences (FR)      | **license-checker** (npm)                 | Bloque les merges introduisant GPL/LGPL/AGPL                       |
-| Audit licences (BE)      | **pip-licenses** + **liccheck**           | Idem côté Python                                                   |
-| Bundle size guard        | **size-limit** (frontend)                 | Bundle initial < 350 KB gzip (hors WASM RDKit.js)                  |
-| Sécurité dépendances     | **Dependabot** + **npm audit** + **pip-audit** | Alertes hebdomadaires                                              |
-| Couverture de tests      | **vitest --coverage** + **pytest --cov**  | Cible ≥ 80 % sur les chemins compute (NFR-009)                     |
-| Visual regression        | **Playwright snapshots**                  | Sur les exports SVG/PNG critiques                                  |
-| Performance benchmarks   | **vitest bench** + suite POC #1 codifiée | Run manuel + sur tag release                                       |
+| Élément                | Choix                                          | Notes                                                 |
+| ---------------------- | ---------------------------------------------- | ----------------------------------------------------- |
+| Versionning            | **Git** + **GitHub**                           | Branche `main`, PRs avec review, conventional commits |
+| CI                     | **GitHub Actions**                             | Voir §12.3 pour le pipeline détaillé                  |
+| Audit licences (FR)    | **license-checker** (npm)                      | Bloque les merges introduisant GPL/LGPL/AGPL          |
+| Audit licences (BE)    | **pip-licenses** + **liccheck**                | Idem côté Python                                      |
+| Bundle size guard      | **size-limit** (frontend)                      | Bundle initial < 350 KB gzip (hors WASM RDKit.js)     |
+| Sécurité dépendances   | **Dependabot** + **npm audit** + **pip-audit** | Alertes hebdomadaires                                 |
+| Couverture de tests    | **vitest --coverage** + **pytest --cov**       | Cible ≥ 80 % sur les chemins compute (NFR-009)        |
+| Visual regression      | **Playwright snapshots**                       | Sur les exports SVG/PNG critiques                     |
+| Performance benchmarks | **vitest bench** + suite POC #1 codifiée       | Run manuel + sur tag release                          |
 
 ---
 
@@ -351,6 +353,7 @@ L'architecture est organisée en **packages indépendants aux frontières strict
 **Rôle :** Modèle de scène immuable, command bus, undo/redo, validateurs, spatial index, sérialisation native `.kdx`.
 
 **Responsabilités :**
+
 - Représenter l'état d'un document (Document → Pages → Atoms / Bonds / Arrows / Annotations / Groups).
 - Appliquer les commandes utilisateur via Immer (structural sharing).
 - Maintenir l'historique d'undo/redo par document avec command merging (ex. : drag continu = un seul `MoveSelection` mergé).
@@ -359,6 +362,7 @@ L'architecture est organisée en **packages indépendants aux frontières strict
 - Sérialiser/désérialiser le format natif `.kdx` (JSON canonique).
 
 **Interfaces exposées :**
+
 ```ts
 interface SceneStore {
   getState(): Document;
@@ -369,7 +373,7 @@ interface SceneStore {
   canUndo(): boolean;
   canRedo(): boolean;
   hitTest(x: number, y: number, radius?: number): HitResult | null;
-  serialize(): string;          // → .kdx JSON
+  serialize(): string; // → .kdx JSON
   deserialize(kdx: string): void;
 }
 
@@ -389,6 +393,7 @@ interface ChemAdapter {
 ```
 
 **Dépendances :** **aucune** (pure TS, framework-agnostic, no React, no DOM).
+
 - Externes : `immer`, `rbush` (R-tree).
 
 **FRs adressées :** FR-001, FR-002, FR-003, FR-005, FR-006, FR-007, FR-008, FR-009, FR-010, FR-011, FR-012, FR-016, FR-030, FR-031, FR-033 (partiel), FR-034.
@@ -400,6 +405,7 @@ interface ChemAdapter {
 **Rôle :** Adapter chimie frontend — implémente l'interface `ChemAdapter` au-dessus de RDKit.js (build full) ou OpenChemLib JS (build static-demo).
 
 **Responsabilités :**
+
 - Charger le module WASM RDKit.js paresseusement au démarrage (Web Worker pour ne pas bloquer le main thread).
 - Exposer les opérations FR-018 (parsing SMILES, rendu indirect via conversion vers le scene model).
 - Fournir les calculs de propriétés du panneau temps réel (formula, MW, canonical SMILES) sans aller-retour réseau (FR-015).
@@ -409,6 +415,7 @@ interface ChemAdapter {
 **Interfaces exposées :** `ChemAdapter` (cf. ci-dessus).
 
 **Dépendances :** `@kendraw/scene` (pour types Document/Atom/Bond).
+
 - Externes : `@rdkit/rdkit` (build full) **ou** `openchemlib` (build static-demo).
 
 **FRs adressées :** FR-007, FR-015 (partiel), FR-018.
@@ -422,6 +429,7 @@ interface ChemAdapter {
 **Rôle :** Moteur de rendu Canvas 2D pour l'écran. Implémente l'interface `Renderer`.
 
 **Responsabilités :**
+
 - Peindre la scène sur un `<canvas>` HTML5 via `CanvasRenderingContext2D`.
 - Rendu en couches : grille → liaisons → atomes → flèches → annotations → overlays interactifs (sélection, poignées Bézier).
 - Diff-driven repaint : sur réception d'un `SceneDiff`, recalculer les "dirty regions" et ne redessiner que celles-ci. Plein repaint uniquement sur zoom/pan.
@@ -429,6 +437,7 @@ interface ChemAdapter {
 - Exposer un mode debug (cycles de frame, FPS, dirty regions visibles) en dev only.
 
 **Architecture interne :**
+
 - `RenderPipeline` orchestre les couches.
 - `LayerCache` mémoïse le rendu de chaque couche (invalidation par diff).
 - `DirtyRegionTracker` calcule les bbox impactées par un diff.
@@ -444,6 +453,7 @@ interface ChemAdapter {
 **Rôle :** Moteur de rendu SVG pour l'export. Distinct du renderer écran.
 
 **Responsabilités :**
+
 - Générer un document SVG propre, sans nœud DOM intermédiaire (string-based builder), à partir du modèle de scène.
 - Embarquer les polices nécessaires en `<defs>` (subset Inter / IBM Plex via fonttools côté CI).
 - Injecter les métadonnées de citation (FR-027) en `<metadata>` et en commentaire HTML.
@@ -464,6 +474,7 @@ interface ChemAdapter {
 **Rôle :** Couche de persistance locale (IndexedDB).
 
 **Responsabilités :**
+
 - Exposer `PersistenceStore` (interface) avec une implémentation `DexieStore`.
 - Gérer trois "tables" Dexie : `documents`, `tabs`, `templates`, `settings`.
 - Auto-save scheduler : reçoit les événements `scene-changed`, debounce 5 s (NFR-010), écrit dans un Web Worker dédié pour ne jamais bloquer le main thread.
@@ -471,6 +482,7 @@ interface ChemAdapter {
 - Surfacer les erreurs de quota (`QuotaExceededError`) avec un message utilisateur actionnable.
 
 **Interfaces :**
+
 ```ts
 interface PersistenceStore {
   saveDocument(id: string, doc: Document): Promise<void>;
@@ -494,6 +506,7 @@ interface PersistenceStore {
 **Rôle :** Lecteurs/écrivains de formats de fichiers.
 
 **Responsabilités :**
+
 - Parser et écrire MOL v2000 (frontend pur, FR-022/FR-023).
 - Parser SDF multi-structures et exposer pages multiples (résolution Q#5 du PRD : multi-pages dans un onglet).
 - Parser SMILES (délégué à `@kendraw/chem` mais converti en commandes scène par cette couche).
@@ -515,6 +528,7 @@ interface PersistenceStore {
 **Rôle :** Client HTTP pour le backend FastAPI.
 
 **Responsabilités :**
+
 - Client OpenAPI auto-généré depuis le schéma exposé par FastAPI (génération en CI via `openapi-typescript-codegen`).
 - Wrapping minimal pour : timeout configurable, retry exponentiel (3 tentatives sur erreur 5xx), normalisation des erreurs en `ChemApiError`.
 - Hook `useBackendAvailability()` qui ping `/health` au démarrage et expose un Boolean réactif (TanStack Query).
@@ -531,6 +545,7 @@ interface PersistenceStore {
 **Rôle :** Application React 18 — c'est ici que vivent JSX, hooks, Zustand UI store, et le design system Glasswerk.
 
 **Responsabilités :**
+
 - Composer la shell UI : top bar, tab bar, tool palette, canvas mount, property panel, status bar (cf. UX doc Part 5 — 11 composants).
 - Implémenter les 22 surfaces UX décrites dans le UX doc.
 - Tool controllers : convertir les événements pointer/clavier en commandes scène (`AddAtom`, `MoveSelection`, etc.). Un controller par outil (Pen, Eraser, Select, Lasso, Bond, Ring, Arrow, CurlyArrow, Text, Pan, Zoom).
@@ -541,11 +556,13 @@ interface PersistenceStore {
 - Cheatsheet shortcuts (FR-019, déclenché par `?`).
 
 **Dépendances :** **tous** les packages précédents. C'est le seul package qui dépend de tout le reste.
+
 - Externes : `react`, `react-dom`, `react-router-dom`, `zustand`, `tanstack-query`, `framer-motion` (lazy), `@lingui/react`, `@lingui/core`.
 
 **FRs adressées :** FR-014, FR-015 (UI), FR-016 (tab bar), FR-019, FR-026, FR-046 (V1), FR-047 (V1), FR-048 (V1), FR-049 (V1), + transversal pour toutes les FRs côté UI.
 
 **Règle de dépendance — invariant à respecter en CI :**
+
 ```
 @kendraw/scene       → ∅
 @kendraw/chem        → scene
@@ -555,6 +572,7 @@ interface PersistenceStore {
 @kendraw/api-client  → ∅
 @kendraw/ui          → tout le reste
 ```
+
 Vérifié par `dependency-cruiser` en CI. Toute violation casse le build.
 
 ### 5.2 Composants backend (4 modules)
@@ -564,6 +582,7 @@ Vérifié par `dependency-cruiser` en CI. Toute violation casse le build.
 **Rôle :** Couche FastAPI — routers, schemas Pydantic, OpenAPI auto-généré.
 
 **Responsabilités :**
+
 - Définir les endpoints REST (cf. §7).
 - Valider entrées/sorties via Pydantic v2 strict mode.
 - Exposer `/openapi.json` pour la génération du client TS.
@@ -584,20 +603,24 @@ Vérifié par `dependency-cruiser` en CI. Toute violation casse le build.
 **Sous-modules :**
 
 **`ComputeService`** — calculs de propriétés.
+
 - `compute_properties(mol: str, format: str) → Properties`
 - `compute_descriptors(mol: str) → DescriptorSet` (V1, FR-038, FR-039)
 - `compute_lipinski(mol: str) → LipinskiResult` (V1, FR-038)
 - `compute_elemental_analysis(mol: str) → ElementalAnalysis` (V1, FR-042)
 
 **`ConvertService`** — conversions de format.
+
 - `convert(input: str, from: Format, to: Format) → ConversionResult`
 - Supporte : MOL ↔ SDF ↔ SMILES ↔ InChI (MVP), + CDXML, CML, RXN (V1).
 
 **`NamingService`** (V1) — IUPAC ↔ structure.
+
 - `iupac_to_structure(name: str) → str (MOL)` via OPSIN
 - `structure_to_iupac(mol: str) → str` via RDKit `MolToInchi` + post-processing (ou STOUT si POC #4 valide)
 
 **`StereoService`** (V1) — R/S et E/Z.
+
 - `assign_stereo(mol: str) → StereoAssignment`
 
 **Dépendances :** RDKit Python, OPSIN (V1, via `py2opsin`).
@@ -611,6 +634,7 @@ Vérifié par `dependency-cruiser` en CI. Toute violation casse le build.
 **Rôle :** Configuration Pydantic Settings, env-driven.
 
 **Responsabilités :**
+
 - Charger `KENDRAW_*` env vars avec defaults sensés pour self-hosted.
 - Variables principales : `KENDRAW_HOST`, `KENDRAW_PORT`, `KENDRAW_CORS_ORIGINS`, `KENDRAW_LOG_LEVEL`, `KENDRAW_MAX_MOL_ATOMS` (cap anti-DOS), `KENDRAW_API_KEY` (optionnel V1).
 - Aucune fuite de chemin local dans les logs ou les erreurs API.
@@ -624,6 +648,7 @@ Vérifié par `dependency-cruiser` en CI. Toute violation casse le build.
 **Rôle :** Logging, métriques optionnelles, health checks.
 
 **Responsabilités :**
+
 - Configurer structlog (JSON en prod, pretty en dev).
 - Exposer `/health` (liveness) et `/ready` (readiness — vérifie que RDKit s'importe correctement).
 - (Optionnel V1+) Exposer `/metrics` au format Prometheus si `KENDRAW_METRICS_ENABLED=1`.
@@ -640,19 +665,19 @@ Le modèle de scène est une **structure de données immuable** (Immer-managed) 
 
 ```ts
 type Document = {
-  id: string;                          // UUID v4
-  schemaVersion: number;               // pour migrations futures
+  id: string; // UUID v4
+  schemaVersion: number; // pour migrations futures
   metadata: DocumentMetadata;
-  pages: Page[];                       // ≥ 1 page (multi pour SDF)
+  pages: Page[]; // ≥ 1 page (multi pour SDF)
   activePageIndex: number;
 };
 
 type DocumentMetadata = {
   title: string;
-  createdAt: string;                   // ISO 8601
-  modifiedAt: string;                  // ISO 8601
-  authorHint?: string;                 // optionnel, pas de tracking
-  appVersion: string;                  // pour debug
+  createdAt: string; // ISO 8601
+  modifiedAt: string; // ISO 8601
+  authorHint?: string; // optionnel, pas de tracking
+  appVersion: string; // pour debug
 };
 
 type Page = {
@@ -667,13 +692,13 @@ type Page = {
 
 type Atom = {
   id: AtomId;
-  x: number;                           // coords scène (unités arbitraires, 1 unit = ~1 Å à l'export par défaut)
+  x: number; // coords scène (unités arbitraires, 1 unit = ~1 Å à l'export par défaut)
   y: number;
-  element: number;                     // numéro atomique Z (1..118)
-  label?: string;                      // ex. "R", "R1", "Et" (si custom)
-  charge: number;                      // -4..+4
+  element: number; // numéro atomique Z (1..118)
+  label?: string; // ex. "R", "R1", "Et" (si custom)
+  charge: number; // -4..+4
   radicalCount: 0 | 1 | 2;
-  lonePairs: number;                   // V1, FR-031
+  lonePairs: number; // V1, FR-031
   isotope?: number;
   stereoParity?: 'CW' | 'CCW' | 'unspecified';
 };
@@ -682,19 +707,30 @@ type Bond = {
   id: BondId;
   fromAtomId: AtomId;
   toAtomId: AtomId;
-  order: 1 | 2 | 3 | 1.5;              // 1.5 = aromatique
-  style: 'single' | 'double' | 'triple' | 'aromatic'
-       | 'wedge' | 'dash' | 'wavy'     // wavy V1
-       | 'dative' | 'bold';            // V1
+  order: 1 | 2 | 3 | 1.5; // 1.5 = aromatique
+  style:
+    | 'single'
+    | 'double'
+    | 'triple'
+    | 'aromatic'
+    | 'wedge'
+    | 'dash'
+    | 'wavy' // wavy V1
+    | 'dative'
+    | 'bold'; // V1
   stereo?: 'E' | 'Z' | 'unspecified';
 };
 
 type Arrow = {
   id: ArrowId;
-  type: 'forward' | 'equilibrium' | 'reversible'
-      | 'resonance'                    // V1
-      | 'curly-radical' | 'curly-pair';
-  geometry: BezierGeometry;            // 4 points
+  type:
+    | 'forward'
+    | 'equilibrium'
+    | 'reversible'
+    | 'resonance' // V1
+    | 'curly-radical'
+    | 'curly-pair';
+  geometry: BezierGeometry; // 4 points
   startAnchor: ArrowAnchor;
   endAnchor: ArrowAnchor;
   annotations?: { above?: AnnotationId; below?: AnnotationId };
@@ -702,22 +738,22 @@ type Arrow = {
 
 type BezierGeometry = {
   start: Point;
-  c1: Point;                           // control point 1
-  c2: Point;                           // control point 2
+  c1: Point; // control point 1
+  c2: Point; // control point 2
   end: Point;
 };
 
 type ArrowAnchor =
   | { kind: 'free' }
   | { kind: 'atom'; refId: AtomId }
-  | { kind: 'bond'; refId: BondId; t?: number }      // t ∈ [0, 1] le long de la liaison
+  | { kind: 'bond'; refId: BondId; t?: number } // t ∈ [0, 1] le long de la liaison
   | { kind: 'lone-pair'; refId: AtomId; index: number };
 
 type Annotation = {
   id: AnnotationId;
   x: number;
   y: number;
-  richText: RichTextNode[];            // pour sub/super/Greek
+  richText: RichTextNode[]; // pour sub/super/Greek
   anchorRef?: { kind: 'arrow'; refId: ArrowId; slot: 'above' | 'below' };
 };
 
@@ -725,7 +761,7 @@ type Group = {
   id: GroupId;
   atomIds: AtomId[];
   bondIds: BondId[];
-  locked: boolean;                     // V1, FR-033
+  locked: boolean; // V1, FR-033
   name?: string;
 };
 
@@ -751,6 +787,7 @@ Le format natif `.kdx` est la sérialisation JSON canonique du `Document`, avec 
 - Extension `.kdx` (Kendraw eXchange).
 
 **Pourquoi un format natif plutôt que MOL/CDXML directement :**
+
 - MOL ne supporte pas les flèches, annotations, groupes, multi-pages, viewports.
 - CDXML est binaire-déguisé-en-XML, complexe, et propriétaire de fait.
 - `.kdx` est un format interne — l'utilisateur exporte vers MOL/SDF/CDXML pour l'interop, mais sauve son travail en `.kdx` localement (auto-save) ou explicitement.
@@ -760,10 +797,10 @@ Le format natif `.kdx` est la sérialisation JSON canonique du `Document`, avec 
 ```ts
 // schema version 1
 db.version(1).stores({
-  documents: 'id, modifiedAt, *tags',           // id PK, modifiedAt index
-  tabs:      'id, order',                        // id PK, order pour tri
-  templates: 'id, &name, category',              // name unique
-  settings:  '&key',                             // key/value store
+  documents: 'id, modifiedAt, *tags', // id PK, modifiedAt index
+  tabs: 'id, order', // id PK, order pour tri
+  templates: 'id, &name, category', // name unique
+  settings: '&key', // key/value store
 });
 ```
 
@@ -775,6 +812,7 @@ db.version(1).stores({
 - **`settings`** : key/value pour theme, shortcuts personnalisés, palette config, locale, etc.
 
 **Stratégie de quota :**
+
 - Surveillance via `navigator.storage.estimate()` au démarrage et après chaque save.
 - Si > 80 % du quota : prompt utilisateur "Voulez-vous nettoyer les anciens documents auto-sauvés ?".
 - Si `QuotaExceededError` à l'écriture : toast d'erreur actionnable + persistance en mémoire seule en mode dégradé jusqu'à libération.
@@ -857,26 +895,26 @@ SceneStore émet scene-changed
 
 ### 7.2 Endpoints MVP (`v0.1.0`)
 
-| Méthode | Path                            | Body                                  | Réponse                                              | FR        |
-|---------|---------------------------------|---------------------------------------|------------------------------------------------------|-----------|
-| GET     | `/api/v1/health`                | —                                     | `{ "status": "ok" }`                                 | n/a       |
-| GET     | `/api/v1/version`               | —                                     | `{ "version": "0.1.0", "commit": "abc123" }`        | n/a       |
-| POST    | `/api/v1/compute/properties`    | `{ "input": str, "format": Format }`  | `{ "formula": str, "mw": float, "exact_mass": float, "canonical_smiles": str, "inchi": str, "inchi_key": str }` | FR-021    |
-| POST    | `/api/v1/convert`               | `{ "input": str, "from": Format, "to": Format }` | `{ "output": str, "warnings": str[] }`              | FR-022    |
-| POST    | `/api/v1/validate`              | `{ "input": str, "format": Format }`  | `{ "valid": bool, "warnings": ValidationWarning[] }` | FR-007 (assist) |
+| Méthode | Path                         | Body                                             | Réponse                                                                                                         | FR              |
+| ------- | ---------------------------- | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- | --------------- |
+| GET     | `/api/v1/health`             | —                                                | `{ "status": "ok" }`                                                                                            | n/a             |
+| GET     | `/api/v1/version`            | —                                                | `{ "version": "0.1.0", "commit": "abc123" }`                                                                    | n/a             |
+| POST    | `/api/v1/compute/properties` | `{ "input": str, "format": Format }`             | `{ "formula": str, "mw": float, "exact_mass": float, "canonical_smiles": str, "inchi": str, "inchi_key": str }` | FR-021          |
+| POST    | `/api/v1/convert`            | `{ "input": str, "from": Format, "to": Format }` | `{ "output": str, "warnings": str[] }`                                                                          | FR-022          |
+| POST    | `/api/v1/validate`           | `{ "input": str, "format": Format }`             | `{ "valid": bool, "warnings": ValidationWarning[] }`                                                            | FR-007 (assist) |
 
 `Format` ∈ `{ "mol", "sdf", "smiles", "inchi" }` au MVP.
 
 ### 7.3 Endpoints V1 (`v1.0.0`)
 
-| Méthode | Path                                 | Body                                | Réponse                                     | FR     |
-|---------|--------------------------------------|-------------------------------------|---------------------------------------------|--------|
-| POST    | `/api/v1/compute/descriptors`        | `{ "input": str, "format": Format }` | `{ "descriptors": Record<str, float> }` (≥30) | FR-039 |
+| Méthode | Path                                 | Body                                 | Réponse                                                                                                    | FR     |
+| ------- | ------------------------------------ | ------------------------------------ | ---------------------------------------------------------------------------------------------------------- | ------ |
+| POST    | `/api/v1/compute/descriptors`        | `{ "input": str, "format": Format }` | `{ "descriptors": Record<str, float> }` (≥30)                                                              | FR-039 |
 | POST    | `/api/v1/compute/lipinski`           | `{ "input": str, "format": Format }` | `{ "logp": float, "tpsa": float, "hbd": int, "hba": int, "mw": float, "violations": int, "passes": bool }` | FR-038 |
-| POST    | `/api/v1/compute/stereo`             | `{ "input": str, "format": Format }` | `{ "atoms": [{ id, parity }], "bonds": [{ id, geometry }] }` | FR-032 |
-| POST    | `/api/v1/compute/elemental-analysis` | `{ "input": str, "format": Format }` | `{ "by_element": Record<str, float>, "total": float }` | FR-042 |
-| POST    | `/api/v1/naming/iupac-to-structure`  | `{ "name": str }`                    | `{ "mol": str (MOL block), "smiles": str }` | FR-040 |
-| POST    | `/api/v1/naming/structure-to-iupac`  | `{ "input": str, "format": Format }` | `{ "name": str }`                          | FR-041 |
+| POST    | `/api/v1/compute/stereo`             | `{ "input": str, "format": Format }` | `{ "atoms": [{ id, parity }], "bonds": [{ id, geometry }] }`                                               | FR-032 |
+| POST    | `/api/v1/compute/elemental-analysis` | `{ "input": str, "format": Format }` | `{ "by_element": Record<str, float>, "total": float }`                                                     | FR-042 |
+| POST    | `/api/v1/naming/iupac-to-structure`  | `{ "name": str }`                    | `{ "mol": str (MOL block), "smiles": str }`                                                                | FR-040 |
+| POST    | `/api/v1/naming/structure-to-iupac`  | `{ "input": str, "format": Format }` | `{ "name": str }`                                                                                          | FR-041 |
 
 `Format` étend en V1 à : `{ ..., "cdxml", "cml", "rxn" }`.
 
@@ -913,11 +951,13 @@ Chaque NFR du PRD est mappée à une solution architecturale concrète, avec cri
 7. **Bundle JS initial < 350 KB gzip** (hors WASM RDKit.js, lazy-loaded). Cible vérifiée par `size-limit` en CI.
 
 **Notes d'implémentation :**
+
 - Désactiver `React.StrictMode` sur le composant `<CanvasMount>` (le double-rendering de StrictMode tue les diffs incrémentaux). StrictMode reste actif sur le reste de l'arbre.
 - Utiliser `requestAnimationFrame` pour batcher les writes Canvas.
 - Profiling continu : un mode debug en dev affiche FPS, frame budget, dirty regions visibles.
 
 **Validation :**
+
 - **POC #1 — bloquant.** Suite de benchmarks codifiée sous `packages/scene/bench/perf-500.bench.ts` :
   - Bench 1 : pan/zoom à 100/250/500/750 atomes, mesure FPS soutenu sur 5 s.
   - Bench 2 : ajout de 100 liaisons consécutives, mesure du frame budget moyen.
@@ -932,6 +972,7 @@ Chaque NFR du PRD est mappée à une solution architecturale concrète, avec cri
 **Exigence :** Chrome / Firefox / Safari / Edge — deux dernières versions stables.
 
 **Solution architecturale :**
+
 - **Vite + esbuild** : ciblage `es2022` (supporté sur toutes les versions cibles).
 - **Pas de polyfills agressifs** : on cible les navigateurs modernes, point.
 - **Matrice CI Playwright** : tests E2E lancés sur Chromium, Firefox, WebKit (= Safari) à chaque PR.
@@ -939,6 +980,7 @@ Chaque NFR du PRD est mappée à une solution architecturale concrète, avec cri
 - Surveillance des spec-divergences : IndexedDB sur Safari (quota stingy), `OffscreenCanvas` (pas universel — fallback main thread), polices web (subset embedded).
 
 **Validation :**
+
 - Suite Playwright cross-browser exécutée à chaque PR sur GitHub Actions.
 - Rapport `playwright-report` archivé en artifact.
 
@@ -949,6 +991,7 @@ Chaque NFR du PRD est mappée à une solution architecturale concrète, avec cri
 **Exigence :** Toutes les dépendances doivent être MIT-compatibles. Aucune GPL/LGPL/AGPL.
 
 **Solution architecturale :**
+
 - **CI license-scan obligatoire** :
   - Frontend : `license-checker --onlyAllow 'MIT;BSD-2-Clause;BSD-3-Clause;Apache-2.0;ISC;0BSD;Unlicense;CC0-1.0'`
   - Backend : `liccheck` avec strategy file équivalent.
@@ -958,6 +1001,7 @@ Chaque NFR du PRD est mappée à une solution architecturale concrète, avec cri
 - **Choix de bibliothèques pré-validé** : chaque ajout de dépendance dans une PR requiert que le contributeur confirme la licence dans la description.
 
 **Validation :**
+
 - CI bloque les merges sur licences interdites.
 - `LICENSES.md` audité lors de chaque tag release.
 
@@ -968,6 +1012,7 @@ Chaque NFR du PRD est mappée à une solution architecturale concrète, avec cri
 **Exigence :** Tourne end-to-end sur une seule machine, sans appel externe obligatoire.
 
 **Solution architecturale :**
+
 - **`docker-compose.yml` unique** orchestre frontend (nginx) + backend (uvicorn). Aucune autre dépendance.
 - **Aucun service géré bundlé** : pas de Redis, pas de PostgreSQL, pas de RabbitMQ, pas d'Elastic, rien.
 - **Backend stateless** → pas de DB → pas de migration → pas de sauvegarde.
@@ -976,6 +1021,7 @@ Chaque NFR du PRD est mappée à une solution architecturale concrète, avec cri
 - **Intégrations externes optionnelles** (Zenodo DOI, GitHub releases) : clairement marquées optionnelles, dégradent gracieusement si offline.
 
 **Validation :**
+
 - Test CI : `docker compose up` puis `docker network disconnect` puis suite e2e qui exerce le flow complet (draw → property → export → save → reload). Doit passer en 100 % offline.
 
 ---
@@ -985,6 +1031,7 @@ Chaque NFR du PRD est mappée à une solution architecturale concrète, avec cri
 **Exigence :** Sortie SVG/PDF/EPS niveau JACS / Angewandte. Géométrie propre, polices vectorielles, ouvre proprement dans Illustrator/Inkscape.
 
 **Solution architecturale :**
+
 - **Renderer SVG dédié** (`@kendraw/renderer-svg`) totalement séparé du renderer écran. C'est non-négociable : un export rasterisé depuis Canvas est inacceptable.
 - **Polices embarquées** : sous-ensembles Inter / IBM Plex Sans / IBM Plex Serif générés côté CI avec `fonttools subset`, embarqués en `<defs>` dans chaque export SVG.
 - **Géométrie propre** : pas de path inutile, pas de groupes vides, IDs lisibles, attributs minimaux, no inline style si possible.
@@ -992,6 +1039,7 @@ Chaque NFR du PRD est mappée à une solution architecturale concrète, avec cri
 - **Métadonnées de citation injectées en dernier maillon** (FR-027) : `<metadata>` SVG, EXIF PNG, info dictionary PDF.
 
 **Validation :**
+
 - 5 figures de référence "JACS-like" produites et validées par contacts URD Abbaye avant chaque tag release majeur.
 - Open dans Illustrator (manuel) + Inkscape (CI headless) sans warning ni rasterisation.
 
@@ -1002,6 +1050,7 @@ Chaque NFR du PRD est mappée à une solution architecturale concrète, avec cri
 **Exigence :** Contraste WCAG AA, navigation clavier UI non-canvas, ARIA labels.
 
 **Solution architecturale :**
+
 - **Tokens Glasswerk** (UX Part 6) construits avec contrastes vérifiés WCAG AA en dark et light mode.
 - **`axe-core`** intégré à Playwright, run sur toutes les surfaces non-canvas à chaque PR. Bloque sur violations AA.
 - **Composants UI** (`@kendraw/ui`) : tous les contrôles interactifs ont un `role`, `aria-label`, et sont focusables. Order de tabulation explicite.
@@ -1011,6 +1060,7 @@ Chaque NFR du PRD est mappée à une solution architecturale concrète, avec cri
 - **Canvas explicitement exempté** (NFR-006 et UX doc le précisent) : un éditeur 2D n'est pas accessible aux lecteurs d'écran sans alternative complète, hors scope MVP.
 
 **Validation :**
+
 - `axe-core` en CI sur toutes les routes non-canvas — zéro violation AA tolérée.
 - Limitations a11y documentées dans `docs/accessibility.md`.
 
@@ -1021,6 +1071,7 @@ Chaque NFR du PRD est mappée à une solution architecturale concrète, avec cri
 **Exigence :** Code prêt pour traductions communautaires. MVP en anglais.
 
 **Solution architecturale :**
+
 - **Lingui v4** : extraction statique des messages depuis les composants TSX.
 - **Locale canonique : `en`**, fichier `locales/en/messages.po`.
 - **Composants** : aucune chaîne hardcodée. Tout passe par `<Trans>` ou `t\`…\``.
@@ -1030,6 +1081,7 @@ Chaque NFR du PRD est mappée à une solution architecturale concrète, avec cri
 - **Ajout d'une langue** = écrire un fichier `.po` + l'enregistrer dans `i18n.ts`. Aucune modification de composant.
 
 **Validation :**
+
 - CI lint bloque les chaînes hardcodées.
 - Smoke test : ajouter une locale `fr` partielle et vérifier qu'elle se charge.
 
@@ -1040,6 +1092,7 @@ Chaque NFR du PRD est mappée à une solution architecturale concrète, avec cri
 **Exigence :** Zéro appel sortant non sollicité. Pas d'analytics, pas de tracking pixel.
 
 **Solution architecturale :**
+
 - **Aucune lib analytics** dans le bundle (Plausible, Matomo, GA, etc. — tous interdits).
 - **Aucun script tiers** (Google Fonts → polices auto-hébergées, pas de CDN externe).
 - **Aucun appel externe au démarrage** : test CI réseau-isolé qui vérifie qu'aucune requête sortante n'est faite avant action utilisateur.
@@ -1048,6 +1101,7 @@ Chaque NFR du PRD est mappée à une solution architecturale concrète, avec cri
 - **Posture déclarée** : `README.md` section Privacy explicite, plus un badge "no telemetry".
 
 **Validation :**
+
 - Test CI : démarrer Kendraw (frontend + backend), capturer le trafic réseau via Playwright, vérifier zéro requête vers un domaine non-`self` au démarrage.
 
 ---
@@ -1057,6 +1111,7 @@ Chaque NFR du PRD est mappée à une solution architecturale concrète, avec cri
 **Exigence :** Code structuré pour contribution OSS, CI complète, première PR < demi-journée.
 
 **Solution architecturale :**
+
 - **Frontières strictes par packages** (cf. §5) avec règles de dépendance vérifiées par `dependency-cruiser` en CI.
 - **TypeScript strict** + `noUncheckedIndexedAccess` + `exactOptionalPropertyTypes`. Mypy strict côté backend.
 - **CI complète** sur chaque PR :
@@ -1075,6 +1130,7 @@ Chaque NFR du PRD est mappée à une solution architecturale concrète, avec cri
 - **Architecture Decision Records (ADR)** sous `docs/adr/` pour les décisions structurantes futures.
 
 **Validation :**
+
 - CI verte requise pour merger.
 - Coverage ≥ 80 % bloquant sur les chemins compute (`@kendraw/scene`, `@kendraw/chem`, `kendraw_chem`).
 - Premier contributeur externe ouvre une PR mergeable < 4 h après clone.
@@ -1086,12 +1142,14 @@ Chaque NFR du PRD est mappée à une solution architecturale concrète, avec cri
 **Exigence :** Worst-case data loss < 5 s. Restore-on-reload one-click.
 
 **Solution architecturale :**
+
 - **`@kendraw/persistence` + Web Worker dédié** : le scheduler debounce 5 s, et au tick écrit dans IndexedDB **via un worker** pour ne jamais bloquer le main thread (et donc ne jamais retarder le frame budget de NFR-001).
 - **Write-ahead minimal** : avant d'écraser, écrire le nouveau document dans une "shadow" key, puis swap atomique. Si crash en plein milieu, rollback automatique au démarrage suivant.
 - **Restore-on-reload** : au démarrage, le hook `useSessionRestore()` lit `tabs` + `documents` depuis IndexedDB et propose à l'utilisateur "Restore your previous session" en bouton unique.
 - **Test crash-resilience** : test automatisé qui interrompt le worker entre deux writes et vérifie que l'état est cohérent au reload.
 
 **Validation :**
+
 - Test automatisé : simulation de crash entre writes → cohérence au reload garantie.
 - Mesure : worst-case latence depuis dernière édition jusqu'à durabilité < 5 s + 50 ms (timer + worker latency).
 
@@ -1102,6 +1160,7 @@ Chaque NFR du PRD est mappée à une solution architecturale concrète, avec cri
 **Exigence :** `CITATION.cff`, README, splash screen (FR-026), EXIF (FR-027), DOI Zenodo dans les 30 j post-release.
 
 **Solution architecturale :**
+
 - **`CITATION.cff` à la racine** validé via `cffconvert` en CI.
 - **README section "Cite this work"** au-dessus du fold, copy-pastable BibTeX.
 - **Splash screen FR-026** : composant `<CitationSplash>` montré au premier lancement de chaque session, accessible ensuite via `Help → About`.
@@ -1109,6 +1168,7 @@ Chaque NFR du PRD est mappée à une solution architecturale concrète, avec cri
 - **Zenodo DOI** : workflow GitHub Actions triggered on tag, pousse l'archive sur Zenodo et récupère le DOI, met à jour `CITATION.cff` automatiquement.
 
 **Validation :**
+
 - CI valide `CITATION.cff` à chaque PR.
 - Test d'export : ouvrir un PNG/SVG exporté, vérifier la présence des métadonnées de citation.
 
@@ -1119,6 +1179,7 @@ Chaque NFR du PRD est mappée à une solution architecturale concrète, avec cri
 **Exigence :** README, Getting Started, shortcuts cheatsheet, deployment guide, CONTRIBUTING.md.
 
 **Solution architecturale :**
+
 - **`docs/`** dans le repo, structuré :
   - `getting-started.md`
   - `keyboard-shortcuts.md`
@@ -1132,6 +1193,7 @@ Chaque NFR du PRD est mappée à une solution architecturale concrète, avec cri
 - **Verification non-author** : un non-auteur valide la doc avant chaque release majeure (NFR-012 acceptance criterion).
 
 **Validation :**
+
 - Tous les fichiers requis présents et liés depuis le README.
 - Build doc CI vert.
 - Validation utilisateur non-auteur pré-release.
@@ -1157,6 +1219,7 @@ Aucune. Pas de comptes, pas de rôles, pas d'ACL. Tout le monde qui peut joindre
 ### 9.3 Validation des entrées (input validation)
 
 **Côté backend :**
+
 - **Pydantic v2 strict mode** valide tous les payloads en entrée. Types stricts, longueurs maximales, charsets.
 - **Cap atomes** : `KENDRAW_MAX_MOL_ATOMS` (défaut 5000). Au-delà, 413 Payload Too Large. C'est une protection anti-DOS contre un attaquant qui enverrait un MOL de 1M atomes pour faire crash RDKit.
 - **Cap payload size** : nginx + uvicorn limitent à 10 MB par requête.
@@ -1164,6 +1227,7 @@ Aucune. Pas de comptes, pas de rôles, pas d'ACL. Tout le monde qui peut joindre
 - **RDKit safe-parse** : utilisation de `MolFromMolBlock(..., sanitize=True, removeHs=False)` ; les exceptions RDKit sont attrapées et converties en `400 INVALID_MOL`.
 
 **Côté frontend :**
+
 - Tout input utilisateur est traité comme des données, jamais comme du code.
 - **Pas de `dangerouslySetInnerHTML`** sauf usage strict et audité (annotations rich-text, sanitisées via DOMPurify).
 - **Imports de fichiers** : parsés en sandbox (Web Worker) si format complexe ; erreurs catchées et surfacées sans crasher l'app.
@@ -1171,6 +1235,7 @@ Aucune. Pas de comptes, pas de rôles, pas d'ACL. Tout le monde qui peut joindre
 ### 9.4 Encryption
 
 **At rest :**
+
 - IndexedDB n'est pas chiffré par défaut. C'est acceptable parce que :
   - Les données ne quittent jamais la machine de l'utilisateur.
   - L'utilisateur a le contrôle physique de sa machine (modèle "single-user laptop").
@@ -1178,6 +1243,7 @@ Aucune. Pas de comptes, pas de rôles, pas d'ACL. Tout le monde qui peut joindre
 - **Si un lab veut chiffrer** : c'est une feature V2+, sous forme de "encrypted vault" optionnel avec mot de passe local (Web Crypto API + AES-GCM).
 
 **In transit :**
+
 - Pour usage local : HTTP suffit, le trafic ne quitte pas localhost.
 - Pour usage remote (lab qui expose son instance) : la doc impose un reverse proxy avec TLS (Caddy avec auto-cert Let's Encrypt recommandé).
 - Aucun cert TLS n'est bundlé dans Kendraw lui-même — la TLS termination est à la charge de l'utilisateur ou de son admin.
@@ -1204,6 +1270,7 @@ Aucune. Pas de comptes, pas de rôles, pas d'ACL. Tout le monde qui peut joindre
 **Réponse honnête : il n'y a pas de scaling horizontal.** Kendraw est conçu pour un déploiement single-instance par utilisateur ou par lab. L'effort de performance est concentré là où il importe : **dans le frontend**, parce que c'est là que vit la boucle d'édition critique (NFR-001).
 
 **Vertical, par instance :**
+
 - **Backend** : un processus uvicorn avec `--workers N` (défaut N=1). Pour un lab qui sert ~50 chimistes simultanément, passer à `--workers 4` suffit largement (RDKit calls sont CPU-bound, pas I/O-bound — workers ≈ CPU cores).
 - **Frontend** : nginx static, scaling trivial (servir des fichiers statiques tient des milliers de RPS sur n'importe quoi).
 
@@ -1214,6 +1281,7 @@ Aucune. Pas de comptes, pas de rôles, pas d'ACL. Tout le monde qui peut joindre
 C'est ici que toute l'attention va. Stratégies appliquées :
 
 **Rendu :**
+
 - Diff-driven repaint, dirty regions, layer cache (cf. §5.1.3).
 - Spatial index R-tree pour hit-testing en O(log n) (cf. §5.1.1).
 - Viewport culling : on ne dessine pas ce qui est hors écran.
@@ -1221,11 +1289,13 @@ C'est ici que toute l'attention va. Stratégies appliquées :
 - Pas de StrictMode sur le canvas mount (double-rendering ruineux).
 
 **Calcul :**
+
 - Web Workers pour : RDKit.js, sérialisation IndexedDB, parsing de gros fichiers SDF.
 - Memoization stricte des computeds React (`useMemo`) sur les dérivés du scene model qui rentrent dans le render.
 - Property panel debounced à 100 ms pour ≤ 100 atomes, 500 ms pour ≤ 500 atomes (NFR-001).
 
 **Bundle :**
+
 - Code splitting agressif : seuls les chunks nécessaires au cold start sont chargés (palette + canvas + scene + persistence + chem). Tout le reste (export pipelines, V1 features, modales settings) est lazy.
 - Tree shaking strict (Vite + Rollup).
 - WASM RDKit.js lazy-loadé (worker thread, premier appel à `parseSmiles`).
@@ -1242,15 +1312,18 @@ C'est ici que toute l'attention va. Stratégies appliquées :
 ### 10.4 Stratégie de cache
 
 **Frontend :**
+
 - TanStack Query cache toutes les réponses backend par clé canonique. Stale-time 5 min, gc-time 30 min. Configurable par endpoint.
 - Lib chimie WASM : module et instance partagés entre tous les workers via SharedArrayBuffer si disponible (sinon par-worker).
 - Service Worker (Workbox) en V1+ : cache des assets statiques pour offline-first complet.
 
 **Backend :**
+
 - LRU in-memory sur les calculs RDKit lourds (descriptors, canonicalisation).
 - Pas de Redis. Si ça devient nécessaire un jour (ce n'est pas le cas au MVP), c'est une décision séparée et un add-on optionnel.
 
 **HTTP :**
+
 - Headers `Cache-Control: public, max-age=86400, immutable` sur les assets fingerprintés (Vite gère).
 - API endpoints : `Cache-Control: private, max-age=0, must-revalidate` (idempotent mais on laisse TanStack Query gérer la mémoire client).
 
@@ -1266,7 +1339,7 @@ C'est ici que toute l'attention va. Stratégies appliquées :
 
 ### 11.1 Tolérance aux défaillances frontend
 
-- **Auto-save sans perte (NFR-010, FR-017)** : c'est la *vraie* feature de fiabilité. Détaillée en §8 NFR-010.
+- **Auto-save sans perte (NFR-010, FR-017)** : c'est la _vraie_ feature de fiabilité. Détaillée en §8 NFR-010.
 - **Error boundaries React** sur chaque tab — un crash dans un tab ne tue pas les autres tabs.
 - **Mode dégradé sur quota IndexedDB** : si IDB est plein, on bascule en in-memory only et on alerte l'utilisateur.
 - **Mode dégradé sur backend down** : `useBackendAvailability()` détecte que le backend est inaccessible, désactive les features qui en dépendent avec une affordance claire, mais l'édition principale continue.
@@ -1284,6 +1357,7 @@ C'est ici que toute l'attention va. Stratégies appliquées :
 **Côté backend :** rien à recover (stateless).
 
 **Côté frontend (utilisateur) :**
+
 - **IndexedDB est local** → si le navigateur de l'utilisateur perd ses données (clear cache, profile corruption, etc.), ses documents auto-savés sont perdus.
 - **Mitigation :** export `.kdx` manuel + sync vers le filesystem via `File System Access API` (Chrome) ou téléchargement classique (Firefox/Safari).
 - **V2+ :** sync optionnel vers OPFS ou cloud bucket (S3-compatible), cf. §17.
@@ -1293,6 +1367,7 @@ C'est ici que toute l'attention va. Stratégies appliquées :
 **Côté backend :** N/A. Stateless.
 
 **Côté frontend :**
+
 - L'utilisateur est responsable de ses backups (export `.kdx` ou save vers son filesystem).
 - Documentation `getting-started.md` couvre la stratégie de backup recommandée.
 
@@ -1367,35 +1442,42 @@ kendraw/
 ```
 
 **Pourquoi monorepo plutôt que multi-repo :**
+
 - Solo dev → moins de friction. Une PR cross-package, une CI, un changelog.
-- Frontières strictes par packages, vérifiées par `dependency-cruiser`. Le découplage est *logique*, pas physique.
+- Frontières strictes par packages, vérifiées par `dependency-cruiser`. Le découplage est _logique_, pas physique.
 - Tooling moderne (pnpm workspaces, Vite, vitest) gère ça nativement.
 
 ### 12.2 Stratégie de test
 
 **Unitaires :**
+
 - **Vitest** par package frontend, **pytest** côté backend.
 - Cible **≥ 80 % de coverage** sur les chemins compute (`@kendraw/scene`, `@kendraw/chem`, `kendraw_chem`, `@kendraw/io`).
 - Cible plus souple (~50 %) sur `@kendraw/ui` (couvert ailleurs par E2E et visual regression).
 
 **Property-based / fuzz :**
+
 - **`fast-check`** côté TS : property tests pour le scene model (round-trip serialize/deserialize, undo/redo invariants, command merging idempotence).
 - **`hypothesis`** côté Python : property tests pour les conversions de format (round-trip MOL ↔ SMILES ↔ InChI sur ensemble généré).
 
 **Visual regression :**
+
 - **Playwright snapshots** sur les exports SVG/PNG critiques (5 figures de référence MVP, 5 V1).
 - Snapshots versionnés dans le repo, mis à jour explicitement par PR si visuel intentionnellement modifié.
 
 **End-to-end :**
+
 - **Playwright** sur trois browsers (Chromium, Firefox, WebKit).
 - Suite E2E couvre les 10 user flows du UX doc (5 MVP, 5 V1).
 - Lancée à chaque PR, plus une version "smoke" rapide en post-merge.
 
 **Performance :**
+
 - **`vitest bench`** + suite POC #1 codifiée sous `packages/scene/bench/perf-500.bench.ts`.
 - Lancée manuellement par le dev, et automatiquement sur tag release. Résultats archivés en artifact CI.
 
 **Tests d'intégration backend :**
+
 - **pytest + httpx** pour appeler les endpoints FastAPI réels avec RDKit installé.
 - Test set chimique : 100 structures de référence pour les conversions et calculs (curated, sous `backend/tests/fixtures/`).
 
@@ -1404,6 +1486,7 @@ kendraw/
 **GitHub Actions** avec workflows séparés :
 
 **`ci-frontend.yml`** (déclenché sur PRs touchant `packages/*`) :
+
 1. Setup Node 20 + pnpm
 2. `pnpm install --frozen-lockfile`
 3. `pnpm lint` (ESLint sur tous les packages)
@@ -1416,6 +1499,7 @@ kendraw/
 10. Upload coverage report (Codecov ou équivalent OSS)
 
 **`ci-backend.yml`** (déclenché sur PRs touchant `backend/*`) :
+
 1. Setup Python 3.11 + uv
 2. `uv sync --frozen`
 3. `uv run ruff check .`
@@ -1426,6 +1510,7 @@ kendraw/
 8. `docker build -f docker/Dockerfile.backend -t kendraw-backend:ci .`
 
 **`ci-e2e.yml`** (déclenché sur PRs ou nightly) :
+
 1. `docker compose -f docker/docker-compose.yml up -d`
 2. Wait for health
 3. `pnpm playwright test` (cross-browser)
@@ -1434,6 +1519,7 @@ kendraw/
 6. Network isolation test (vérifie zéro requête externe — NFR-008)
 
 **`release.yml`** (déclenché sur tag `v*.*.*`) :
+
 1. Build images Docker frontend + backend, push GHCR
 2. Build static-demo profile, déployer sur GitHub Pages
 3. Générer GitHub Release avec changelog auto (conventional commits)
@@ -1441,16 +1527,17 @@ kendraw/
 5. Run perf benchmarks (POC #1 codifiée), archiver les résultats
 
 **`deploy-demo.yml`** (déclenché sur push to main) :
+
 1. Build static-demo, déployer sur `gh-pages` branch (preview de main)
 
 ### 12.4 Environnements
 
-| Environnement   | Hébergement                          | Usage                                       |
-|-----------------|--------------------------------------|---------------------------------------------|
-| **Dev local**   | `pnpm dev` (Vite) + `uv run uvicorn` | Travail quotidien                           |
-| **CI**          | GitHub Actions ephemeral             | Tests et build sur chaque PR                |
-| **Demo public** | GitHub Pages (frontend-only)         | Vitrine pour découverte rapide              |
-| **Self-hosted** | Machine de l'utilisateur             | Production réelle pour les utilisateurs     |
+| Environnement   | Hébergement                          | Usage                                   |
+| --------------- | ------------------------------------ | --------------------------------------- |
+| **Dev local**   | `pnpm dev` (Vite) + `uv run uvicorn` | Travail quotidien                       |
+| **CI**          | GitHub Actions ephemeral             | Tests et build sur chaque PR            |
+| **Demo public** | GitHub Pages (frontend-only)         | Vitrine pour découverte rapide          |
+| **Self-hosted** | Machine de l'utilisateur             | Production réelle pour les utilisateurs |
 
 **Pas de "staging".** Ce serait absurde pour un projet auto-hébergé : chaque utilisateur déploie ce qu'il veut, quand il veut. La "staging" est la branche `main` déployée sur GitHub Pages pour le preview communautaire.
 
@@ -1459,6 +1546,7 @@ kendraw/
 ### 12.5 Stratégie de déploiement
 
 **Pour l'utilisateur self-hosted :**
+
 1. `git clone` ou `wget` du `docker-compose.yml`
 2. `docker compose up -d`
 3. Ouvrir `http://localhost:8080`
@@ -1466,11 +1554,13 @@ kendraw/
 C'est tout. Pas de blue-green, pas de canary, pas de rolling update. L'utilisateur fait `docker compose pull && docker compose up -d` pour mettre à jour. Downtime : ~10 secondes.
 
 **Versioning :**
+
 - SemVer strict.
 - Tags Git `v0.1.0`, `v0.2.0`, …, `v1.0.0`.
 - Images Docker taggées avec le SemVer + `latest` (déconseillé en prod, mais disponible).
 
 **Backwards compatibility :**
+
 - Schema `.kdx` migré explicitement par la CI à chaque bump majeur de `schemaVersion`.
 - API REST : toute rupture incompatible va sur `/api/v2/*` cohabitant.
 - Tags Docker : on garde les anciennes versions disponibles indéfiniment sur GHCR.
@@ -1487,76 +1577,76 @@ Si une institution veut industrialiser le déploiement à 50 instances, c'est un
 
 ### 13.1 FR → composants
 
-| FR ID  | Nom (court)                                  | Composant(s) principal(aux)                                         | Notes                                                  |
-|--------|----------------------------------------------|---------------------------------------------------------------------|--------------------------------------------------------|
-| FR-001 | Canvas 2D interactif                         | `scene`, `renderer-canvas`, `ui`                                    | Driver D1                                              |
-| FR-002 | Atom & element placement                     | `scene`, `ui`                                                       |                                                        |
-| FR-003 | Bond types MVP                               | `scene`, `ui`                                                       |                                                        |
-| FR-004 | Ring library MVP                             | `scene`, `ui`                                                       |                                                        |
-| FR-005 | Quick carbon chain                           | `scene`, `ui`                                                       |                                                        |
-| FR-006 | Wedge/dash display                           | `scene`, `renderer-canvas`, `renderer-svg`                          |                                                        |
-| FR-007 | Real-time valence validation                 | `scene` (validators), `chem`                                        | Frontend uniquement, no round-trip                     |
-| FR-008 | Selection tools MVP                          | `scene`, `ui`                                                       |                                                        |
-| FR-009 | Unlimited undo/redo                          | `scene` (history)                                                   |                                                        |
-| FR-010 | Edit operations + transforms                 | `scene`, `ui`                                                       |                                                        |
-| FR-011 | Reaction arrows                              | `scene`, `renderer-canvas`, `renderer-svg`, `ui`                    |                                                        |
-| FR-012 | Curly arrows                                 | `scene`, `renderer-canvas`, `renderer-svg`, `ui`                    | Géométrie Bézier 4 pts (UX Q#3)                        |
-| FR-013 | Reaction conditions                          | `scene`, `ui`                                                       |                                                        |
-| FR-014 | Glassmorphism + dark/light                   | `ui` (Glasswerk)                                                    |                                                        |
-| FR-015 | Real-time property panel                     | `ui`, `chem` (RDKit.js)                                             | Frontend, < 100 ms ≤ 100 atoms                         |
-| FR-016 | Multi-document tabs                          | `ui`, `persistence`                                                 |                                                        |
-| FR-017 | Local auto-save                              | `persistence` (IDB + worker)                                        | NFR-010                                                |
-| FR-018 | Frontend SMILES parsing                      | `chem`                                                              | POC #2 bloquant                                        |
-| FR-019 | ChemDraw shortcuts                           | `ui` (tool controllers)                                             |                                                        |
-| FR-020 | Drag & drop import                           | `ui`, `io`                                                          |                                                        |
-| FR-021 | RDKit backend compute API                    | `kendraw_api`, `kendraw_chem` (ComputeService)                      |                                                        |
-| FR-022 | Format conversion (MVP)                      | `kendraw_api`, `kendraw_chem` (ConvertService), `io` (frontend)     |                                                        |
-| FR-023 | MVP file import                              | `io`, `ui`                                                          |                                                        |
-| FR-024 | MVP file export                              | `renderer-svg`, `ui`, `io`                                          |                                                        |
-| FR-025 | Image copy-paste                             | `renderer-svg`, `ui` (ClipboardItem API)                            |                                                        |
-| FR-026 | Citation splash / About                      | `ui`                                                                |                                                        |
-| FR-027 | EXIF / metadata footprint                    | `renderer-svg` (post-pipeline)                                      |                                                        |
-| FR-028 | Self-hosted bundle                           | `docker/`, doc                                                      | NFR-004                                                |
-| FR-029 | Static demo mode                             | `ui` (build profile), `api-client` (stub), CI                       | D4                                                     |
-| FR-030 | Advanced bond types (V1)                     | `scene`, `renderer-canvas`, `renderer-svg`                          |                                                        |
-| FR-031 | Lone pairs / radicals (V1)                   | `scene`, `renderer-canvas`, `renderer-svg`                          |                                                        |
-| FR-032 | R/S et E/Z computation (V1)                  | `kendraw_chem` (StereoService), `chem` (cache)                      |                                                        |
-| FR-033 | Lasso + advanced layout (V1)                 | `scene`, `ui`                                                       |                                                        |
-| FR-034 | Resonance arrows + multi-step (V1)           | `scene`, `renderer-canvas`, `ui`                                    |                                                        |
-| FR-035 | Biomolecule template library (V1)            | `ui` (templates), `persistence`                                     |                                                        |
-| FR-036 | Common molecules / protecting groups (V1)    | `ui` (templates)                                                    |                                                        |
-| FR-037 | User custom templates (V1)                   | `persistence`, `ui`                                                 |                                                        |
-| FR-038 | Drug-likeness / Lipinski (V1)                | `kendraw_chem` (ComputeService), `ui`                               |                                                        |
-| FR-039 | Full descriptor suite (V1)                   | `kendraw_chem` (ComputeService), `ui`                               |                                                        |
-| FR-040 | IUPAC name → structure (V1)                  | `kendraw_chem` (NamingService + OPSIN)                              | POC #4 bloquant                                        |
-| FR-041 | Structure → IUPAC name (V1)                  | `kendraw_chem` (NamingService + RDKit)                              | POC #4 bloquant                                        |
-| FR-042 | Elemental analysis / stoichiometry (V1)      | `kendraw_chem` (ComputeService), `ui`                               |                                                        |
-| FR-043 | CDXML import/export (V1)                     | `io`, `kendraw_chem` (ConvertService)                               | POC #3 bloquant                                        |
-| FR-044 | CML / RXN (V1)                               | `io`, `kendraw_chem` (ConvertService)                               |                                                        |
-| FR-045 | Publication-quality vector export (V1)       | `renderer-svg`, pipelines PDF/EPS                                   | NFR-005                                                |
-| FR-046 | Customizable tool palette (V1)               | `ui`, `persistence` (settings)                                      |                                                        |
-| FR-047 | Customizable shortcuts (V1)                  | `ui`, `persistence`                                                 |                                                        |
-| FR-048 | Integrated structure search (V1)             | `ui`, `chem` (substructure matching), `persistence`                 |                                                        |
-| FR-049 | Embedded reference data tables (V1)          | `ui`                                                                |                                                        |
+| FR ID  | Nom (court)                               | Composant(s) principal(aux)                                     | Notes                              |
+| ------ | ----------------------------------------- | --------------------------------------------------------------- | ---------------------------------- |
+| FR-001 | Canvas 2D interactif                      | `scene`, `renderer-canvas`, `ui`                                | Driver D1                          |
+| FR-002 | Atom & element placement                  | `scene`, `ui`                                                   |                                    |
+| FR-003 | Bond types MVP                            | `scene`, `ui`                                                   |                                    |
+| FR-004 | Ring library MVP                          | `scene`, `ui`                                                   |                                    |
+| FR-005 | Quick carbon chain                        | `scene`, `ui`                                                   |                                    |
+| FR-006 | Wedge/dash display                        | `scene`, `renderer-canvas`, `renderer-svg`                      |                                    |
+| FR-007 | Real-time valence validation              | `scene` (validators), `chem`                                    | Frontend uniquement, no round-trip |
+| FR-008 | Selection tools MVP                       | `scene`, `ui`                                                   |                                    |
+| FR-009 | Unlimited undo/redo                       | `scene` (history)                                               |                                    |
+| FR-010 | Edit operations + transforms              | `scene`, `ui`                                                   |                                    |
+| FR-011 | Reaction arrows                           | `scene`, `renderer-canvas`, `renderer-svg`, `ui`                |                                    |
+| FR-012 | Curly arrows                              | `scene`, `renderer-canvas`, `renderer-svg`, `ui`                | Géométrie Bézier 4 pts (UX Q#3)    |
+| FR-013 | Reaction conditions                       | `scene`, `ui`                                                   |                                    |
+| FR-014 | Glassmorphism + dark/light                | `ui` (Glasswerk)                                                |                                    |
+| FR-015 | Real-time property panel                  | `ui`, `chem` (RDKit.js)                                         | Frontend, < 100 ms ≤ 100 atoms     |
+| FR-016 | Multi-document tabs                       | `ui`, `persistence`                                             |                                    |
+| FR-017 | Local auto-save                           | `persistence` (IDB + worker)                                    | NFR-010                            |
+| FR-018 | Frontend SMILES parsing                   | `chem`                                                          | POC #2 bloquant                    |
+| FR-019 | ChemDraw shortcuts                        | `ui` (tool controllers)                                         |                                    |
+| FR-020 | Drag & drop import                        | `ui`, `io`                                                      |                                    |
+| FR-021 | RDKit backend compute API                 | `kendraw_api`, `kendraw_chem` (ComputeService)                  |                                    |
+| FR-022 | Format conversion (MVP)                   | `kendraw_api`, `kendraw_chem` (ConvertService), `io` (frontend) |                                    |
+| FR-023 | MVP file import                           | `io`, `ui`                                                      |                                    |
+| FR-024 | MVP file export                           | `renderer-svg`, `ui`, `io`                                      |                                    |
+| FR-025 | Image copy-paste                          | `renderer-svg`, `ui` (ClipboardItem API)                        |                                    |
+| FR-026 | Citation splash / About                   | `ui`                                                            |                                    |
+| FR-027 | EXIF / metadata footprint                 | `renderer-svg` (post-pipeline)                                  |                                    |
+| FR-028 | Self-hosted bundle                        | `docker/`, doc                                                  | NFR-004                            |
+| FR-029 | Static demo mode                          | `ui` (build profile), `api-client` (stub), CI                   | D4                                 |
+| FR-030 | Advanced bond types (V1)                  | `scene`, `renderer-canvas`, `renderer-svg`                      |                                    |
+| FR-031 | Lone pairs / radicals (V1)                | `scene`, `renderer-canvas`, `renderer-svg`                      |                                    |
+| FR-032 | R/S et E/Z computation (V1)               | `kendraw_chem` (StereoService), `chem` (cache)                  |                                    |
+| FR-033 | Lasso + advanced layout (V1)              | `scene`, `ui`                                                   |                                    |
+| FR-034 | Resonance arrows + multi-step (V1)        | `scene`, `renderer-canvas`, `ui`                                |                                    |
+| FR-035 | Biomolecule template library (V1)         | `ui` (templates), `persistence`                                 |                                    |
+| FR-036 | Common molecules / protecting groups (V1) | `ui` (templates)                                                |                                    |
+| FR-037 | User custom templates (V1)                | `persistence`, `ui`                                             |                                    |
+| FR-038 | Drug-likeness / Lipinski (V1)             | `kendraw_chem` (ComputeService), `ui`                           |                                    |
+| FR-039 | Full descriptor suite (V1)                | `kendraw_chem` (ComputeService), `ui`                           |                                    |
+| FR-040 | IUPAC name → structure (V1)               | `kendraw_chem` (NamingService + OPSIN)                          | POC #4 bloquant                    |
+| FR-041 | Structure → IUPAC name (V1)               | `kendraw_chem` (NamingService + RDKit)                          | POC #4 bloquant                    |
+| FR-042 | Elemental analysis / stoichiometry (V1)   | `kendraw_chem` (ComputeService), `ui`                           |                                    |
+| FR-043 | CDXML import/export (V1)                  | `io`, `kendraw_chem` (ConvertService)                           | POC #3 bloquant                    |
+| FR-044 | CML / RXN (V1)                            | `io`, `kendraw_chem` (ConvertService)                           |                                    |
+| FR-045 | Publication-quality vector export (V1)    | `renderer-svg`, pipelines PDF/EPS                               | NFR-005                            |
+| FR-046 | Customizable tool palette (V1)            | `ui`, `persistence` (settings)                                  |                                    |
+| FR-047 | Customizable shortcuts (V1)               | `ui`, `persistence`                                             |                                    |
+| FR-048 | Integrated structure search (V1)          | `ui`, `chem` (substructure matching), `persistence`             |                                    |
+| FR-049 | Embedded reference data tables (V1)       | `ui`                                                            |                                    |
 
 **Couverture :** 49/49 FR adressées par au moins un composant. Aucune FR orpheline.
 
 ### 13.2 NFR → solutions architecturales
 
-| NFR ID  | Nom (court)                       | Solution principale                                                                       | Validation                                  |
-|---------|-----------------------------------|-------------------------------------------------------------------------------------------|---------------------------------------------|
-| NFR-001 | Perf 500 atomes                  | Scene immuable + Canvas 2D + spatial index + workers + abstraction `Renderer`            | POC #1 bloquant + benches CI                |
-| NFR-002 | Compatibilité navigateurs        | Vite es2022 + matrice Playwright cross-browser                                            | CI Playwright sur 3 browsers                |
-| NFR-003 | Licence MIT                      | license-checker + liccheck en CI, whitelist explicite                                     | CI bloque les merges                        |
-| NFR-004 | Auto-hébergé zéro cloud          | docker-compose unique, backend stateless, IndexedDB côté client                           | Test CI réseau-isolé                        |
-| NFR-005 | Qualité vectorielle publication  | `renderer-svg` dédié, polices embarquées, métadonnées, validation 5 figures de référence  | Inkscape headless en CI + URD Abbaye review |
-| NFR-006 | Accessibilité baseline (hors canvas) | Tokens contrast-vérifiés, axe-core en CI, ARIA labels                                  | axe-core CI sans violation AA               |
-| NFR-007 | i18n                             | Lingui + extraction statique + lint anti hardcoded strings                                | CI lint                                     |
-| NFR-008 | Privacy / no telemetry           | Aucune lib analytics, aucun script tiers, CSP stricte, test réseau-isolé                 | Test CI réseau-isolé                        |
-| NFR-009 | Code quality / maintenabilité    | Frontières packages strict, TS strict, mypy strict, CI complète, ADRs                     | CI verte requise + first-PR test            |
-| NFR-010 | Auto-save sans perte             | Worker dédié + write-ahead + restore-on-reload                                            | Test crash-resilience automatisé            |
-| NFR-011 | Citation robustesse              | `CITATION.cff` + splash + EXIF + DOI Zenodo workflow                                      | cffconvert en CI + test export metadata     |
-| NFR-012 | Documentation baseline           | `docs/` structuré + mkdocs/starlight + validation non-author                              | CI build doc + review pré-release           |
+| NFR ID  | Nom (court)                          | Solution principale                                                                      | Validation                                  |
+| ------- | ------------------------------------ | ---------------------------------------------------------------------------------------- | ------------------------------------------- |
+| NFR-001 | Perf 500 atomes                      | Scene immuable + Canvas 2D + spatial index + workers + abstraction `Renderer`            | POC #1 bloquant + benches CI                |
+| NFR-002 | Compatibilité navigateurs            | Vite es2022 + matrice Playwright cross-browser                                           | CI Playwright sur 3 browsers                |
+| NFR-003 | Licence MIT                          | license-checker + liccheck en CI, whitelist explicite                                    | CI bloque les merges                        |
+| NFR-004 | Auto-hébergé zéro cloud              | docker-compose unique, backend stateless, IndexedDB côté client                          | Test CI réseau-isolé                        |
+| NFR-005 | Qualité vectorielle publication      | `renderer-svg` dédié, polices embarquées, métadonnées, validation 5 figures de référence | Inkscape headless en CI + URD Abbaye review |
+| NFR-006 | Accessibilité baseline (hors canvas) | Tokens contrast-vérifiés, axe-core en CI, ARIA labels                                    | axe-core CI sans violation AA               |
+| NFR-007 | i18n                                 | Lingui + extraction statique + lint anti hardcoded strings                               | CI lint                                     |
+| NFR-008 | Privacy / no telemetry               | Aucune lib analytics, aucun script tiers, CSP stricte, test réseau-isolé                 | Test CI réseau-isolé                        |
+| NFR-009 | Code quality / maintenabilité        | Frontières packages strict, TS strict, mypy strict, CI complète, ADRs                    | CI verte requise + first-PR test            |
+| NFR-010 | Auto-save sans perte                 | Worker dédié + write-ahead + restore-on-reload                                           | Test crash-resilience automatisé            |
+| NFR-011 | Citation robustesse                  | `CITATION.cff` + splash + EXIF + DOI Zenodo workflow                                     | cffconvert en CI + test export metadata     |
+| NFR-012 | Documentation baseline               | `docs/` structuré + mkdocs/starlight + validation non-author                             | CI build doc + review pré-release           |
 
 **Couverture :** 12/12 NFR adressées par une solution architecturale concrète et un mécanisme de validation.
 
@@ -1654,6 +1744,7 @@ Documentation honnête des décisions structurantes — ce qu'on gagne, ce qu'on
 ### 15.1 POC bloquants — précèdent toute écriture de code applicatif
 
 **POC #1 — Performance 500 atomes (NFR-001 / D1)**
+
 - **Hypothèse :** Canvas 2D + scene immuable + diff incrémental + spatial index tient ≥ 30 fps soutenus à 500 atomes sur laptop i5/M1.
 - **Méthode :** prototype minimal `packages/scene-poc/` avec génération de scènes synthétiques 100/250/500/750 atomes, pan/zoom/edit, mesure FPS et frame budget.
 - **Critère de succès :** ≥ 30 fps soutenu, frame budget moyen < 16 ms à 500 atomes.
@@ -1661,6 +1752,7 @@ Documentation honnête des décisions structurantes — ce qu'on gagne, ce qu'on
 - **Impact si échec total :** **arrêt projet ou redéfinition radicale de l'architecture rendu.**
 
 **POC #2 — RDKit.js bundle / latence (FR-018 / D1)**
+
 - **Hypothèse :** RDKit.js WASM est utilisable côté frontend avec bundle < 6 MB compressé et parsing SMILES < 200 ms pour ≤ 100 atomes.
 - **Méthode :** mini-app de mesure, lazy load WASM dans Web Worker, parsing SMILES test set 100 structures, mesure first interactive < 2 s sur connexion 4G simulée (Chrome DevTools Network throttling).
 - **Critère de succès :** trois critères atteints simultanément.
@@ -1668,6 +1760,7 @@ Documentation honnête des décisions structurantes — ce qu'on gagne, ce qu'on
 - **Impact si échec total :** divergence frontend/backend (parité réduite), tolérée si OpenChemLib couvre suffisamment.
 
 **POC #3 — CDXML round-trip (FR-043 / V1)**
+
 - **Hypothèse :** RDKit Python (et/ou parser TS custom) supporte le round-trip CDXML → Kendraw → CDXML avec ≥ 95 % de fidélité sur le corpus URD Abbaye.
 - **Méthode :** récupérer 50-100 fichiers CDXML réels d'URD Abbaye, parser, re-écrire, diff structurel.
 - **Critère de succès :** ≥ 95 % préservation atomes, liaisons, charges, stéréo, flèches, annotations conditions.
@@ -1676,6 +1769,7 @@ Documentation honnête des décisions structurantes — ce qu'on gagne, ce qu'on
 - **Timing :** déclenché en début de phase V1, après MVP stable.
 
 **POC #4 — Couverture IUPAC name ↔ structure (FR-040, FR-041 / V1)**
+
 - **Hypothèse :** OPSIN (name → structure) et RDKit/STOUT (structure → name) atteignent ≥ 80 % de bonne réponse sur un test set de 200 IUPAC names / 200 structures de référence.
 - **Méthode :** test set curated, comparaison résultats vs gold standard.
 - **Critère de succès :** ≥ 80 % sur les deux directions.
@@ -1685,26 +1779,31 @@ Documentation honnête des décisions structurantes — ce qu'on gagne, ce qu'on
 ### 15.2 Risques restants
 
 **R-001 : Curly arrow Bézier serialization in MOL/CDXML extensions**
+
 - **Description :** Aucun standard pour sérialiser une géométrie Bézier de flèche incurvée dans MOL ou CDXML. Custom extension obligatoire.
 - **Impact :** les flèches incurvées ne survivent pas à un round-trip MOL/CDXML strict (les autres outils ne les comprendront pas).
 - **Mitigation :** sérialiser en `.kdx` natif pour préservation totale ; en MOL/CDXML, utiliser un bloc d'extension propriétaire `<kendraw:curly-arrow>` ou un commentaire structuré ; le re-importer via Kendraw fonctionne, l'importer ailleurs perd les courbes (acceptable).
 
 **R-002 : Embedding de polices dans SVG/PDF**
+
 - **Description :** Garantir la reproductibilité typographique cross-app implique d'embarquer des subsets de polices dans chaque export, ce qui alourdit chaque fichier.
 - **Impact :** exports SVG plus lourds (50-200 KB de overhead par fichier).
 - **Mitigation :** subset CI-driven via fonttools, n'embarquer que les glyphes utilisés. Acceptable.
 
 **R-003 : Inconsistance IndexedDB cross-browser**
+
 - **Description :** Safari WebKit a un quota IDB stingy (~50 MB initial, escalation par prompt) et des bugs historiques sur les transactions longues.
 - **Impact :** auto-save peut échouer ou être lent sur Safari pour gros documents.
 - **Mitigation :** scheduler chunk-based pour Safari, prompt utilisateur explicite à 80 % quota, doc dédiée.
 
 **R-004 : WASM cold start en mode démo**
+
 - **Description :** RDKit.js WASM ~3-5 MB compressé peut prendre 1-2 s à charger sur 4G.
 - **Impact :** premier rendu interactif retardé en mode démo public.
 - **Mitigation :** OpenChemLib JS dans le profil démo (POC #2 valide), preloading aggressive via `<link rel="preload">`, splash screen pendant le chargement.
 
 **R-005 : Burnout solo dev (le risque #1 du brief)**
+
 - **Description :** JB est seul, à temps partiel, sur 12-24 mois.
 - **Impact :** projet à l'arrêt si JB décroche.
 - **Mitigation architecturale :** D7 (codebase appropriable). Frontières strictes, tests, doc, CI. C'est tout l'objectif de ce document.
@@ -1761,6 +1860,7 @@ L'architecture ne prépare pas explicitement V2 mais elle ne le rend pas impossi
 ## Approbation & Sign-off
 
 **Statut de revue :**
+
 - [ ] Architect / Tech Lead (JB Donnette)
 - [ ] Product Owner (JB Donnette — double casquette)
 - [ ] First-pass sanity check par contact URD Abbaye (optionnel mais recommandé avant POC #1)
@@ -1769,8 +1869,8 @@ L'architecture ne prépare pas explicitement V2 mais elle ne le rend pas impossi
 
 ## Historique des révisions
 
-| Version | Date       | Auteur                | Changements                                                |
-|---------|------------|-----------------------|------------------------------------------------------------|
+| Version | Date       | Auteur                 | Changements                                                               |
+| ------- | ---------- | ---------------------- | ------------------------------------------------------------------------- |
 | 1.0     | 2026-04-12 | Jean-Baptiste Donnette | Architecture initiale couvrant MVP + V1, alignée sur PRD v1.0 et UX v1.0. |
 
 ---
@@ -1787,6 +1887,7 @@ L'architecture ne prépare pas explicitement V2 mais elle ne le rend pas impossi
 ### Phase 4 — Sprint Planning
 
 Une fois POC #1 et POC #2 validés, lancer `/sprint-planning` pour :
+
 - Décomposer les 12 epics en stories détaillées (66-92 stories estimées).
 - Estimer la complexité.
 - Séquencer la livraison MVP en sprints.
@@ -1800,20 +1901,20 @@ Après MVP stable, avant l'engagement formel sur les FR V1.
 
 ## Annexe A — Matrice d'évaluation des libs chimie frontend
 
-| Critère                                 | Poids | RDKit.js (WASM) | OpenChemLib JS | smiles-drawer |
-|-----------------------------------------|-------|------------------|------------------|------------------|
-| Licence MIT-compat                      | bloquant | ✓ (BSD-3)        | ✓ (BSD-2)        | ✓ (MIT)         |
-| Parsing SMILES complet (rings, stereo)  | élevé | ✓ (référence)    | ✓                | ✓ (rendu only)  |
-| Canonicalisation                        | élevé | ✓                | ✓ (limité)       | ✗               |
-| InChI generation                        | élevé | ✓                | ✗                | ✗               |
-| Valence checking                        | élevé | ✓                | ✓                | ✗               |
-| Bundle size compressé                    | élevé | ~3-5 MB ✗       | ~400 KB ✓        | ~150 KB ✓       |
-| Latence cold start (4G)                  | élevé | 1-2 s ✗         | 200 ms ✓         | 100 ms ✓        |
-| Parité comportementale RDKit Python     | élevé | ✓ (parfait)      | ⚠ (divergence)  | n/a             |
-| Maintenance active                       | moyen | ✓                | ✓                | ✗ (peu actif)   |
-| API TypeScript-friendly                  | moyen | ⚠ (manuelle)    | ✓                | ✓                |
-| **Verdict cible profil full**           | —     | **✓ (sous réserve POC #2)** | fallback        | rejeté          |
-| **Verdict cible profil static-demo**    | —     | si POC #2 OK     | **✓ par défaut** | rejeté          |
+| Critère                                | Poids    | RDKit.js (WASM)             | OpenChemLib JS   | smiles-drawer  |
+| -------------------------------------- | -------- | --------------------------- | ---------------- | -------------- |
+| Licence MIT-compat                     | bloquant | ✓ (BSD-3)                   | ✓ (BSD-2)        | ✓ (MIT)        |
+| Parsing SMILES complet (rings, stereo) | élevé    | ✓ (référence)               | ✓                | ✓ (rendu only) |
+| Canonicalisation                       | élevé    | ✓                           | ✓ (limité)       | ✗              |
+| InChI generation                       | élevé    | ✓                           | ✗                | ✗              |
+| Valence checking                       | élevé    | ✓                           | ✓                | ✗              |
+| Bundle size compressé                  | élevé    | ~3-5 MB ✗                   | ~400 KB ✓        | ~150 KB ✓      |
+| Latence cold start (4G)                | élevé    | 1-2 s ✗                     | 200 ms ✓         | 100 ms ✓       |
+| Parité comportementale RDKit Python    | élevé    | ✓ (parfait)                 | ⚠ (divergence)   | n/a            |
+| Maintenance active                     | moyen    | ✓                           | ✓                | ✗ (peu actif)  |
+| API TypeScript-friendly                | moyen    | ⚠ (manuelle)                | ✓                | ✓              |
+| **Verdict cible profil full**          | —        | **✓ (sous réserve POC #2)** | fallback         | rejeté         |
+| **Verdict cible profil static-demo**   | —        | si POC #2 OK                | **✓ par défaut** | rejeté         |
 
 **Décision actuelle :** RDKit.js pour le profil full, OpenChemLib pour le profil static-demo, swap conditionné par POC #2.
 
@@ -1824,11 +1925,13 @@ Après MVP stable, avant l'engagement formel sur les FR V1.
 ### Backend (instance unique self-hosted)
 
 **Hypothèse de charge nominale :**
+
 - 1 lab = 5-50 chimistes
 - Charge typique : ~10 requêtes / chimiste / jour = 50-500 requêtes / jour total
 - Pic : ~5 requêtes/seconde (très optimiste)
 
 **Ressources nécessaires :**
+
 - CPU : 2 vCPU suffisants (RDKit ops sont sub-seconde sur structures normales)
 - RAM : 1-2 GB (Python + RDKit + caches LRU)
 - Disk : ~500 MB image Docker, négligeable runtime
@@ -1839,16 +1942,19 @@ Après MVP stable, avant l'engagement formel sur les FR V1.
 ### Frontend
 
 **Cold start :**
+
 - Bundle initial < 350 KB gzip → < 1 s download sur 10 Mbps.
 - WASM RDKit.js lazy → +1-2 s pour le premier appel chem.
 
 **Steady state :**
+
 - Tient sur n'importe quel navigateur moderne avec ≥ 4 GB RAM.
 - Document 500 atomes : < 50 MB RAM JS heap + IDB.
 
 ### Démo statique
 
 **Hébergement GitHub Pages :**
+
 - Bundle total avec OpenChemLib (profil démo) : ~600 KB - 1 MB
 - Bande passante GitHub Pages : illimitée pour OSS, soft cap 100 GB/mois
 - Suffisant pour des dizaines de milliers de visiteurs/mois sans souci
@@ -1858,6 +1964,7 @@ Après MVP stable, avant l'engagement formel sur les FR V1.
 ## Annexe C — Coûts d'opération
 
 **Pour le projet (Jean-Baptiste Donnette) :**
+
 - GitHub : gratuit (public OSS)
 - GitHub Actions : 2000 min/mois gratuits, suffisant pour la cadence de PR attendue (solo dev)
 - GitHub Pages : gratuit
@@ -1866,6 +1973,7 @@ Après MVP stable, avant l'engagement formel sur les FR V1.
 - **Total : 0 €/mois.**
 
 **Pour un utilisateur self-hosted :**
+
 - Hardware : machine déjà existante (laptop, NUC, VM lab)
 - Bande passante : négligeable, trafic local
 - TLS cert : gratuit via Let's Encrypt (à la charge utilisateur si exposition publique)
@@ -1877,4 +1985,4 @@ C'est précisément l'inverse de ChemDraw (~4000 €/utilisateur/an). C'est le p
 
 **Ce document a été créé selon la BMAD Method v6 — Phase 3 (Solutioning).**
 
-*Pour continuer : exécuter `/solutioning-gate-check` pour valider la sortie de Phase 3, puis `/sprint-planning` pour entrer en Phase 4.*
+_Pour continuer : exécuter `/solutioning-gate-check` pour valider la sortie de Phase 3, puis `/sprint-planning` pour entrer en Phase 4._

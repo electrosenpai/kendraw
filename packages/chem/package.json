@@ -1,0 +1,13 @@
+{
+  "name": "@kendraw/chem",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Chemistry library adapter (RDKit.js / OpenChemLib)",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  }
+}

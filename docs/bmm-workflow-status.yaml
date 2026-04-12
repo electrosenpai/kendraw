@@ -2,87 +2,93 @@
 # Updated automatically by BMM workflows
 
 project:
-  name: "Kendraw"
-  type: "web-app"
+  name: 'Kendraw'
+  type: 'web-app'
   level: 4
-  initialized_at: "2026-04-11T00:00:00Z"
-  last_updated: "2026-04-12T05:00:00Z"
+  initialized_at: '2026-04-11T00:00:00Z'
+  last_updated: '2026-04-12T05:00:00Z'
 
 # Phase 1 — Analysis (optional)
 analysis:
   product_brief:
-    status: "complete"   # not-started | in-progress | complete | skipped
-    path: "docs/product-brief-kendraw-2026-04-12.md"
-    completed_at: "2026-04-12"
+    status: 'complete' # not-started | in-progress | complete | skipped
+    path: 'docs/product-brief-kendraw-2026-04-12.md'
+    completed_at: '2026-04-12'
   research:
-    status: "optional"
+    status: 'optional'
     path: null
   brainstorming:
-    status: "optional"
+    status: 'optional'
     path: null
 
 # Phase 2 — Planning
 planning:
   prd:
-    status: "complete"       # Level 4 → REQUIRED
-    path: "docs/prd-kendraw-2026-04-12.md"
-    completed_at: "2026-04-12"
+    status: 'complete' # Level 4 → REQUIRED
+    path: 'docs/prd-kendraw-2026-04-12.md'
+    completed_at: '2026-04-12'
   ux_design:
-    status: "complete"       # Critical for Kendraw (UX is a key differentiator)
-    path: "docs/ux-design-kendraw-2026-04-12.md"
-    completed_at: "2026-04-12"
+    status: 'complete' # Critical for Kendraw (UX is a key differentiator)
+    path: 'docs/ux-design-kendraw-2026-04-12.md'
+    completed_at: '2026-04-12'
     surfaces_designed: 22
     user_flows: 10
     components: 11
-    accessibility_level: "WCAG 2.1 AA (non-canvas UI)"
-    resolved_open_questions: ["Q#3 curly arrow geometry", "Q#5 multi-structure SDF UX"]
+    accessibility_level: 'WCAG 2.1 AA (non-canvas UI)'
+    resolved_open_questions: ['Q#3 curly arrow geometry', 'Q#5 multi-structure SDF UX']
   tech_spec:
-    status: "optional"       # Level 4 → optional (covered by architecture)
+    status: 'optional' # Level 4 → optional (covered by architecture)
     path: null
 
 # Phase 3 — Solutioning
 solutioning:
   architecture:
-    status: "complete"       # Level 4 → REQUIRED
-    path: "docs/architecture-kendraw-2026-04-12.md"
-    completed_at: "2026-04-12"
-    pattern: "Modular Monolith (frontend SPA + backend API)"
+    status: 'complete' # Level 4 → REQUIRED
+    path: 'docs/architecture-kendraw-2026-04-12.md'
+    completed_at: '2026-04-12'
+    pattern: 'Modular Monolith (frontend SPA + backend API)'
     components_frontend: 8
     components_backend: 4
     frs_addressed: 49
     nfrs_addressed: 12
-    blocking_pocs: ["POC#1 perf 500 atomes", "POC#2 RDKit.js bundle", "POC#3 CDXML round-trip", "POC#4 IUPAC coverage"]
+    blocking_pocs:
+      [
+        'POC#1 perf 500 atomes',
+        'POC#2 RDKit.js bundle',
+        'POC#3 CDXML round-trip',
+        'POC#4 IUPAC coverage',
+      ]
   solutioning_gate_check:
-    status: "PASS"
-    path: "docs/solutioning-gate-check-kendraw-2026-04-12.md"
-    completed_at: "2026-04-12"
-    fr_coverage: "100%"   # 49/49
-    nfr_coverage: "100%"  # 12/12 fully addressed
-    quality_score: "100%" # 42/42 checks
+    status: 'PASS'
+    path: 'docs/solutioning-gate-check-kendraw-2026-04-12.md'
+    completed_at: '2026-04-12'
+    fr_coverage: '100%' # 49/49
+    nfr_coverage: '100%' # 12/12 fully addressed
+    quality_score: '100%' # 42/42 checks
     blockers: 0
-    conditions: []        # no conditions, clean PASS
+    conditions: [] # no conditions, clean PASS
 
 # Phase 4 — Development
 development:
   sprint_planning:
-    status: "complete"
-    path: "docs/sprint-plan-kendraw-2026-04-12.md"
-    sprint_status_path: "docs/sprint-status.yaml"
-    completed_at: "2026-04-12"
-    scope: "MVP only (29 FR Must Have)"
-    v1_deferred: true            # second /sprint-planning post-MVP for V1
-    total_sprints: 19            # sprint 0 (gated) + 18 applicative
+    status: 'complete'
+    path: 'docs/sprint-plan-kendraw-2026-04-12.md'
+    sprint_status_path: 'docs/sprint-status.yaml'
+    completed_at: '2026-04-12'
+    scope: 'MVP only (29 FR Must Have)'
+    v1_deferred: true # second /sprint-planning post-MVP for V1
+    total_sprints: 19 # sprint 0 (gated) + 18 applicative
     total_stories: 67
     total_points: 215
-    estimated_calendar_months: "9-10"
+    estimated_calendar_months: '9-10'
     capacity_points_per_sprint: 10
     capacity_hours_per_week: 10
   stories_created: 0
   stories_completed: 0
 
 # Current position in the workflow
-current_phase: "development"
-current_step: "sprint_0_execution"
-next_recommended: "/create-story STORY-INF-001"
-last_workflow: "sprint-planning"
-last_workflow_date: "2026-04-12"
+current_phase: 'development'
+current_step: 'sprint_0_execution'
+next_recommended: '/create-story STORY-INF-001'
+last_workflow: 'sprint-planning'
+last_workflow_date: '2026-04-12'

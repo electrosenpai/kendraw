@@ -1,0 +1,52 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+*.tsbuildinfo
+
+# Vite
+.vite/
+
+# Test coverage
+coverage/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+*.egg-info/
+
+# IDE
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Debug logs
+npm-debug.log*
+pnpm-debug.log*
+
+# Corpus URD Abbaye (gitignored, downloaded separately)
+tests/fixtures/cdxml-corpus/urd-abbaye/
+
+# Playwright
+test-results/
+playwright-report/
+
+# POC directories (throwaway, not part of final app)
+packages/scene-poc/
+packages/chem-poc/
