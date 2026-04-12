@@ -37,19 +37,23 @@ module,skill,display-name,menu-code,description,action,args,phase,after,before,r
 ```
 
 **Phases** determine the high-level flow:
+
 - `anytime` — available regardless of workflow state
 - Numbered phases (`1-analysis`, `2-planning`, etc.) flow in order; naming varies by module
 
 **Dependencies** determine ordering within and across phases:
+
 - `after` — skills that should ideally complete before this one
 - `before` — skills that should run after this one
 - Format: `skill-name` for single-action skills, `skill-name:action` for multi-action skills
 
 **Required gates**:
+
 - `required=true` items must complete before the user can meaningfully proceed to later phases
 - A phase with no required items is entirely optional — recommend it but be clear about what's actually required next
 
 **Completion detection**:
+
 - Search resolved output paths for `outputs` patterns
 - Fuzzy-match found files to catalog rows
 - User may also state completion explicitly, or it may be evident from the current conversation
@@ -59,6 +63,7 @@ module,skill,display-name,menu-code,description,action,args,phase,after,before,r
 ## Response Format
 
 For each recommended item, present:
+
 - `[menu-code]` **Display name** — e.g., "[CP] Create PRD"
 - Skill name in backticks — e.g., `bmad-create-prd`
 - For multi-action skills: action invocation context — e.g., "tech-writer lets create a mermaid diagram!"

@@ -8,11 +8,11 @@ export interface Renderer {
 
 // CPK-inspired color palette keyed by atomic number
 const CPK_COLORS: Record<number, string> = {
-  1: '#ffffff',  // H — white
-  6: '#333333',  // C — dark gray (not pure black, better on dark bg)
-  7: '#3050f8',  // N — blue
-  8: '#ff0000',  // O — red
-  9: '#90e050',  // F — green
+  1: '#ffffff', // H — white
+  6: '#333333', // C — dark gray (not pure black, better on dark bg)
+  7: '#3050f8', // N — blue
+  8: '#ff0000', // O — red
+  9: '#90e050', // F — green
   15: '#ff8000', // P — orange
   16: '#ffff30', // S — yellow
   17: '#1ff01f', // Cl — green
@@ -24,10 +24,31 @@ const DEFAULT_COLOR = '#808080';
 
 // Element symbols keyed by atomic number (common subset)
 const ELEMENT_SYMBOLS: Record<number, string> = {
-  1: 'H', 2: 'He', 3: 'Li', 4: 'Be', 5: 'B', 6: 'C', 7: 'N', 8: 'O',
-  9: 'F', 10: 'Ne', 11: 'Na', 12: 'Mg', 13: 'Al', 14: 'Si', 15: 'P',
-  16: 'S', 17: 'Cl', 18: 'Ar', 19: 'K', 20: 'Ca', 26: 'Fe', 29: 'Cu',
-  30: 'Zn', 35: 'Br', 53: 'I',
+  1: 'H',
+  2: 'He',
+  3: 'Li',
+  4: 'Be',
+  5: 'B',
+  6: 'C',
+  7: 'N',
+  8: 'O',
+  9: 'F',
+  10: 'Ne',
+  11: 'Na',
+  12: 'Mg',
+  13: 'Al',
+  14: 'Si',
+  15: 'P',
+  16: 'S',
+  17: 'Cl',
+  18: 'Ar',
+  19: 'K',
+  20: 'Ca',
+  26: 'Fe',
+  29: 'Cu',
+  30: 'Zn',
+  35: 'Br',
+  53: 'I',
 };
 
 const ATOM_RADIUS = 14;

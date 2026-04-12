@@ -27,6 +27,7 @@ STORY-001 laid the foundation with types and a reactive store. This story wires 
 ### Scope
 
 **In scope:**
+
 - `AddAtomCommand` and `RemoveAtomCommand` discriminated union types
 - `applyCommand(state, cmd)` reducer using Immer `produce`
 - Store `dispatch()` applies command, emits SceneDiff to listeners
@@ -35,6 +36,7 @@ STORY-001 laid the foundation with types and a reactive store. This story wires 
 - Vitest tests: add/remove/multiple add/structural sharing
 
 **Out of scope:**
+
 - Undo/redo execution (Sprint 3)
 - Bonds, arrows, annotations commands (future sprints)
 - Spatial index (Sprint 3)

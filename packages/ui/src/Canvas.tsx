@@ -1,10 +1,5 @@
 import { useRef, useEffect, useCallback, useSyncExternalStore } from 'react';
-import {
-  createSceneStore,
-  createAtom,
-  type SceneStore,
-  type Document,
-} from '@kendraw/scene';
+import { createSceneStore, createAtom, type SceneStore, type Document } from '@kendraw/scene';
 import { CanvasRenderer } from '@kendraw/renderer-canvas';
 
 // Singleton store — lives outside React to be framework-agnostic

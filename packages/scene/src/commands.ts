@@ -12,6 +12,4 @@ export type RemoveAtomCommand = {
 
 export type Command = AddAtomCommand | RemoveAtomCommand;
 
-export type SceneDiff =
-  | { type: 'atom-added'; id: AtomId }
-  | { type: 'atom-removed'; id: AtomId };
+export type SceneDiff = { type: 'atom-added'; id: AtomId } | { type: 'atom-removed'; id: AtomId };

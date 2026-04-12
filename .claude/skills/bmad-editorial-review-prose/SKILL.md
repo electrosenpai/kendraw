@@ -12,10 +12,10 @@ description: 'Clinical copy-editor that reviews text for communication issues. U
 **CONTENT IS SACROSANCT:** Never challenge ideas — only clarify how they're expressed.
 
 **Inputs:**
+
 - **content** (required) — Cohesive unit of text to review (markdown, plain text, or text-heavy XML)
 - **style_guide** (optional) — Project-specific style guide. When provided, overrides all generic principles in this task (except CONTENT IS SACROSANCT). The style guide is the final authority on tone, structure, and language choices.
 - **reader_type** (optional, default: `humans`) — `humans` for standard editorial, `llm` for precision focus
-
 
 ## PRINCIPLES
 
@@ -28,7 +28,6 @@ description: 'Clinical copy-editor that reviews text for communication issues. U
 7. **Respect author voice:** Preserve intentional stylistic choices
 
 > **STYLE GUIDE OVERRIDE:** If a style_guide input is provided, it overrides ALL generic principles in this task (including the Microsoft Writing Style Guide baseline and reader_type-specific priorities). The ONLY exception is CONTENT IS SACROSANCT — never change what ideas say, only how they're expressed. When style guide conflicts with this task, style guide wins.
-
 
 ## STEPS
 
@@ -67,17 +66,16 @@ description: 'Clinical copy-editor that reviews text for communication issues. U
 
 **Output format:**
 
-| Original Text | Revised Text | Changes |
-|---------------|--------------|---------|
+| Original Text              | Revised Text           | Changes                                   |
+| -------------------------- | ---------------------- | ----------------------------------------- |
 | The exact original passage | The suggested revision | Brief explanation of what changed and why |
 
 **Example:**
 
-| Original Text | Revised Text | Changes |
-|---------------|--------------|---------|
+| Original Text                                         | Revised Text                                  | Changes                                                                                |
+| ----------------------------------------------------- | --------------------------------------------- | -------------------------------------------------------------------------------------- |
 | The system will processes data and it handles errors. | The system processes data and handles errors. | Fixed subject-verb agreement ("will processes" to "processes"); removed redundant "it" |
-| Users can chose from options (lines 12, 45, 78) | Users can choose from options | Fixed spelling: "chose" to "choose" (appears in 3 locations) |
-
+| Users can chose from options (lines 12, 45, 78)       | Users can choose from options                 | Fixed spelling: "chose" to "choose" (appears in 3 locations)                           |
 
 ## HALT CONDITIONS
 

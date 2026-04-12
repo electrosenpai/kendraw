@@ -27,6 +27,7 @@ Sprint 1 delivers the first vertical slice: click canvas, atom appears. This sto
 ### Scope
 
 **In scope:**
+
 - All TypeScript types from architecture doc §6.1: `Document`, `Page`, `Atom`, `Bond`, `Arrow`, `Annotation`, `Group`, `Viewport`, `Point`, `BezierGeometry`, `ArrowAnchor`, `DocumentMetadata`, branded ID types
 - `SceneStore` interface: `getState()`, `subscribe(listener)`, `dispatch(command)`, `undo()`, `redo()`, `canUndo()`, `canRedo()`
 - `createSceneStore(initialDoc?: Document): SceneStore` factory
@@ -34,6 +35,7 @@ Sprint 1 delivers the first vertical slice: click canvas, atom appears. This sto
 - Vitest unit tests
 
 **Out of scope:**
+
 - Immer structural sharing (STORY-002)
 - Command implementations (STORY-002)
 - Spatial index / R-tree (Sprint 3)
@@ -61,6 +63,7 @@ Sprint 1 delivers the first vertical slice: click canvas, atom appears. This sto
 ## Technical Notes
 
 ### Components
+
 - **Package:** `packages/scene/`
 - **Files to create:**
   - `src/types.ts` — all scene model types per §6.1 architecture
@@ -71,6 +74,7 @@ Sprint 1 delivers the first vertical slice: click canvas, atom appears. This sto
   - `src/__tests__/store.test.ts` — unit tests
 
 ### Key Design Decisions
+
 - `Record<Id, Entity>` for atoms/bonds/etc (O(1) lookups, per architecture §6.1)
 - Branded types for IDs (`type AtomId = string & { readonly __brand: 'AtomId' }`) for type safety
 - No Immer yet — `dispatch` can use spread/structuredClone for now
@@ -78,6 +82,7 @@ Sprint 1 delivers the first vertical slice: click canvas, atom appears. This sto
 - Framework-agnostic: zero React, zero DOM dependencies
 
 ### Edge Cases
+
 - `subscribe()` then immediate `unsubscribe()` — listener must not fire
 - Multiple subscribers — all notified on dispatch
 - `getState()` before any dispatch — returns valid empty document
@@ -88,14 +93,17 @@ Sprint 1 delivers the first vertical slice: click canvas, atom appears. This sto
 ## Dependencies
 
 **Prerequisite:**
+
 - Sprint 0 gate passed (POC #1 and #2 green)
 
 **Blocks:**
+
 - STORY-002 (command bus builds on this store)
 - STORY-003 (renderer reads Document type)
 - STORY-004 (UI wires store + renderer)
 
 **External Dependencies:**
+
 - None (pure TypeScript, zero external deps)
 
 ---
@@ -124,6 +132,7 @@ Sprint 1 delivers the first vertical slice: click canvas, atom appears. This sto
 ## Progress Tracking
 
 **Status History:**
+
 - 2026-04-12: Created
 
 **Actual Effort:** TBD

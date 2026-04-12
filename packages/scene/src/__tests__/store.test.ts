@@ -5,7 +5,6 @@ import {
   createAtom,
   NotImplementedError,
 } from '../index.js';
-import type { Command } from '../index.js';
 
 describe('createEmptyDocument', () => {
   it('returns a valid document with one page', () => {
@@ -31,7 +30,7 @@ describe('SceneStore', () => {
       const state = store.getState();
       expect(state.pages).toHaveLength(1);
       expect(state.activePageIndex).toBe(0);
-      expect(Object.keys(state.pages[0]!.atoms)).toHaveLength(0);
+      expect(Object.keys(state.pages[0]?.atoms ?? {})).toHaveLength(0);
     });
 
     it('returns the provided initial document', () => {
@@ -52,10 +51,7 @@ describe('SceneStore', () => {
       store.dispatch({ type: 'add-atom', atom });
 
       expect(listener).toHaveBeenCalledTimes(1);
-      expect(listener).toHaveBeenCalledWith(
-        store.getState(),
-        { type: 'atom-added', id: atom.id },
-      );
+      expect(listener).toHaveBeenCalledWith(store.getState(), { type: 'atom-added', id: atom.id });
     });
 
     it('notifies multiple subscribers', () => {
@@ -105,9 +101,7 @@ describe('SceneStore', () => {
   describe('dispatch with no subscribers', () => {
     it('does not throw', () => {
       const store = createSceneStore();
-      expect(() =>
-        store.dispatch({ type: 'add-atom', atom: createAtom(0, 0) }),
-      ).not.toThrow();
+      expect(() => store.dispatch({ type: 'add-atom', atom: createAtom(0, 0) })).not.toThrow();
     });
   });
 
@@ -118,7 +112,9 @@ describe('SceneStore', () => {
 
       store.dispatch({ type: 'add-atom', atom });
 
-      const page = store.getState().pages[0]!;
+      const page = store.getState().pages[0];
+      expect(page).toBeDefined();
+      if (!page) return;
       expect(page.atoms[atom.id]).toEqual(atom);
     });
 
@@ -132,7 +128,9 @@ describe('SceneStore', () => {
       store.dispatch({ type: 'add-atom', atom: a2 });
       store.dispatch({ type: 'add-atom', atom: a3 });
 
-      const page = store.getState().pages[0]!;
+      const page = store.getState().pages[0];
+      expect(page).toBeDefined();
+      if (!page) return;
       expect(Object.keys(page.atoms)).toHaveLength(3);
       expect(page.atoms[a1.id]).toEqual(a1);
       expect(page.atoms[a2.id]).toEqual(a2);
@@ -147,10 +145,7 @@ describe('SceneStore', () => {
       const atom = createAtom(0, 0);
       store.dispatch({ type: 'add-atom', atom });
 
-      expect(listener).toHaveBeenCalledWith(
-        expect.anything(),
-        { type: 'atom-added', id: atom.id },
-      );
+      expect(listener).toHaveBeenCalledWith(expect.anything(), { type: 'atom-added', id: atom.id });
     });
   });
 
@@ -162,7 +157,9 @@ describe('SceneStore', () => {
       store.dispatch({ type: 'add-atom', atom });
       store.dispatch({ type: 'remove-atom', id: atom.id });
 
-      const page = store.getState().pages[0]!;
+      const page = store.getState().pages[0];
+      expect(page).toBeDefined();
+      if (!page) return;
       expect(page.atoms[atom.id]).toBeUndefined();
     });
 
@@ -175,18 +172,16 @@ describe('SceneStore', () => {
       store.subscribe(listener);
       store.dispatch({ type: 'remove-atom', id: atom.id });
 
-      expect(listener).toHaveBeenCalledWith(
-        expect.anything(),
-        { type: 'atom-removed', id: atom.id },
-      );
+      expect(listener).toHaveBeenCalledWith(expect.anything(), {
+        type: 'atom-removed',
+        id: atom.id,
+      });
     });
 
     it('removing non-existent atom does not throw', () => {
       const store = createSceneStore();
       const atom = createAtom(0, 0);
-      expect(() =>
-        store.dispatch({ type: 'remove-atom', id: atom.id }),
-      ).not.toThrow();
+      expect(() => store.dispatch({ type: 'remove-atom', id: atom.id })).not.toThrow();
     });
   });
 

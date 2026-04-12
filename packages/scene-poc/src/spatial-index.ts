@@ -1,5 +1,5 @@
 import RBush from 'rbush';
-import type { Atom, Page } from './types.js';
+import type { Page } from './types.js';
 
 interface AtomBBox {
   minX: number;

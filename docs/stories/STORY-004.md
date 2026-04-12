@@ -27,6 +27,7 @@ This is the capstone story of Sprint 1 — the first end-to-end vertical slice. 
 ### Scope
 
 **In scope:**
+
 - Minimal React app in `packages/ui/src/App.tsx`
 - `<Canvas>` component: full-screen, dark background
 - Instantiate SceneStore + CanvasRenderer, wire together
@@ -36,6 +37,7 @@ This is the capstone story of Sprint 1 — the first end-to-end vertical slice. 
 - E2E Playwright test: click 3 times, verify atoms rendered
 
 **Out of scope:**
+
 - Element palette / tool switching
 - Property panel
 - Multi-tab / multi-document

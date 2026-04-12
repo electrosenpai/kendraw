@@ -4,7 +4,7 @@ services:
       context: ..
       dockerfile: docker/Dockerfile.frontend
     ports:
-      - "${KENDRAW_FRONTEND_PORT:-8080}:80"
+      - '${KENDRAW_FRONTEND_PORT:-8080}:80'
     depends_on:
       backend:
         condition: service_started
@@ -17,9 +17,9 @@ services:
       context: ..
       dockerfile: docker/Dockerfile.backend
       args:
-        GIT_COMMIT: "${GIT_COMMIT:-unknown}"
+        GIT_COMMIT: '${GIT_COMMIT:-unknown}'
     ports:
-      - "${KENDRAW_BACKEND_PORT:-8081}:8081"
+      - '${KENDRAW_BACKEND_PORT:-8081}:8081'
     environment:
       - KENDRAW_HOST=0.0.0.0
       - KENDRAW_PORT=8081

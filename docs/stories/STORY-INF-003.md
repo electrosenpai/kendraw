@@ -24,6 +24,7 @@ afin de **commencer à travailler sans installer Node.js, Python, ni configurer 
 ### Contexte
 
 Le document d'architecture (`docs/architecture-kendraw-2026-04-12.md` §4.4, §9.5, §12.5) prescrit un déploiement en **deux containers** orchestrés par un seul `docker-compose.yml` :
+
 - **Frontend** : bundle Vite servi par nginx avec headers de sécurité.
 - **Backend** : FastAPI servi par uvicorn, user non-root `kendraw:kendraw`.
 
@@ -34,6 +35,7 @@ Cette story crée les 3 fichiers Docker (`Dockerfile.frontend`, `Dockerfile.back
 ### Périmètre
 
 **Inclus :**
+
 - `docker/Dockerfile.frontend` — multi-stage build : Node pour build Vite, nginx pour servir.
 - `docker/Dockerfile.backend` — `python:3.11-slim`, user non-root, install via uv, uvicorn.
 - `docker/docker-compose.yml` — orchestre les deux services, réseau interne, ports configurables.
@@ -41,6 +43,7 @@ Cette story crée les 3 fichiers Docker (`Dockerfile.frontend`, `Dockerfile.back
 - Test manuel : `docker compose up` → `curl localhost:8080` sert le HTML, `curl localhost:8080/api/v1/health` proxifié vers le backend.
 
 **Exclus :**
+
 - TLS / HTTPS (à la charge de l'utilisateur via reverse proxy, cf. architecture §9.4).
 - CI E2E workflow (STORY-INF-006 différé).
 - Images push vers GHCR (Sprint 18, release workflow).
@@ -108,6 +111,7 @@ EXPOSE 80
 ```
 
 **Notes :**
+
 - Le `COPY packages/` copie tous les packages car `@kendraw/ui` pourrait dépendre des autres via workspace references (pas encore le cas en Sprint 0, mais la structure est prête).
 - `pnpm install --frozen-lockfile` garantit la reproductibilité.
 - L'image finale est basée sur `nginx:alpine` (~25 MB) + le bundle Vite (~200 KB) = très léger.
@@ -144,6 +148,7 @@ CMD ["uv", "run", "uvicorn", "kendraw_api.main:app", "--host", "0.0.0.0", "--por
 ```
 
 **Notes :**
+
 - `COPY --from=ghcr.io/astral-sh/uv:latest` est le moyen officiel d'installer uv dans Docker sans curl.
 - `--no-dev` exclut pytest, ruff, mypy, hypothesis de l'image prod.
 - `--no-install-project` installe les deps sans installer le package lui-même (pas besoin, on COPY le code source).
@@ -158,7 +163,7 @@ services:
       context: ..
       dockerfile: docker/Dockerfile.frontend
     ports:
-      - "${KENDRAW_FRONTEND_PORT:-8080}:80"
+      - '${KENDRAW_FRONTEND_PORT:-8080}:80'
     depends_on:
       backend:
         condition: service_started
@@ -170,7 +175,7 @@ services:
       context: ..
       dockerfile: docker/Dockerfile.backend
     ports:
-      - "${KENDRAW_BACKEND_PORT:-8081}:8081"
+      - '${KENDRAW_BACKEND_PORT:-8081}:8081'
     environment:
       - KENDRAW_HOST=0.0.0.0
       - KENDRAW_PORT=8081
@@ -184,6 +189,7 @@ networks:
 ```
 
 **Notes :**
+
 - Les ports sont configurable via env vars (`KENDRAW_FRONTEND_PORT`, `KENDRAW_BACKEND_PORT`).
 - `depends_on: service_started` suffit (le backend démarre en < 1 s, pas besoin de healthcheck pour le compose ordering).
 - Le nom du service `backend` est aussi le hostname DNS dans le réseau `kendraw-net` — c'est ce que nginx utilise pour le proxy.
@@ -231,6 +237,7 @@ server {
 ```
 
 **Notes :**
+
 - `/api/` est proxifié vers `http://backend:8081/` — le trailing slash est important pour que `/api/v1/health` arrive comme `/v1/health` sur le backend.
 
 **Wait — correction importante :** avec cette config, `/api/v1/health` serait proxifié vers `http://backend:8081/v1/health` (le prefix `/api` est strippé). Mais nos endpoints backend sont `/health` et `/version` sans prefix. On a deux options :
@@ -256,14 +263,17 @@ Les Dockerfile sont dans `docker/` mais le build context doit être la **racine 
 ## Dépendances
 
 ### Stories prérequises
+
 - **STORY-INF-001** (monorepo scaffold) — le frontend build a besoin de `packages/ui/`.
 - **STORY-INF-002** (backend skeleton) — le backend build a besoin de `backend/`.
 
 ### Stories bloquées par celle-ci
+
 - **Gate check Sprint 0** — critère go/no-go : "docker compose up fonctionne".
 - **STORY-INF-006** (si créée) — CI E2E basée sur docker compose.
 
 ### Dépendances externes
+
 - **Docker Desktop** (ou Docker Engine) installé localement.
 - **~500 MB d'espace disque** pour les images de base (node:20-alpine, python:3.11-slim, nginx:alpine).
 
@@ -298,6 +308,7 @@ Les Dockerfile sont dans `docker/` mais le build context doit être la **racine 
 ## Suivi
 
 **Historique :**
+
 - 2026-04-12 : Créé par Scrum Master (Jean-Baptiste Donnette)
 
 **Effort réel :** TBD
@@ -306,4 +317,4 @@ Les Dockerfile sont dans `docker/` mais le build context doit être la **racine 
 
 **Cette story a été créée selon la BMAD Method v6 — Phase 4 (Implementation Planning).**
 
-*Pour implémenter : `/dev-story STORY-INF-003`*
+_Pour implémenter : `/dev-story STORY-INF-003`_

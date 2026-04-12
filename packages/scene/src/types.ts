@@ -56,13 +56,7 @@ export type Bond = {
 
 export type Arrow = {
   id: ArrowId;
-  type:
-    | 'forward'
-    | 'equilibrium'
-    | 'reversible'
-    | 'resonance'
-    | 'curly-radical'
-    | 'curly-pair';
+  type: 'forward' | 'equilibrium' | 'reversible' | 'resonance' | 'curly-radical' | 'curly-pair';
   geometry: BezierGeometry;
   startAnchor: ArrowAnchor;
   endAnchor: ArrowAnchor;

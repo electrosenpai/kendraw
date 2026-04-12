@@ -30,6 +30,7 @@ Cette story crée le **squelette vide mais fonctionnel** : l'app démarre, répo
 ### Périmètre
 
 **Inclus :**
+
 - `backend/` à la racine du monorepo avec les 4 modules Python.
 - `pyproject.toml` (PEP 621) + `uv.lock` avec toutes les dépendances de base.
 - FastAPI app minimale avec 2 endpoints : `GET /health`, `GET /version`.
@@ -41,6 +42,7 @@ Cette story crée le **squelette vide mais fonctionnel** : l'app démarre, répo
 - Un `README.md` sous `backend/` expliquant comment démarrer en dev.
 
 **Exclus (stories séparées) :**
+
 - RDKit (installé dans les stories POC #3/POC #4 et Sprint 10).
 - OPSIN / JRE (V1 uniquement, STORY-POC-004 kickoff).
 - Dockerfile (STORY-INF-003).
@@ -284,6 +286,7 @@ def test_version_returns_version(client: TestClient) -> None:
 ### Choix technique : uv vs poetry vs pip-tools
 
 **uv** est choisi (cf. architecture §4.2) parce que :
+
 - 10-100× plus rapide à résoudre et installer que poetry.
 - Hash-locking strict (`uv.lock`).
 - Drop-in pip-compatible (Docker build trivial).
@@ -294,6 +297,7 @@ def test_version_returns_version(client: TestClient) -> None:
 ### Pas de RDKit dans cette story
 
 RDKit est **volontairement absent** de `pyproject.toml` dans cette story. La raison :
+
 - RDKit n'est pas disponible via pip standard — il s'installe via `conda` ou `pip install rdkit` (depuis RDKit 2022.09+, disponible sur PyPI pour certaines plateformes).
 - L'installation est lourde (~50 MB) et peut échouer sur certains OS sans dépendances système.
 - Les POC #3 et #4 ajouteront RDKit quand ils en auront besoin.
@@ -310,16 +314,19 @@ Les placeholders dans `kendraw_chem/` sont des classes vides qui importent corre
 ## Dépendances
 
 ### Stories prérequises
+
 - **Aucune formelle.** STORY-INF-002 peut être développée en parallèle de STORY-INF-001 (repo scaffold). Cependant, si le repo n'existe pas encore physiquement, il faut le créer d'abord.
 - **En pratique :** STORY-INF-001 doit être close ou quasi-close pour que les fichiers `backend/` atterrissent dans un repo propre.
 
 ### Stories bloquées par celle-ci
+
 - **STORY-INF-003** (Docker) — a besoin de `backend/` pour le `Dockerfile.backend`.
 - **STORY-INF-005** (CI backend) — a besoin de `pyproject.toml` et du scaffold pytest.
 - **STORY-POC-003** (CDXML kickoff) — a besoin du module `kendraw_chem/convert.py`.
 - **STORY-POC-004** (IUPAC kickoff) — a besoin du module `kendraw_chem/naming.py`.
 
 ### Dépendances externes
+
 - **Python 3.11+** installé localement.
 - **uv** installé (`pip install uv` ou `curl -LsSf https://astral.sh/uv/install.sh | sh`).
 - **Pas de RDKit** requis (pas dans cette story).
@@ -375,6 +382,7 @@ Ref: docs/architecture-kendraw-2026-04-12.md §4.2, §5.2
 ### Vérification Python locale
 
 Avant de démarrer, vérifier :
+
 ```bash
 python3 --version   # ≥ 3.11
 uv --version        # ≥ 0.5 (ou installer via pip install uv)
@@ -387,6 +395,7 @@ Si Python 3.11+ n'est pas disponible sur la machine Windows de JB, `uv` peut ins
 ## Suivi
 
 **Historique :**
+
 - 2026-04-12 : Créé par Scrum Master (Jean-Baptiste Donnette)
 
 **Effort réel :** TBD
@@ -395,4 +404,4 @@ Si Python 3.11+ n'est pas disponible sur la machine Windows de JB, `uv` peut ins
 
 **Cette story a été créée selon la BMAD Method v6 — Phase 4 (Implementation Planning).**
 
-*Pour implémenter : `/dev-story STORY-INF-002`*
+_Pour implémenter : `/dev-story STORY-INF-002`_
