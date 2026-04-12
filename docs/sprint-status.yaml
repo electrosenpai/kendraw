@@ -25,7 +25,7 @@ velocity:
   rolling_average: null
 
 # Current state
-current_sprint: 15
+current_sprint: 16
 current_sprint_status: 'completed'
 mvp_target: 'v0.1.0 in ~9-10 months'
 
@@ -606,11 +606,28 @@ sprints:
     name: 'Sprint 16 — Self-hosted bundle + static demo + i18n scaffold'
     type: 'standard'
     capacity_points: 10
-    status: 'planned'
+    committed_points: 10
+    completed_points: 10
+    status: 'completed'
     goal: 'docker compose up fonctionne + démo statique GH Pages + Lingui scaffold'
     epics: ['EPIC-011']
     frs: ['FR-028', 'FR-029']
-    estimated_stories: 3
+    stories:
+      - id: 'STORY-16.1'
+        title: 'Docker prod config (existing from Sprint 0)'
+        points: 3
+        status: 'completed'
+        completed_at: '2026-04-12'
+      - id: 'STORY-16.2'
+        title: 'useBackendAvailability hook + static demo mode'
+        points: 4
+        status: 'completed'
+        completed_at: '2026-04-12'
+      - id: 'STORY-16.3'
+        title: 'i18n scaffold EN/FR with locale switching'
+        points: 3
+        status: 'completed'
+        completed_at: '2026-04-12'
 
   - sprint_number: 17
     name: 'Sprint 17 — MVP hardening (a11y + cross-browser + perf)'
