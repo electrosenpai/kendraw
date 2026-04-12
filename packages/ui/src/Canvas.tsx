@@ -10,8 +10,7 @@ import {
   type Selection,
 } from '@kendraw/scene';
 import { CanvasRenderer } from '@kendraw/renderer-canvas';
-
-type Tool = 'select' | 'add-atom';
+import { ToolPalette, type ToolId } from './ToolPalette';
 
 const ATOM_RADIUS = 14;
 
@@ -23,7 +22,7 @@ export function Canvas({ store }: CanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<CanvasRenderer | null>(null);
   const spatialIndexRef = useRef(new SpatialIndex());
-  const [tool, setTool] = useState<Tool>('add-atom');
+  const [tool, setTool] = useState<ToolId>('add-atom');
   const [selection, setSelection] = useState<Selection>(createSelection());
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
   const isDraggingRef = useRef(false);
@@ -99,13 +98,22 @@ export function Canvas({ store }: CanvasProps) {
         setSelection(clearSelection(selection));
         return;
       }
-      if ((e.key === 'v' || e.key === 'V') && !isMod) {
-        setTool('select');
-        return;
-      }
-      if ((e.key === 'a' || e.key === 'A') && !isMod) {
-        setTool('add-atom');
-        return;
+      if (!isMod) {
+        const toolMap: Record<string, ToolId> = {
+          v: 'select',
+          V: 'select',
+          a: 'add-atom',
+          A: 'add-atom',
+          e: 'eraser',
+          E: 'eraser',
+          h: 'pan',
+          H: 'pan',
+        };
+        const mapped = toolMap[e.key];
+        if (mapped) {
+          setTool(mapped);
+          return;
+        }
       }
     }
 
@@ -154,6 +162,18 @@ export function Canvas({ store }: CanvasProps) {
       if (tool === 'add-atom') {
         const atom = createAtom(x, y, 6);
         store.dispatch({ type: 'add-atom', atom });
+        dragStartRef.current = null;
+        isDraggingRef.current = false;
+        return;
+      }
+
+      if (tool === 'eraser') {
+        const hitId = spatialIndexRef.current.hitTest(x, y, ATOM_RADIUS);
+        if (hitId) {
+          store.dispatch({ type: 'remove-atom', id: hitId });
+        }
+        dragStartRef.current = null;
+        isDraggingRef.current = false;
         return;
       }
 
@@ -191,51 +211,23 @@ export function Canvas({ store }: CanvasProps) {
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
-      {/* Tool indicator bar */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 8,
-          left: 8,
-          display: 'flex',
-          gap: 4,
-          zIndex: 10,
-          fontFamily: 'system-ui, sans-serif',
-          fontSize: 12,
-        }}
-      >
-        <button
-          onClick={() => setTool('select')}
+      <ToolPalette activeTool={tool} onToolChange={setTool} />
+
+      {/* Selection indicator */}
+      {selection.atomIds.length > 0 && (
+        <div
           style={{
-            padding: '4px 10px',
-            background: tool === 'select' ? '#4dabf7' : '#2a2a2a',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 4,
-            cursor: 'pointer',
+            position: 'absolute',
+            top: 8,
+            left: 60,
+            color: 'var(--kd-color-text-muted)',
+            fontSize: 'var(--kd-font-size-sm)',
+            zIndex: 10,
           }}
         >
-          Select (V)
-        </button>
-        <button
-          onClick={() => setTool('add-atom')}
-          style={{
-            padding: '4px 10px',
-            background: tool === 'add-atom' ? '#4dabf7' : '#2a2a2a',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 4,
-            cursor: 'pointer',
-          }}
-        >
-          Atom (A)
-        </button>
-        {selection.atomIds.length > 0 && (
-          <span style={{ color: '#888', lineHeight: '28px', marginLeft: 8 }}>
-            {selection.atomIds.length} selected
-          </span>
-        )}
-      </div>
+          {selection.atomIds.length} selected
+        </div>
+      )}
 
       {/* Canvas container */}
       <div
@@ -247,7 +239,14 @@ export function Canvas({ store }: CanvasProps) {
           width: '100%',
           height: '100%',
           backgroundColor: '#0a0a0a',
-          cursor: tool === 'select' ? 'default' : 'crosshair',
+          cursor:
+            tool === 'select'
+              ? 'default'
+              : tool === 'pan'
+                ? 'grab'
+                : tool === 'eraser'
+                  ? 'pointer'
+                  : 'crosshair',
         }}
       />
     </div>

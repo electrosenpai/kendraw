@@ -14,11 +14,10 @@ export function TabBar({ tabs, activeTabId, onSwitchTab, onCloseTab, onNewTab }:
       style={{
         display: 'flex',
         alignItems: 'center',
-        height: 32,
-        backgroundColor: '#1a1a1a',
-        borderBottom: '1px solid #333',
-        fontFamily: 'system-ui, sans-serif',
-        fontSize: 12,
+        height: 'var(--kd-tabbar-height)',
+        backgroundColor: 'var(--kd-color-bg-tertiary)',
+        borderBottom: '1px solid var(--kd-color-border)',
+        fontSize: 'var(--kd-font-size-sm)',
         overflow: 'hidden',
       }}
     >
@@ -29,15 +28,20 @@ export function TabBar({ tabs, activeTabId, onSwitchTab, onCloseTab, onNewTab }:
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: 4,
-            padding: '0 12px',
+            gap: 'var(--kd-space-sm)',
+            padding: '0 var(--kd-space-lg)',
             height: '100%',
             cursor: 'pointer',
-            backgroundColor: tab.id === activeTabId ? '#2a2a2a' : 'transparent',
-            color: tab.id === activeTabId ? '#fff' : '#888',
-            borderRight: '1px solid #333',
+            backgroundColor:
+              tab.id === activeTabId ? 'var(--kd-color-surface-hover)' : 'transparent',
+            color:
+              tab.id === activeTabId
+                ? 'var(--kd-color-text-primary)'
+                : 'var(--kd-color-text-muted)',
+            borderRight: '1px solid var(--kd-color-border-subtle)',
             userSelect: 'none',
             maxWidth: 160,
+            transition: 'background var(--kd-transition-fast)',
           }}
         >
           <span
@@ -58,8 +62,8 @@ export function TabBar({ tabs, activeTabId, onSwitchTab, onCloseTab, onNewTab }:
               }}
               style={{
                 cursor: 'pointer',
-                color: '#666',
-                fontSize: 14,
+                color: 'var(--kd-color-text-muted)',
+                fontSize: 'var(--kd-font-size-md)',
                 lineHeight: 1,
               }}
             >
@@ -73,13 +77,13 @@ export function TabBar({ tabs, activeTabId, onSwitchTab, onCloseTab, onNewTab }:
         style={{
           background: 'none',
           border: 'none',
-          color: '#666',
+          color: 'var(--kd-color-text-muted)',
           cursor: 'pointer',
-          padding: '0 8px',
+          padding: '0 var(--kd-space-md)',
           height: '100%',
-          fontSize: 16,
+          fontSize: 'var(--kd-font-size-lg)',
         }}
-        title="New document"
+        title="New document (Ctrl+N)"
       >
         +
       </button>
