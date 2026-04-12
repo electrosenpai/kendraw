@@ -25,7 +25,7 @@ velocity:
   rolling_average: null
 
 # Current state
-current_sprint: 9
+current_sprint: 10
 current_sprint_status: 'completed'
 mvp_target: 'v0.1.0 in ~9-10 months'
 
@@ -444,11 +444,28 @@ sprints:
     name: 'Sprint 10 — Backend compute + format conversion MVP'
     type: 'standard'
     capacity_points: 10
-    status: 'planned'
+    committed_points: 10
+    completed_points: 10
+    status: 'completed'
     goal: 'Backend up + conversions MOL/SDF/SMILES/InChI'
     epics: ['EPIC-006']
     frs: ['FR-021', 'FR-022']
-    estimated_stories: 3
+    stories:
+      - id: 'STORY-10.1'
+        title: 'ComputeService (formula, MW, SMILES, InChI) + API endpoints'
+        points: 4
+        status: 'completed'
+        completed_at: '2026-04-12'
+      - id: 'STORY-10.2'
+        title: 'ConvertService (MOL/SDF/SMILES/InChI) + round-trip API'
+        points: 4
+        status: 'completed'
+        completed_at: '2026-04-12'
+      - id: 'STORY-10.3'
+        title: '@kendraw/api-client — typed fetch wrapper for backend API'
+        points: 2
+        status: 'completed'
+        completed_at: '2026-04-12'
 
   - sprint_number: 11
     name: 'Sprint 11 — File I/O — import + export PNG/SVG'
