@@ -167,6 +167,26 @@ export function Canvas({ store, onMoleculeSearch, showPropertyPanel = true }: Ca
     async function handleKeyDown(e: KeyboardEvent) {
       const isMod = e.ctrlKey || e.metaKey;
 
+      // Structure cleanup (Shift+Ctrl+K, reference Section 4.1)
+      if (isMod && e.shiftKey && (e.key === 'k' || e.key === 'K')) {
+        e.preventDefault();
+        try {
+          const { cleanup } = await import('@kendraw/constraints');
+          const pg = store.getState().pages[store.getState().activePageIndex];
+          if (pg) {
+            const result = cleanup(pg);
+            for (const [id, correction] of result.corrections) {
+              if (Math.abs(correction.dx) > 0.5 || Math.abs(correction.dy) > 0.5) {
+                store.dispatch({ type: 'move-atom', id, dx: correction.dx, dy: correction.dy });
+              }
+            }
+          }
+        } catch {
+          // constraints package not available
+        }
+        return;
+      }
+
       // Undo/Redo
       if (isMod && e.key === 'z' && !e.shiftKey) {
         e.preventDefault();

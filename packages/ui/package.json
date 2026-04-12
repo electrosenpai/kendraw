@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@kendraw/chem": "workspace:*",
+    "@kendraw/constraints": "workspace:*",
     "@kendraw/io": "workspace:*",
     "@kendraw/persistence": "workspace:*",
     "@kendraw/renderer-canvas": "workspace:*",

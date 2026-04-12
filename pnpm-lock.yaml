@@ -137,6 +137,9 @@ importers:
       '@kendraw/chem':
         specifier: workspace:*
         version: link:../chem
+      '@kendraw/constraints':
+        specifier: workspace:*
+        version: link:../constraints
       '@kendraw/io':
         specifier: workspace:*
         version: link:../io
