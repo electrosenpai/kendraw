@@ -150,7 +150,12 @@ export class CanvasRenderer implements Renderer {
       );
     }
 
-    // 4. Selection rect
+    // 4. Annotations (free text: conditions, labels, numbering)
+    for (const ann of Object.values(page.annotations)) {
+      this.drawAnnotation(ctx, ann);
+    }
+
+    // 5. Selection rect
     if (this.selectionRect) {
       const { x1, y1, x2, y2 } = this.selectionRect;
       ctx.strokeStyle = 'rgba(77, 171, 247, 0.8)';
@@ -474,6 +479,27 @@ export class CanvasRenderer implements Renderer {
   }
 
   // ── Arrow rendering ─────────────────────────────────────
+
+  private drawAnnotation(
+    ctx: CanvasRenderingContext2D,
+    ann: { x: number; y: number; richText: Array<{ text: string; style?: string }> },
+  ): void {
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    let x = ann.x;
+    for (const seg of ann.richText) {
+      const isSubscript = seg.style === 'subscript';
+      const isSuperscript = seg.style === 'superscript';
+      const size = isSubscript || isSuperscript ? S.labelSize * 0.75 : S.labelSize;
+      ctx.font = `${size}px Arial, system-ui, sans-serif`;
+      ctx.fillStyle = '#e0e0e0';
+      let y = ann.y;
+      if (isSubscript) y += S.labelSize * 0.3;
+      if (isSuperscript) y -= S.labelSize * 0.3;
+      ctx.fillText(seg.text, x, y);
+      x += ctx.measureText(seg.text).width;
+    }
+  }
 
   private drawArrow(
     ctx: CanvasRenderingContext2D,

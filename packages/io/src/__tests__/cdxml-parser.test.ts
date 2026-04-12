@@ -79,4 +79,43 @@ describe('CDXML parser', () => {
     const result = parseCdxml(cdxml);
     expect(result.bonds[0]?.style).toBe('wedge');
   });
+
+  it('parses arrows', () => {
+    const cdxml = `<CDXML><page>
+      <arrow id="100" Head3D="200 90 0" Tail3D="100 90 0" ArrowheadHead="Full"/>
+    </page></CDXML>`;
+    const result = parseCdxml(cdxml);
+    expect(result.arrows).toHaveLength(1);
+    expect(result.arrows[0]?.geometry.start.x).toBeGreaterThan(0);
+    expect(result.arrows[0]?.geometry.end.x).toBeGreaterThan(
+      result.arrows[0]?.geometry.start.x ?? 0,
+    );
+  });
+
+  it('parses free text annotations', () => {
+    const cdxml = `<CDXML><page>
+      <t id="50" p="150 95" LineHeight="auto"><s font="3" size="10" color="0">Aniline</s></t>
+    </page></CDXML>`;
+    const result = parseCdxml(cdxml);
+    expect(result.annotations).toHaveLength(1);
+    expect(result.annotations[0]?.richText[0]?.text).toBe('Aniline');
+  });
+
+  it('does not include node-internal text as free annotations', () => {
+    const cdxml = `<CDXML><page><fragment>
+      <n id="1" p="100 100" Element="7"><t p="96 104"><s font="3" size="10" face="96">NH2</s></t></n>
+    </fragment></page></CDXML>`;
+    const result = parseCdxml(cdxml);
+    // NH2 is inside a node, should NOT appear as free annotation
+    expect(result.annotations).toHaveLength(0);
+  });
+
+  it('parses R-group labels from GenericNickname nodes', () => {
+    const cdxml = `<CDXML><page><fragment>
+      <n id="1" p="100 100" NodeType="GenericNickname" GenericNickname="R"><t p="96 104"><s font="3" size="10" face="96">R3</s></t></n>
+    </fragment></page></CDXML>`;
+    const result = parseCdxml(cdxml);
+    expect(result.atoms).toHaveLength(1);
+    expect(result.atoms[0]?.label).toBe('R3');
+  });
 });

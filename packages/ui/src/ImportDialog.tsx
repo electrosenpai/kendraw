@@ -23,6 +23,9 @@ export function ImportDialog({ store, onClose }: ImportDialogProps) {
           const result = parseCdxml(content);
           for (const a of result.atoms) store.dispatch({ type: 'add-atom', atom: a });
           for (const b of result.bonds) store.dispatch({ type: 'add-bond', bond: b });
+          for (const ar of result.arrows) store.dispatch({ type: 'add-arrow', arrow: ar });
+          for (const an of result.annotations)
+            store.dispatch({ type: 'add-annotation', annotation: an });
           atoms = result.atoms.length;
           bonds = result.bonds.length;
         } else if (ext === 'mol' || ext === 'sdf' || content.includes('V2000')) {
