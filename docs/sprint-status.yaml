@@ -25,7 +25,7 @@ velocity:
   rolling_average: null
 
 # Current state
-current_sprint: 7
+current_sprint: 8
 current_sprint_status: 'completed'
 mvp_target: 'v0.1.0 in ~9-10 months'
 
@@ -389,11 +389,28 @@ sprints:
     name: 'Sprint 8 — Edit operations + clipboard + transforms'
     type: 'standard'
     capacity_points: 10
-    status: 'planned'
+    committed_points: 10
+    completed_points: 10
+    status: 'completed'
     goal: 'Copy/paste/duplicate, rotation, miroir'
     epics: ['EPIC-002']
     frs: ['FR-010']
-    estimated_stories: 3
+    stories:
+      - id: 'STORY-8.1'
+        title: 'Clipboard copy/paste with ID remapping and offset'
+        points: 3
+        status: 'completed'
+        completed_at: '2026-04-12'
+      - id: 'STORY-8.2'
+        title: 'Free rotation + snap 15/30/45/90 degrees'
+        points: 4
+        status: 'completed'
+        completed_at: '2026-04-12'
+      - id: 'STORY-8.3'
+        title: 'Mirror H/V + center computation'
+        points: 3
+        status: 'completed'
+        completed_at: '2026-04-12'
 
   - sprint_number: 9
     name: 'Sprint 9 — Frontend SMILES + property panel'
