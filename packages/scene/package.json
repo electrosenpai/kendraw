@@ -11,6 +11,10 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "immer": "^10.2.0"
+    "immer": "^10.2.0",
+    "rbush": "^4.0.1"
+  },
+  "devDependencies": {
+    "@types/rbush": "^4.0.0"
   }
 }
