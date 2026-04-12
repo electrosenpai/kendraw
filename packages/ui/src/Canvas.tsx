@@ -510,17 +510,62 @@ export function Canvas({ store, onMoleculeSearch, showPropertyPanel = true }: Ca
         return;
       }
 
-      // Select tool: check if clicking on a selected atom to start move
+      // Select tool: click on atom → select it + prepare for move drag
       if (toolState.tool === 'select') {
         const hitId = spatialIndexRef.current.hitTest(x, y, ATOM_RADIUS);
-        if (hitId && selection.atomIds.includes(hitId)) {
-          // Start moving the selection
+        if (hitId) {
+          // If atom is already selected, just start move
+          // If not selected, select it first then prepare move
+          if (!selection.atomIds.includes(hitId)) {
+            if (e.shiftKey) {
+              setSelection((s) => addToSelection(s, { atomIds: [hitId] }));
+            } else {
+              setSelection(addToSelection(createSelection(), { atomIds: [hitId] }));
+            }
+          }
+          // In all cases, prepare for potential move drag
           isMovingRef.current = true;
           moveStartRef.current = { x, y };
           dragStartRef.current = { x, y };
           isDraggingRef.current = false;
           return;
         }
+      }
+
+      // Eraser: fire on mouseDown for instant feedback (like Photoshop)
+      if (toolState.tool === 'eraser') {
+        const page = store.getState().pages[store.getState().activePageIndex];
+        const hitId = spatialIndexRef.current.hitTest(x, y, ATOM_RADIUS);
+        if (hitId) {
+          if (page) {
+            for (const bond of Object.values(page.bonds)) {
+              if (bond.fromAtomId === hitId || bond.toAtomId === hitId) {
+                store.dispatch({ type: 'remove-bond', id: bond.id });
+              }
+            }
+          }
+          store.dispatch({ type: 'remove-atom', id: hitId });
+          return;
+        }
+        // Try bond hit-test
+        if (page) {
+          for (const bond of Object.values(page.bonds)) {
+            const fa = page.atoms[bond.fromAtomId];
+            const ta = page.atoms[bond.toAtomId];
+            if (fa && ta && pointToSegmentDist(x, y, fa.x, fa.y, ta.x, ta.y) < 8) {
+              store.dispatch({ type: 'remove-bond', id: bond.id });
+              return;
+            }
+          }
+          for (const arrow of Object.values(page.arrows)) {
+            const { start, end } = arrow.geometry;
+            if (pointToSegmentDist(x, y, start.x, start.y, end.x, end.y) < 10) {
+              store.dispatch({ type: 'remove-arrow', id: arrow.id });
+              return;
+            }
+          }
+        }
+        return;
       }
 
       // Track mouse-down position for all tools (drag guard)
