@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { CanvasRenderer } from '../renderer.js';
-import { createEmptyDocument, createAtom } from '@kendraw/scene';
+import { createEmptyDocument, createAtom, createBond } from '@kendraw/scene';
 import type { Document } from '@kendraw/scene';
 
 // Polyfill ResizeObserver for jsdom
@@ -164,6 +164,46 @@ describe('CanvasRenderer', () => {
       const doc = createEmptyDocument();
       expect(() => renderer.render(doc)).not.toThrow();
     });
+
+    it('renders wedge bond as filled triangle (not a line)', () => {
+      renderer.attach(container);
+      const doc = createDocWithBond('wedge');
+      mock.ctx.fill.mockClear();
+      mock.ctx.closePath.mockClear();
+      mock.ctx.moveTo.mockClear();
+      mock.ctx.lineTo.mockClear();
+
+      renderer.render(doc);
+
+      // Wedge bond must call fill() (solid triangle), not just stroke
+      expect(mock.ctx.fill).toHaveBeenCalled();
+      // Should form a triangle: moveTo (tip) + 2x lineTo (base) + closePath
+      expect(mock.ctx.closePath).toHaveBeenCalled();
+    });
+
+    it('renders hashed-wedge bond with multiple hash strokes', () => {
+      renderer.attach(container);
+      const doc = createDocWithBond('hashed-wedge');
+      mock.ctx.stroke.mockClear();
+
+      renderer.render(doc);
+
+      // Hashed wedge draws multiple parallel lines (at least 3)
+      expect(mock.ctx.stroke.mock.calls.length).toBeGreaterThanOrEqual(3);
+    });
+
+    it('renders hollow-wedge bond as stroked triangle outline', () => {
+      renderer.attach(container);
+      const doc = createDocWithBond('hollow-wedge');
+      mock.ctx.stroke.mockClear();
+      mock.ctx.closePath.mockClear();
+
+      renderer.render(doc);
+
+      // Hollow wedge: closePath + stroke (outline, not fill)
+      expect(mock.ctx.closePath).toHaveBeenCalled();
+      expect(mock.ctx.stroke).toHaveBeenCalled();
+    });
   });
 });
 
@@ -175,5 +215,18 @@ function createDocWithAtoms(count: number): Document {
     const atom = createAtom(i * 30, i * 30, 6);
     page.atoms[atom.id] = atom;
   }
+  return doc;
+}
+
+function createDocWithBond(style: Parameters<typeof createBond>[3]): Document {
+  const doc = createEmptyDocument();
+  const page = doc.pages[0];
+  if (!page) throw new Error('Expected at least one page');
+  const a1 = createAtom(100, 100, 6);
+  const a2 = createAtom(140, 100, 6);
+  page.atoms[a1.id] = a1;
+  page.atoms[a2.id] = a2;
+  const bond = createBond(a1.id, a2.id, 1, style);
+  page.bonds[bond.id] = bond;
   return doc;
 }

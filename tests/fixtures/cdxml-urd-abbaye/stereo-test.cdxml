@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE CDXML SYSTEM "http://www.cambridgesoft.com/xml/cdxml.dtd" >
+<!--
+  Stereo bond test fixture.
+  Contains wedge, hashed-wedge, hollow-wedge, wedge-end, and hashed-wedge-end
+  bonds using both string and numeric Display values.
+  Use this file to visually verify that stereo bonds render as triangles,
+  not as plain single lines.
+-->
+<CDXML
+ CreationProgram="kendraw-test"
+ BoundingBox="0 0 300 200"
+ LabelFont="3"
+ LabelSize="10"
+ LabelFace="96"
+ LineWidth="0.60"
+ BoldWidth="2.00"
+ BondLength="14.40"
+ BondSpacing="18"
+ HashSpacing="2.50"
+ MarginWidth="1.60"
+ ShowTerminalCarbonLabels="no"
+ ShowNonTerminalCarbonLabels="no"
+ HideImplicitHydrogens="no"
+>
+<fonttable><font id="3" charset="iso-8859-1" name="Arial"/></fonttable>
+<colortable>
+  <color r="1" g="1" b="1"/>
+  <color r="0" g="0" b="0"/>
+</colortable>
+<page
+ BoundingBox="0 0 300 200"
+ Width="300"
+ Height="200"
+>
+
+<!-- ═══════════════════════════════════════════════════
+     Molecule 1: Chiral center with string Display values
+     Central carbon with 4 substituents:
+       - Wedge bond (up, to OH)
+       - Hashed wedge bond (back, to H)
+       - Single bonds (left to CH3, right to NH2)
+     ═══════════════════════════════════════════════════ -->
+<fragment id="1000">
+  <!-- Central carbon (stereocenter) -->
+  <n id="101" p="80 80" Z="1" Element="6" NumHydrogens="0"/>
+
+  <!-- OH — above, wedge bond (string: WedgeBegin) -->
+  <n id="102" p="80 55" Z="2" Element="8" NumHydrogens="1">
+    <t p="77 51"><s font="3" size="10" face="96">OH</s></t>
+  </n>
+
+  <!-- H — below, hashed wedge bond (string: WedgedHashBegin) -->
+  <n id="103" p="80 105" Z="3" Element="1" NumHydrogens="0">
+    <t p="78 101"><s font="3" size="10" face="96">H</s></t>
+  </n>
+
+  <!-- CH3 — left, single bond -->
+  <n id="104" p="55 80" Z="4" Element="6" NumHydrogens="3">
+    <t p="42 76"><s font="3" size="10" face="96">CH3</s></t>
+  </n>
+
+  <!-- NH2 — right, single bond -->
+  <n id="105" p="105 80" Z="5" Element="7" NumHydrogens="2">
+    <t p="103 76"><s font="3" size="10" face="96">NH2</s></t>
+  </n>
+
+  <!-- Bonds using STRING Display values -->
+  <b id="201" Z="6" B="101" E="102" Display="WedgeBegin" BS="N"/>
+  <b id="202" Z="7" B="101" E="103" Display="WedgedHashBegin" BS="N"/>
+  <b id="203" Z="8" B="101" E="104" BS="N"/>
+  <b id="204" Z="9" B="101" E="105" BS="N"/>
+</fragment>
+
+<!-- ═══════════════════════════════════════════════════
+     Molecule 2: Same stereochemistry with NUMERIC Display values
+     ═══════════════════════════════════════════════════ -->
+<fragment id="2000">
+  <!-- Central carbon (stereocenter) -->
+  <n id="201" p="200 80" Z="10" Element="6" NumHydrogens="0"/>
+
+  <!-- F — above, wedge bond (numeric: 6 = WedgeBegin) -->
+  <n id="202" p="200 55" Z="11" Element="9" NumHydrogens="0">
+    <t p="197 51"><s font="3" size="10" face="96">F</s></t>
+  </n>
+
+  <!-- Cl — below, hashed wedge (numeric: 3 = WedgedHashBegin) -->
+  <n id="203" p="200 105" Z="12" Element="17" NumHydrogens="0">
+    <t p="194 101"><s font="3" size="10" face="96">Cl</s></t>
+  </n>
+
+  <!-- Br — left, hollow wedge (numeric: 9 = HollowWedgeBegin) -->
+  <n id="204" p="175 80" Z="13" Element="35" NumHydrogens="0">
+    <t p="168 76"><s font="3" size="10" face="96">Br</s></t>
+  </n>
+
+  <!-- I — right, bold bond (numeric: 5 = Bold) -->
+  <n id="205" p="225 80" Z="14" Element="53" NumHydrogens="0">
+    <t p="224 76"><s font="3" size="10" face="96">I</s></t>
+  </n>
+
+  <!-- Bonds using NUMERIC Display values -->
+  <b id="301" Z="15" B="201" E="202" Display="6" BS="N"/>
+  <b id="302" Z="16" B="201" E="203" Display="3" BS="N"/>
+  <b id="303" Z="17" B="201" E="204" Display="9" BS="N"/>
+  <b id="304" Z="18" B="201" E="205" Display="5" BS="N"/>
+</fragment>
+
+<!-- ═══════════════════════════════════════════════════
+     Molecule 3: Wedge-end and hashed-wedge-end variants
+     ═══════════════════════════════════════════════════ -->
+<fragment id="3000">
+  <n id="301" p="140 160" Z="19" Element="6" NumHydrogens="0"/>
+  <n id="302" p="140 135" Z="20" Element="8" NumHydrogens="1">
+    <t p="137 131"><s font="3" size="10" face="96">OH</s></t>
+  </n>
+  <n id="303" p="140 185" Z="21" Element="1" NumHydrogens="0">
+    <t p="138 181"><s font="3" size="10" face="96">H</s></t>
+  </n>
+  <n id="304" p="115 160" Z="22" Element="6" NumHydrogens="3">
+    <t p="102 156"><s font="3" size="10" face="96">CH3</s></t>
+  </n>
+  <n id="305" p="165 160" Z="23" Element="7" NumHydrogens="2">
+    <t p="163 156"><s font="3" size="10" face="96">NH2</s></t>
+  </n>
+
+  <!-- WedgeEnd (narrow at End atom, wide at Begin) -->
+  <b id="401" Z="24" B="301" E="302" Display="WedgeEnd" BS="N"/>
+  <!-- WedgedHashEnd -->
+  <b id="402" Z="25" B="301" E="303" Display="WedgedHashEnd" BS="N"/>
+  <!-- HollowWedgeEnd (numeric: 10) -->
+  <b id="403" Z="26" B="301" E="304" Display="10" BS="N"/>
+  <!-- Wavy bond (numeric: 8) -->
+  <b id="404" Z="27" B="301" E="305" Display="8" BS="N"/>
+</fragment>
+
+</page>
+</CDXML>
