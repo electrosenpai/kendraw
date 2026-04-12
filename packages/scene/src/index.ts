@@ -85,3 +85,30 @@ export {
   calculateBondTarget,
   getNextChainPosition,
 } from './bond-geometry.js';
+
+export {
+  ACS_1996,
+  NEW_DOCUMENT,
+  SLIDE_POSTER,
+  ALL_PRESETS,
+  RING_ANGLES,
+  HYBRIDIZATION_ANGLES,
+  deriveQuantities,
+  ptToPx,
+  getBondLengthPx,
+  getDoubleBondOffsetPx,
+  getMarginWidthPx,
+  getLineWidthPx,
+  getBoldWidthPx,
+  getWedgeWidePx,
+  type StylePreset,
+} from './style-presets.js';
+
+export {
+  getImplicitHydrogens,
+  shouldShowLabel,
+  getHydrogenSide,
+  buildAtomLabel,
+  formulaMode,
+  type LabelSegment,
+} from './atom-display.js';
