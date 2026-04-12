@@ -18,6 +18,8 @@ import {
   mirrorAtomsV,
   defaultCurlyGeometry,
   floodSelectMolecule,
+  calculateBondTarget,
+  getNextChainPosition,
   type SceneStore,
   type Selection,
   type ClipboardData,
@@ -31,6 +33,13 @@ import { PropertyPanel } from './PropertyPanel';
 import { StatusBar } from './StatusBar';
 
 const ATOM_RADIUS = 14;
+
+function getBondOrder(style: string): Bond['order'] {
+  if (style === 'double') return 2;
+  if (style === 'triple') return 3;
+  if (style === 'aromatic') return 1.5;
+  return 1;
+}
 
 /** Distance from point (px,py) to line segment (x1,y1)-(x2,y2). */
 function pointToSegmentDist(
@@ -523,57 +532,101 @@ export function Canvas({ store, onMoleculeSearch, showPropertyPanel = true }: Ca
         return;
       }
 
-      // --- BOND TOOL ---
+      // --- BOND TOOL (ChemDraw-style: fixed length + angle snapping) ---
       if (toolState.tool === 'add-bond') {
         const hitId = spatialIndexRef.current.hitTest(x, y, ATOM_RADIUS);
-        if (bondStartAtomRef.current === null) {
-          // First click: select start atom, or create one
-          if (hitId) {
-            bondStartAtomRef.current = hitId;
-          } else {
-            const atom = createAtom(x, y, toolState.element);
-            store.dispatch({ type: 'add-atom', atom });
-            bondStartAtomRef.current = atom.id;
+        const page = store.getState().pages[store.getState().activePageIndex];
+        const freeAngle = e.shiftKey;
+
+        if (hitId && bondStartAtomRef.current === null) {
+          // Click on existing atom → start bond from it, auto-place target
+          if (!isDraggingRef.current && page) {
+            // Quick click: auto-place at ideal angle + fixed length
+            const pos = getNextChainPosition(page, hitId);
+            const existTarget = spatialIndexRef.current.hitTest(pos.x, pos.y, ATOM_RADIUS);
+            if (existTarget && existTarget !== hitId) {
+              // Target position has an atom — bond to it or cycle
+              const existing = page
+                ? Object.values(page.bonds).find(
+                    (b) =>
+                      (b.fromAtomId === hitId && b.toAtomId === existTarget) ||
+                      (b.toAtomId === hitId && b.fromAtomId === existTarget),
+                  )
+                : undefined;
+              if (existing) {
+                store.dispatch({ type: 'cycle-bond', id: existing.id });
+              } else {
+                const bond = createBond(
+                  hitId,
+                  existTarget,
+                  getBondOrder(toolState.bondStyle),
+                  toolState.bondStyle,
+                );
+                store.dispatch({ type: 'add-bond', bond });
+              }
+            } else {
+              // Create new atom at ideal position
+              const atom = createAtom(pos.x, pos.y, toolState.element);
+              store.dispatch({ type: 'add-atom', atom });
+              store.dispatch({
+                type: 'add-bond',
+                bond: createBond(
+                  hitId,
+                  atom.id,
+                  getBondOrder(toolState.bondStyle),
+                  toolState.bondStyle,
+                ),
+              });
+            }
           }
-        } else {
-          // Second click: connect to target atom
-          let targetId = hitId;
-          if (!targetId) {
-            const atom = createAtom(x, y, toolState.element);
-            store.dispatch({ type: 'add-atom', atom });
-            targetId = atom.id;
-          }
-          if (targetId !== bondStartAtomRef.current) {
-            // Check if bond already exists between these atoms
-            const page = store.getState().pages[store.getState().activePageIndex];
-            const existingBond = page
+        } else if (hitId && bondStartAtomRef.current !== null) {
+          // Second click on an atom → connect bond
+          if (hitId !== bondStartAtomRef.current) {
+            const existing = page
               ? Object.values(page.bonds).find(
                   (b) =>
-                    (b.fromAtomId === bondStartAtomRef.current && b.toAtomId === targetId) ||
-                    (b.toAtomId === bondStartAtomRef.current && b.fromAtomId === targetId),
+                    (b.fromAtomId === bondStartAtomRef.current && b.toAtomId === hitId) ||
+                    (b.toAtomId === bondStartAtomRef.current && b.fromAtomId === hitId),
                 )
               : undefined;
-            if (existingBond) {
-              store.dispatch({ type: 'cycle-bond', id: existingBond.id });
+            if (existing) {
+              store.dispatch({ type: 'cycle-bond', id: existing.id });
             } else {
-              const order =
-                toolState.bondStyle === 'double'
-                  ? 2
-                  : toolState.bondStyle === 'triple'
-                    ? 3
-                    : toolState.bondStyle === 'aromatic'
-                      ? (1.5 as Bond['order'])
-                      : 1;
               const bond = createBond(
                 bondStartAtomRef.current,
-                targetId,
-                order,
+                hitId,
+                getBondOrder(toolState.bondStyle),
                 toolState.bondStyle,
               );
               store.dispatch({ type: 'add-bond', bond });
             }
           }
           bondStartAtomRef.current = null;
+        } else if (bondStartAtomRef.current !== null && page) {
+          // Click on empty space with a start atom → place at snapped position
+          const pos = calculateBondTarget(page, bondStartAtomRef.current, x, y, { freeAngle });
+          const atom = createAtom(pos.x, pos.y, toolState.element);
+          store.dispatch({ type: 'add-atom', atom });
+          store.dispatch({
+            type: 'add-bond',
+            bond: createBond(
+              bondStartAtomRef.current,
+              atom.id,
+              getBondOrder(toolState.bondStyle),
+              toolState.bondStyle,
+            ),
+          });
+          bondStartAtomRef.current = null;
+        } else {
+          // Click on empty space, no start atom → create a full bond (2 atoms)
+          const a1 = createAtom(x, y, toolState.element);
+          const a2 = createAtom(x + 40, y, toolState.element); // horizontal
+          store.dispatch({ type: 'add-atom', atom: a1 });
+          store.dispatch({ type: 'add-atom', atom: a2 });
+          store.dispatch({
+            type: 'add-bond',
+            bond: createBond(a1.id, a2.id, getBondOrder(toolState.bondStyle), toolState.bondStyle),
+          });
         }
         dragStartRef.current = null;
         isDraggingRef.current = false;

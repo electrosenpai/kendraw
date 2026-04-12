@@ -76,3 +76,12 @@ export { rotateAtoms, snapAngle, mirrorAtomsH, mirrorAtomsV, computeCenter } fro
 export { evaluateBezier, bezierBoundingBox, bezierLength, defaultCurlyGeometry } from './bezier.js';
 
 export { floodSelectMolecule } from './flood-select.js';
+
+export {
+  STANDARD_BOND_LENGTH_PX,
+  getExistingBondAngles,
+  getIdealBondAngle,
+  snapAngleToGrid,
+  calculateBondTarget,
+  getNextChainPosition,
+} from './bond-geometry.js';
