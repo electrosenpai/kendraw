@@ -1,7 +1,6 @@
 import { produce } from 'immer';
 import type { Document, Page } from './types.js';
 import type { Command, SceneDiff } from './commands.js';
-import { NotImplementedError } from './errors.js';
 
 export type Unsubscribe = () => void;
 export type SceneListener = (doc: Document, diff: SceneDiff) => void;
@@ -66,13 +65,35 @@ function applyCommand(state: Document, command: Command): { next: Document; diff
       });
       return { next, diff: { type: 'atom-removed', id: command.id } };
     }
+    case 'move-atom': {
+      const next = produce(state, (draft) => {
+        const page = draft.pages[pageIndex];
+        if (page) {
+          const atom = page.atoms[command.id];
+          if (atom) {
+            atom.x += command.dx;
+            atom.y += command.dy;
+          }
+        }
+      });
+      return { next, diff: { type: 'atom-moved', id: command.id } };
+    }
   }
 }
 
 export function createSceneStore(initialDoc?: Document): SceneStore {
   let state: Document = initialDoc ?? createEmptyDocument();
   const listeners = new Set<SceneListener>();
-  const history: Command[] = [];
+
+  // Undo/redo: snapshot-based history stack
+  const undoStack: Document[] = [];
+  const redoStack: Document[] = [];
+
+  function notify(diff: SceneDiff): void {
+    for (const listener of listeners) {
+      listener(state, diff);
+    }
+  }
 
   return {
     getState(): Document {
@@ -87,28 +108,35 @@ export function createSceneStore(initialDoc?: Document): SceneStore {
     },
 
     dispatch(command: Command): void {
+      undoStack.push(state);
+      redoStack.length = 0; // new action clears redo
       const { next, diff } = applyCommand(state, command);
       state = next;
-      history.push(command);
-      for (const listener of listeners) {
-        listener(state, diff);
-      }
+      notify(diff);
     },
 
     undo(): void {
-      throw new NotImplementedError('undo');
+      const prev = undoStack.pop();
+      if (!prev) return;
+      redoStack.push(state);
+      state = prev;
+      notify({ type: 'state-restored' });
     },
 
     redo(): void {
-      throw new NotImplementedError('redo');
+      const next = redoStack.pop();
+      if (!next) return;
+      undoStack.push(state);
+      state = next;
+      notify({ type: 'state-restored' });
     },
 
     canUndo(): boolean {
-      return false;
+      return undoStack.length > 0;
     },
 
     canRedo(): boolean {
-      return false;
+      return redoStack.length > 0;
     },
   };
 }
