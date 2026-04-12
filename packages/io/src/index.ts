@@ -20,3 +20,5 @@ export {
 } from './templates/template-library.js';
 
 export { parseSmiles, type SmilesParseResult } from './smiles-parser.js';
+
+export { parseCdxml, type CdxmlParseResult } from './cdxml-parser.js';
