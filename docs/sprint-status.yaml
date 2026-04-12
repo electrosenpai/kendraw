@@ -25,7 +25,7 @@ velocity:
   rolling_average: null
 
 # Current state
-current_sprint: 11
+current_sprint: 12
 current_sprint_status: 'completed'
 mvp_target: 'v0.1.0 in ~9-10 months'
 
@@ -498,11 +498,28 @@ sprints:
     name: 'Sprint 12 — Reaction arrows + conditions'
     type: 'standard'
     capacity_points: 10
-    status: 'planned'
+    committed_points: 10
+    completed_points: 10
+    status: 'completed'
     goal: 'Schémas réactionnels avec arrows et annotations conditions (sans curly)'
     epics: ['EPIC-003']
     frs: ['FR-011', 'FR-013']
-    estimated_stories: 3
+    stories:
+      - id: 'STORY-12.1'
+        title: 'Arrow model + add/remove commands + rendering'
+        points: 4
+        status: 'completed'
+        completed_at: '2026-04-12'
+      - id: 'STORY-12.2'
+        title: 'Annotation rich text model + add/remove commands'
+        points: 3
+        status: 'completed'
+        completed_at: '2026-04-12'
+      - id: 'STORY-12.3'
+        title: 'Anchor annotations to arrows (above/below slots)'
+        points: 3
+        status: 'completed'
+        completed_at: '2026-04-12'
 
   - sprint_number: 13
     name: 'Sprint 13 — Curly arrows part 1 (geometry & rendering)'
