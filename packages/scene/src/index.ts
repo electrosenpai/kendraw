@@ -28,6 +28,10 @@ export type {
   AddBondCommand,
   RemoveBondCommand,
   CycleBondCommand,
+  AddArrowCommand,
+  RemoveArrowCommand,
+  AddAnnotationCommand,
+  RemoveAnnotationCommand,
   SceneDiff,
 } from './commands.js';
 

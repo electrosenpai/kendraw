@@ -134,6 +134,44 @@ function applyCommand(state: Document, command: Command): { next: Document; diff
       });
       return { next, diff: { type: 'bond-cycled', id: command.id } };
     }
+    case 'add-arrow': {
+      const next = produce(state, (draft) => {
+        const page = draft.pages[pageIndex];
+        if (page) {
+          page.arrows[command.arrow.id] = command.arrow;
+        }
+      });
+      return { next, diff: { type: 'arrow-added', id: command.arrow.id } };
+    }
+    case 'remove-arrow': {
+      const next = produce(state, (draft) => {
+        const page = draft.pages[pageIndex];
+        if (page) {
+          const { [command.id]: _, ...rest } = page.arrows;
+          page.arrows = rest as typeof page.arrows;
+        }
+      });
+      return { next, diff: { type: 'arrow-removed', id: command.id } };
+    }
+    case 'add-annotation': {
+      const next = produce(state, (draft) => {
+        const page = draft.pages[pageIndex];
+        if (page) {
+          page.annotations[command.annotation.id] = command.annotation;
+        }
+      });
+      return { next, diff: { type: 'annotation-added', id: command.annotation.id } };
+    }
+    case 'remove-annotation': {
+      const next = produce(state, (draft) => {
+        const page = draft.pages[pageIndex];
+        if (page) {
+          const { [command.id]: _, ...rest } = page.annotations;
+          page.annotations = rest as typeof page.annotations;
+        }
+      });
+      return { next, diff: { type: 'annotation-removed', id: command.id } };
+    }
   }
 }
 
