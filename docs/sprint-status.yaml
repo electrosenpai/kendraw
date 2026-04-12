@@ -25,7 +25,7 @@ velocity:
   rolling_average: null
 
 # Current state
-current_sprint: 1
+current_sprint: 3
 current_sprint_status: 'completed'
 mvp_target: 'v0.1.0 in ~9-10 months'
 
@@ -253,11 +253,28 @@ sprints:
     name: 'Sprint 3 — Sélection + Undo/Redo + spatial index'
     type: 'standard'
     capacity_points: 10
-    status: 'planned'
+    committed_points: 10
+    completed_points: 10
+    status: 'completed'
     goal: 'Sélectionner, supprimer, annuler/refaire fonctionnent'
     epics: ['EPIC-002']
     frs: ['FR-008', 'FR-009']
-    estimated_stories: 3
+    stories:
+      - id: 'STORY-3.1'
+        title: '@kendraw/scene — Spatial index R-tree + hitTest + Selection model'
+        points: 3
+        status: 'completed'
+        completed_at: '2026-04-12'
+      - id: 'STORY-3.2'
+        title: '@kendraw/scene — Undo/redo with snapshot history + MoveAtomCommand'
+        points: 4
+        status: 'completed'
+        completed_at: '2026-04-12'
+      - id: 'STORY-3.3'
+        title: '@kendraw/ui — Tool controllers Select + undo/redo/delete shortcuts'
+        points: 3
+        status: 'completed'
+        completed_at: '2026-04-12'
 
   - sprint_number: 4
     name: 'Sprint 4 — Multi-tabs + auto-save worker'
