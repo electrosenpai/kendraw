@@ -38,7 +38,7 @@ sprints:
     end_date: null
     capacity_points: 45 # cumulative effort budget, not 10 pts
     committed_points: 45
-    completed_points: 16
+    completed_points: 19
     status: 'in_progress'
     goal: 'Repo + CI + ADRs + 4 POCs verts (POC #1 et #2 bloquants). Aucune story applicative.'
     gate_criteria:
@@ -128,7 +128,9 @@ sprints:
         title: 'Rédaction ADRs 001 à 006 (décisions structurantes architecture)'
         points: 3
         priority: 'must_have'
-        status: 'not_started'
+        status: 'completed'
+        story_doc: 'docs/stories/STORY-ADR-001.md'
+        completed_at: '2026-04-12'
         depends_on: ['STORY-INF-008']
       - id: 'STORY-ADR-002'
         title: 'ADR-007 choix outil de doc statique (mkdocs vs starlight)'
