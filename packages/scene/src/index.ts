@@ -63,3 +63,7 @@ export {
 export { RING_TEMPLATES, generateRing, type RingTemplate, type GeneratedRing } from './rings.js';
 
 export { validateValence, type ValenceIssue } from './valence.js';
+
+export { copySelection, prepareForPaste, type ClipboardData } from './clipboard.js';
+
+export { rotateAtoms, snapAngle, mirrorAtomsH, mirrorAtomsV, computeCenter } from './transforms.js';
