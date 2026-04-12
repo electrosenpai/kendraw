@@ -1,9 +1,11 @@
-import type { Document, SceneDiff } from '@kendraw/scene';
+import type { AtomId, Document, SceneDiff } from '@kendraw/scene';
 
 export interface Renderer {
   attach(container: HTMLElement): void;
   detach(): void;
   render(doc: Document, diff?: SceneDiff): void;
+  setSelectedAtoms(ids: Set<AtomId>): void;
+  setSelectionRect(rect: { x1: number; y1: number; x2: number; y2: number } | null): void;
 }
 
 // CPK-inspired color palette keyed by atomic number
@@ -59,6 +61,9 @@ export class CanvasRenderer implements Renderer {
   private ctx: CanvasRenderingContext2D | null = null;
   private container: HTMLElement | null = null;
   private resizeObserver: ResizeObserver | null = null;
+  private selectedAtoms = new Set<AtomId>();
+  private selectionRect: { x1: number; y1: number; x2: number; y2: number } | null = null;
+  private lastDoc: Document | null = null;
 
   attach(container: HTMLElement): void {
     this.container = container;
@@ -96,9 +101,20 @@ export class CanvasRenderer implements Renderer {
     this.container = null;
   }
 
+  setSelectedAtoms(ids: Set<AtomId>): void {
+    this.selectedAtoms = ids;
+    if (this.lastDoc) this.render(this.lastDoc);
+  }
+
+  setSelectionRect(rect: { x1: number; y1: number; x2: number; y2: number } | null): void {
+    this.selectionRect = rect;
+    if (this.lastDoc) this.render(this.lastDoc);
+  }
+
   render(doc: Document): void {
     const { canvas, ctx } = this;
     if (!canvas || !ctx) return;
+    this.lastDoc = doc;
 
     const dpr = window.devicePixelRatio || 1;
     const width = canvas.width / dpr;
@@ -115,6 +131,16 @@ export class CanvasRenderer implements Renderer {
     for (const atom of Object.values(page.atoms)) {
       const color = CPK_COLORS[atom.element] ?? DEFAULT_COLOR;
       const label = atom.label ?? ELEMENT_SYMBOLS[atom.element] ?? '?';
+      const selected = this.selectedAtoms.has(atom.id);
+
+      // Selection highlight ring
+      if (selected) {
+        ctx.beginPath();
+        ctx.arc(atom.x, atom.y, ATOM_RADIUS + 3, 0, Math.PI * 2);
+        ctx.strokeStyle = '#4dabf7';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
 
       // Filled circle
       ctx.beginPath();
@@ -126,9 +152,20 @@ export class CanvasRenderer implements Renderer {
       ctx.font = `${FONT_SIZE}px system-ui, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      // Use white text on dark backgrounds, black on light
       ctx.fillStyle = this.isLightColor(color) ? '#000000' : '#ffffff';
       ctx.fillText(label, atom.x, atom.y);
+    }
+
+    // Draw selection rectangle
+    if (this.selectionRect) {
+      const { x1, y1, x2, y2 } = this.selectionRect;
+      ctx.strokeStyle = 'rgba(77, 171, 247, 0.8)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 4]);
+      ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+      ctx.fillStyle = 'rgba(77, 171, 247, 0.1)';
+      ctx.fillRect(x1, y1, x2 - x1, y2 - y1);
+      ctx.setLineDash([]);
     }
   }
 
