@@ -38,7 +38,7 @@ sprints:
     end_date: null
     capacity_points: 45 # cumulative effort budget, not 10 pts
     committed_points: 45
-    completed_points: 15
+    completed_points: 16
     status: 'in_progress'
     goal: 'Repo + CI + ADRs + 4 POCs verts (POC #1 et #2 bloquants). Aucune story applicative.'
     gate_criteria:
@@ -120,7 +120,9 @@ sprints:
         title: '.github/ templates (PR, issue, dependabot, code owners)'
         points: 1
         priority: 'should_have'
-        status: 'not_started'
+        status: 'completed'
+        story_doc: 'docs/stories/STORY-INF-009.md'
+        completed_at: '2026-04-12'
         depends_on: ['STORY-INF-001']
       - id: 'STORY-ADR-001'
         title: 'Rédaction ADRs 001 à 006 (décisions structurantes architecture)'
