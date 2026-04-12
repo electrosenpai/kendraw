@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useSyncExternalStore } from 'react';
 import { Canvas } from './Canvas';
 import { TabBar } from './TabBar';
 import { ShortcutCheatsheet } from './ShortcutCheatsheet';
+import { AboutPage } from './AboutPage';
 import { workspaceStore, type WorkspaceState } from './workspace-store';
 
 function subscribeToWorkspace(onStoreChange: () => void) {
@@ -16,6 +17,7 @@ export function App() {
   const workspace = useSyncExternalStore(subscribeToWorkspace, getWorkspaceSnapshot);
   const [initialized, setInitialized] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [showAbout, setShowAbout] = useState(false);
 
   useEffect(() => {
     async function init() {
@@ -105,6 +107,7 @@ export function App() {
         )}
       </div>
       {showShortcuts && <ShortcutCheatsheet onClose={() => setShowShortcuts(false)} />}
+      {showAbout && <AboutPage onClose={() => setShowAbout(false)} />}
     </div>
   );
 }
