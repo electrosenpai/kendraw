@@ -9,5 +9,11 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@kendraw/scene": "workspace:*"
+  },
+  "devDependencies": {
+    "jsdom": "^29.0.2"
   }
 }

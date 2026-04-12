@@ -201,7 +201,7 @@ sprints:
     end_date: null
     capacity_points: 10
     committed_points: 10
-    completed_points: 4
+    completed_points: 7
     status: 'in_progress'
     goal: 'Cliquer sur le canvas → un atome apparaît. Pipeline scene → renderer → ui fonctionne end-to-end.'
     stories:
@@ -225,7 +225,9 @@ sprints:
         title: '@kendraw/renderer-canvas minimal — render atomes'
         points: 3
         priority: 'must_have'
-        status: 'not_started'
+        status: 'completed'
+        story_doc: 'docs/stories/STORY-003.md'
+        completed_at: '2026-04-12'
         depends_on: ['STORY-001']
       - id: 'STORY-004'
         title: '@kendraw/ui shell + tool controller AddAtom'
