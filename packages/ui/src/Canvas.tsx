@@ -81,6 +81,48 @@ export function Canvas({ store, onMoleculeSearch, showPropertyPanel = true }: Ca
   const bondStartAtomRef = useRef<AtomId | null>(null);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
+
+  const fitToScreen = useCallback(() => {
+    const page = store.getState().pages[store.getState().activePageIndex];
+    if (!page) return;
+    const atoms = Object.values(page.atoms);
+    if (atoms.length === 0) {
+      setZoom(1);
+      setPan({ x: 0, y: 0 });
+      return;
+    }
+    // Compute bounding box of all atoms
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+    for (const a of atoms) {
+      if (a.x < minX) minX = a.x;
+      if (a.y < minY) minY = a.y;
+      if (a.x > maxX) maxX = a.x;
+      if (a.y > maxY) maxY = a.y;
+    }
+    const padding = 60;
+    const bboxW = maxX - minX + padding * 2;
+    const bboxH = maxY - minY + padding * 2;
+
+    const container = containerRef.current;
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    const canvasW = rect.width;
+    const canvasH = rect.height;
+
+    // Compute zoom to fit bbox in canvas
+    const newZoom = Math.min(canvasW / bboxW, canvasH / bboxH, 3);
+    // Compute pan to center the bbox
+    const centerX = (minX + maxX) / 2;
+    const centerY = (minY + maxY) / 2;
+    const newPanX = canvasW / 2 - centerX * newZoom;
+    const newPanY = canvasH / 2 - centerY * newZoom;
+
+    setZoom(newZoom);
+    setPan({ x: newPanX, y: newPanY });
+  }, [store]);
   const isPanningRef = useRef(false);
   const panStartRef = useRef({ x: 0, y: 0, panX: 0, panY: 0 });
   const isMovingRef = useRef(false);
@@ -166,6 +208,13 @@ export function Canvas({ store, onMoleculeSearch, showPropertyPanel = true }: Ca
   useEffect(() => {
     async function handleKeyDown(e: KeyboardEvent) {
       const isMod = e.ctrlKey || e.metaKey;
+
+      // Fit to screen (Ctrl+0)
+      if (isMod && e.key === '0') {
+        e.preventDefault();
+        fitToScreen();
+        return;
+      }
 
       // Structure cleanup (Shift+Ctrl+K, reference Section 4.1)
       if (isMod && e.shiftKey && (e.key === 'k' || e.key === 'K')) {
@@ -961,6 +1010,7 @@ export function Canvas({ store, onMoleculeSearch, showPropertyPanel = true }: Ca
             setSelection(clearSelection(selection));
           }}
           onMoleculeSearch={onMoleculeSearch}
+          onFitToScreen={fitToScreen}
           canUndo={store.canUndo()}
           canRedo={store.canRedo()}
         />

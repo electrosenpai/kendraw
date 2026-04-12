@@ -269,6 +269,7 @@ interface ToolPaletteProps {
   onUndo?: (() => void) | undefined;
   onRedo?: (() => void) | undefined;
   onMoleculeSearch?: (() => void) | undefined;
+  onFitToScreen?: (() => void) | undefined;
   canUndo?: boolean;
   canRedo?: boolean;
 }
@@ -279,6 +280,7 @@ export function ToolPalette({
   onUndo,
   onRedo,
   onMoleculeSearch,
+  onFitToScreen,
   canUndo = true,
   canRedo = false,
 }: ToolPaletteProps) {
@@ -310,11 +312,14 @@ export function ToolPalette({
         onRedo?.();
         return;
       }
-      if (def.id === 'fit') return; // TODO
+      if (def.id === 'fit') {
+        onFitToScreen?.();
+        return;
+      }
       onToolStateChange({ tool: def.id as ToolId });
       setSubmenu(null);
     },
-    [onToolStateChange, onMoleculeSearch, onUndo, onRedo],
+    [onToolStateChange, onMoleculeSearch, onUndo, onRedo, onFitToScreen],
   );
 
   const handleContext = useCallback(
