@@ -69,7 +69,11 @@ importers:
 
   packages/renderer-svg: {}
 
-  packages/scene: {}
+  packages/scene:
+    dependencies:
+      immer:
+        specifier: ^10.2.0
+        version: 10.2.0
 
   packages/scene-poc:
     dependencies:
