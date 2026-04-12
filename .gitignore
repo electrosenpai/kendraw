@@ -47,6 +47,6 @@ tests/fixtures/cdxml-corpus/urd-abbaye/
 test-results/
 playwright-report/
 
-# POC directories (throwaway, not part of final app)
-packages/scene-poc/
+# POC directories (throwaway — tracked during Sprint 0, deleted after)
+# packages/scene-poc/  — currently tracked for POC #1
 packages/chem-poc/

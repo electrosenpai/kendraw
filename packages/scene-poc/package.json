@@ -1,0 +1,18 @@
+{
+  "name": "@kendraw/scene-poc",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "POC #1: 500-atom performance benchmark (throwaway)",
+  "scripts": {
+    "bench": "vitest bench",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "immer": "^10.1.1",
+    "rbush": "^4.0.1"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.4"
+  }
+}
