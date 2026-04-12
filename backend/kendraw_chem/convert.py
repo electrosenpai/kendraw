@@ -26,7 +26,7 @@ class ConvertService:
     def __init__(self) -> None:
         self._rdkit_available = False
         try:
-            from rdkit import Chem  # noqa: F401
+            from rdkit import Chem  # type: ignore[import-not-found]  # noqa: F401
 
             self._rdkit_available = True
         except ImportError:
@@ -89,7 +89,7 @@ class ConvertService:
         output_format: str,
     ) -> str:
         from rdkit import Chem
-        from rdkit.Chem import inchi
+        from rdkit.Chem import inchi  # type: ignore[import-not-found]
 
         # Parse input
         mol = None
@@ -106,15 +106,15 @@ class ConvertService:
 
         # Write output
         if output_format == "smiles":
-            return Chem.MolToSmiles(mol)
+            return str(Chem.MolToSmiles(mol))
         elif output_format == "mol":
-            return Chem.MolToMolBlock(mol)
+            return str(Chem.MolToMolBlock(mol))
         elif output_format == "inchi":
             result = inchi.MolToInchi(mol)
             if result is None:
                 msg = "Failed to generate InChI"
                 raise ValueError(msg)
-            return result
+            return str(result)
 
         msg = f"Unsupported output format: {output_format}"
         raise ValueError(msg)

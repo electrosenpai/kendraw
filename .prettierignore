@@ -4,3 +4,4 @@ build
 coverage
 pnpm-lock.yaml
 *.tsbuildinfo
+backend/.pytest_cache/

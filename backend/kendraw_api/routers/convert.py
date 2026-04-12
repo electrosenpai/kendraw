@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
 
-from kendraw_chem.convert import ConvertService, ConversionResult
+from kendraw_chem.convert import ConversionResult, ConvertService
 
 router = APIRouter(prefix="/convert", tags=["convert"])
 
