@@ -38,7 +38,7 @@ sprints:
     end_date: null
     capacity_points: 45 # cumulative effort budget, not 10 pts
     committed_points: 45
-    completed_points: 13
+    completed_points: 15
     status: 'in_progress'
     goal: 'Repo + CI + ADRs + 4 POCs verts (POC #1 et #2 bloquants). Aucune story applicative.'
     gate_criteria:
@@ -90,7 +90,9 @@ sprints:
         title: 'CI workflow backend'
         points: 2
         priority: 'must_have'
-        status: 'not_started'
+        status: 'completed'
+        story_doc: 'docs/stories/STORY-INF-005.md'
+        completed_at: '2026-04-12'
         depends_on: ['STORY-INF-002']
       - id: 'STORY-INF-006'
         title: 'License audit setup + LICENSES.md'

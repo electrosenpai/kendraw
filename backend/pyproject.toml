@@ -24,6 +24,7 @@ dev = [
     "ruff>=0.11.0",
     "mypy>=1.15.0",
     "hypothesis>=6.120.0",
+    "pip-licenses>=5.0.0",
 ]
 
 [tool.ruff]
