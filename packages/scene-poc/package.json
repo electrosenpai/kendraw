@@ -6,7 +6,7 @@
   "description": "POC #1: 500-atom performance benchmark (throwaway)",
   "scripts": {
     "bench": "vitest bench",
-    "test": "vitest run"
+    "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
     "immer": "^10.1.1",

@@ -25,8 +25,8 @@ velocity:
   rolling_average: null
 
 # Current state
-current_sprint: 0
-current_sprint_status: 'in_progress'
+current_sprint: 1
+current_sprint_status: 'completed'
 mvp_target: 'v0.1.0 in ~9-10 months'
 
 # Sprint inventory
@@ -201,8 +201,8 @@ sprints:
     end_date: null
     capacity_points: 10
     committed_points: 10
-    completed_points: 7
-    status: 'in_progress'
+    completed_points: 10
+    status: 'completed'
     goal: 'Cliquer sur le canvas → un atome apparaît. Pipeline scene → renderer → ui fonctionne end-to-end.'
     stories:
       - id: 'STORY-001'
@@ -233,7 +233,9 @@ sprints:
         title: '@kendraw/ui shell + tool controller AddAtom'
         points: 3
         priority: 'must_have'
-        status: 'not_started'
+        status: 'completed'
+        story_doc: 'docs/stories/STORY-004.md'
+        completed_at: '2026-04-12'
         depends_on: ['STORY-001', 'STORY-002', 'STORY-003']
 
   # Sprints 2-18 are placeholders, detailed via /create-story at sprint start
