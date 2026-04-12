@@ -116,6 +116,9 @@ importers:
 
   packages/ui:
     dependencies:
+      '@kendraw/persistence':
+        specifier: workspace:*
+        version: link:../persistence
       '@kendraw/renderer-canvas':
         specifier: workspace:*
         version: link:../renderer-canvas
