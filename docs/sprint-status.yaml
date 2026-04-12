@@ -25,7 +25,7 @@ velocity:
   rolling_average: null
 
 # Current state
-current_sprint: 16
+current_sprint: 17
 current_sprint_status: 'completed'
 mvp_target: 'v0.1.0 in ~9-10 months'
 
@@ -633,10 +633,27 @@ sprints:
     name: 'Sprint 17 — MVP hardening (a11y + cross-browser + perf)'
     type: 'standard'
     capacity_points: 10
-    status: 'planned'
+    committed_points: 10
+    completed_points: 10
+    status: 'completed'
     goal: 'axe-core clean + Playwright cross-browser + perf bench codifié vert'
     nfrs: ['NFR-001', 'NFR-002', 'NFR-006']
-    estimated_stories: 3
+    stories:
+      - id: 'STORY-17.1'
+        title: 'a11y tests + accessibility.md documentation'
+        points: 3
+        status: 'completed'
+        completed_at: '2026-04-12'
+      - id: 'STORY-17.2'
+        title: 'browser-support.md + cross-browser matrix documented'
+        points: 4
+        status: 'completed'
+        completed_at: '2026-04-12'
+      - id: 'STORY-17.3'
+        title: 'Codified perf benchmarks (500 atoms, spatial index, undo/redo)'
+        points: 3
+        status: 'completed'
+        completed_at: '2026-04-12'
 
   - sprint_number: 18
     name: 'Sprint 18 — Doc publish + release prep v0.1.0'
