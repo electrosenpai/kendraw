@@ -32,6 +32,26 @@ import { StatusBar } from './StatusBar';
 
 const ATOM_RADIUS = 14;
 
+/** Distance from point (px,py) to line segment (x1,y1)-(x2,y2). */
+function pointToSegmentDist(
+  px: number,
+  py: number,
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+): number {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const lenSq = dx * dx + dy * dy;
+  if (lenSq === 0) return Math.sqrt((px - x1) ** 2 + (py - y1) ** 2);
+  let t = ((px - x1) * dx + (py - y1) * dy) / lenSq;
+  t = Math.max(0, Math.min(1, t));
+  const cx = x1 + t * dx;
+  const cy = y1 + t * dy;
+  return Math.sqrt((px - cx) ** 2 + (py - cy) ** 2);
+}
+
 interface CanvasProps {
   store: SceneStore;
   onMoleculeSearch?: (() => void) | undefined;
@@ -575,17 +595,12 @@ export function Canvas({ store, onMoleculeSearch, showPropertyPanel = true }: Ca
         return;
       }
 
-      // --- ERASER TOOL --- (only on click, not drag)
+      // --- ERASER TOOL ---
       if (toolState.tool === 'eraser') {
-        if (isDraggingRef.current) {
-          dragStartRef.current = null;
-          isDraggingRef.current = false;
-          return;
-        }
+        const page = store.getState().pages[store.getState().activePageIndex];
+        // Try atom first
         const hitId = spatialIndexRef.current.hitTest(x, y, ATOM_RADIUS);
         if (hitId) {
-          // Remove bonds connected to this atom first
-          const page = store.getState().pages[store.getState().activePageIndex];
           if (page) {
             for (const bond of Object.values(page.bonds)) {
               if (bond.fromAtomId === hitId || bond.toAtomId === hitId) {
@@ -594,6 +609,32 @@ export function Canvas({ store, onMoleculeSearch, showPropertyPanel = true }: Ca
             }
           }
           store.dispatch({ type: 'remove-atom', id: hitId });
+          dragStartRef.current = null;
+          isDraggingRef.current = false;
+          return;
+        }
+        // Try bond hit-test (point-to-segment distance)
+        if (page) {
+          for (const bond of Object.values(page.bonds)) {
+            const fa = page.atoms[bond.fromAtomId];
+            const ta = page.atoms[bond.toAtomId];
+            if (fa && ta && pointToSegmentDist(x, y, fa.x, fa.y, ta.x, ta.y) < 8) {
+              store.dispatch({ type: 'remove-bond', id: bond.id });
+              dragStartRef.current = null;
+              isDraggingRef.current = false;
+              return;
+            }
+          }
+          // Try arrow hit-test
+          for (const arrow of Object.values(page.arrows)) {
+            const { start, end } = arrow.geometry;
+            if (pointToSegmentDist(x, y, start.x, start.y, end.x, end.y) < 10) {
+              store.dispatch({ type: 'remove-arrow', id: arrow.id });
+              dragStartRef.current = null;
+              isDraggingRef.current = false;
+              return;
+            }
+          }
         }
         dragStartRef.current = null;
         isDraggingRef.current = false;
