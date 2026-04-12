@@ -87,6 +87,10 @@ export function App() {
   const handleNewTab = useCallback(() => workspaceStore.createTab(), []);
   const handleSwitchTab = useCallback((id: string) => workspaceStore.switchTab(id), []);
   const handleCloseTab = useCallback((id: string) => workspaceStore.closeTab(id), []);
+  const handleRenameTab = useCallback(
+    (id: string, name: string) => workspaceStore.renameTab(id, name),
+    [],
+  );
 
   // Auto-collapse panel on small screens
   const effectivePanelW = layout === 'minimal' ? 0 : panelVisible ? panelW : 0;
@@ -135,6 +139,7 @@ export function App() {
           onSwitchTab={handleSwitchTab}
           onCloseTab={handleCloseTab}
           onNewTab={handleNewTab}
+          onRenameTab={handleRenameTab}
         />
       </div>
 

@@ -88,6 +88,15 @@ class WorkspaceStore {
     this.notify();
   }
 
+  renameTab(id: string, name: string): void {
+    const store = this.stores.get(id);
+    if (store) {
+      const doc = store.getState();
+      doc.metadata.title = name;
+    }
+    this.updateTabTitle(id, name);
+  }
+
   async restoreFromDB(): Promise<void> {
     const stored = await db.listDocuments();
     if (stored.length === 0) return;
