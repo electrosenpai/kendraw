@@ -9,5 +9,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@kendraw/scene": "workspace:*"
   }
 }

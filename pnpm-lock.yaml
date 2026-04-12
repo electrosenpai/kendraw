@@ -65,7 +65,11 @@ importers:
         specifier: workspace:*
         version: link:../scene
 
-  packages/io: {}
+  packages/io:
+    dependencies:
+      '@kendraw/scene':
+        specifier: workspace:*
+        version: link:../scene
 
   packages/persistence:
     dependencies:
@@ -90,7 +94,11 @@ importers:
         specifier: ^29.0.2
         version: 29.0.2
 
-  packages/renderer-svg: {}
+  packages/renderer-svg:
+    dependencies:
+      '@kendraw/scene':
+        specifier: workspace:*
+        version: link:../scene
 
   packages/scene:
     dependencies:
