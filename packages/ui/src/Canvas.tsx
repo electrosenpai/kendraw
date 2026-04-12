@@ -32,9 +32,10 @@ const ATOM_RADIUS = 14;
 
 interface CanvasProps {
   store: SceneStore;
+  onMoleculeSearch?: (() => void) | undefined;
 }
 
-export function Canvas({ store }: CanvasProps) {
+export function Canvas({ store, onMoleculeSearch }: CanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<CanvasRenderer | null>(null);
   const spatialIndexRef = useRef(new SpatialIndex());
@@ -642,6 +643,7 @@ export function Canvas({ store }: CanvasProps) {
           store.redo();
           setSelection(clearSelection(selection));
         }}
+        onMoleculeSearch={onMoleculeSearch}
         canUndo={store.canUndo()}
         canRedo={store.canRedo()}
       />

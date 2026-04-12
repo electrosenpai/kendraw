@@ -182,6 +182,24 @@ const Icons = {
       <path d="M16 8H8a5 5 0 000 10h3" />
     </svg>
   ),
+  molecule: (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+    >
+      <circle cx="6" cy="6" r="3" />
+      <circle cx="14" cy="6" r="3" />
+      <circle cx="10" cy="14" r="3" />
+      <line x1="8.5" y1="7.5" x2="11.5" y2="7.5" />
+      <line x1="7.5" y1="8.5" x2="9" y2="12" />
+      <line x1="12.5" y1="8.5" x2="11" y2="12" />
+    </svg>
+  ),
   zoomFit: (
     <svg
       width="20"
@@ -215,8 +233,9 @@ const BOND_STYLES: { id: ToolState['bondStyle']; label: string; icon: React.Reac
 interface ToolPaletteProps {
   toolState: ToolState;
   onToolStateChange: (state: Partial<ToolState>) => void;
-  onUndo?: () => void;
-  onRedo?: () => void;
+  onUndo?: (() => void) | undefined;
+  onRedo?: (() => void) | undefined;
+  onMoleculeSearch?: (() => void) | undefined;
   canUndo?: boolean;
   canRedo?: boolean;
 }
@@ -226,6 +245,7 @@ export function ToolPalette({
   onToolStateChange,
   onUndo,
   onRedo,
+  onMoleculeSearch,
   canUndo = true,
   canRedo = false,
 }: ToolPaletteProps) {
@@ -323,6 +343,18 @@ export function ToolPalette({
           e.preventDefault();
           openFlyout('ring', btn);
         }}
+      />
+
+      <Separator />
+
+      {/* ── Library ── */}
+      <SectionLabel>Library</SectionLabel>
+      <ToolButton
+        icon={Icons.molecule}
+        label="Molecules"
+        shortcut="M"
+        active={false}
+        onClick={onMoleculeSearch}
       />
 
       <Separator />

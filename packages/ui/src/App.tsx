@@ -99,7 +99,11 @@ export function App() {
       />
       <div style={{ flex: 1, position: 'relative' }}>
         {activeStore ? (
-          <Canvas key={workspace.activeTabId} store={activeStore} />
+          <Canvas
+            key={workspace.activeTabId}
+            store={activeStore}
+            onMoleculeSearch={() => setShowMolSearch(true)}
+          />
         ) : (
           <div
             style={{
