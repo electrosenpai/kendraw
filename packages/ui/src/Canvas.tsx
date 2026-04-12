@@ -11,6 +11,7 @@ import {
 } from '@kendraw/scene';
 import { CanvasRenderer } from '@kendraw/renderer-canvas';
 import { ToolPalette, type ToolId } from './ToolPalette';
+import { PropertyPanel } from './PropertyPanel';
 
 const ATOM_RADIUS = 14;
 
@@ -24,6 +25,7 @@ export function Canvas({ store }: CanvasProps) {
   const spatialIndexRef = useRef(new SpatialIndex());
   const [tool, setTool] = useState<ToolId>('add-atom');
   const [selection, setSelection] = useState<Selection>(createSelection());
+  const [showProperties, setShowProperties] = useState(true);
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
   const isDraggingRef = useRef(false);
 
@@ -99,6 +101,10 @@ export function Canvas({ store }: CanvasProps) {
         return;
       }
       if (!isMod) {
+        if (e.key === 'p' || e.key === 'P') {
+          setShowProperties((s) => !s);
+          return;
+        }
         const toolMap: Record<string, ToolId> = {
           v: 'select',
           V: 'select',
@@ -228,6 +234,8 @@ export function Canvas({ store }: CanvasProps) {
           {selection.atomIds.length} selected
         </div>
       )}
+
+      <PropertyPanel doc={doc} visible={showProperties} />
 
       {/* Canvas container */}
       <div

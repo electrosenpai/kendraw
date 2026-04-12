@@ -59,7 +59,11 @@ importers:
 
   packages/api-client: {}
 
-  packages/chem: {}
+  packages/chem:
+    dependencies:
+      '@kendraw/scene':
+        specifier: workspace:*
+        version: link:../scene
 
   packages/io: {}
 
@@ -116,6 +120,9 @@ importers:
 
   packages/ui:
     dependencies:
+      '@kendraw/chem':
+        specifier: workspace:*
+        version: link:../chem
       '@kendraw/persistence':
         specifier: workspace:*
         version: link:../persistence
