@@ -764,33 +764,74 @@ export class CanvasRenderer implements Renderer {
         c2: { x: number; y: number };
         end: { x: number; y: number };
       };
+      arrowheadHead?: 'full' | 'half' | 'none';
+      arrowheadTail?: 'full' | 'half' | 'none';
     },
   ): void {
     const { start, c1, c2, end } = arrow.geometry;
     const isCurly = arrow.type === 'curly-pair' || arrow.type === 'curly-radical';
+    const color = isCurly ? '#e06633' : '#000000';
+
+    // Default arrowhead config: curly arrows always have head, reaction arrows use parsed config
+    const headType = arrow.arrowheadHead ?? (isCurly ? 'full' : 'full');
+    const tailType = arrow.arrowheadTail ?? 'none';
+
+    // Draw the shaft (Bézier curve)
     ctx.beginPath();
     ctx.moveTo(start.x, start.y);
     ctx.bezierCurveTo(c1.x, c1.y, c2.x, c2.y, end.x, end.y);
-    ctx.strokeStyle = isCurly ? '#e06633' : '#cccccc';
-    ctx.lineWidth = isCurly ? 1.5 : 2;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = isCurly ? 1.5 : 1.5;
     ctx.stroke();
 
-    const adx = end.x - c2.x;
-    const ady = end.y - c2.y;
-    const alen = Math.sqrt(adx * adx + ady * ady);
-    if (alen > 0) {
-      const aux = adx / alen;
-      const auy = ady / alen;
-      const hl = 8;
-      const hw = isCurly ? 3 : 5;
-      ctx.beginPath();
-      ctx.moveTo(end.x, end.y);
-      ctx.lineTo(end.x - aux * hl + auy * hw, end.y - auy * hl - aux * hw);
-      ctx.lineTo(end.x - aux * hl - auy * hw, end.y - auy * hl + aux * hw);
-      ctx.closePath();
-      ctx.fillStyle = isCurly ? '#e06633' : '#cccccc';
-      ctx.fill();
+    const hl = isCurly ? 6 : 10; // arrowhead length
+    const hw = isCurly ? 2.5 : 4; // arrowhead half-width
+
+    // Draw arrowhead at head (end) — direction from c2 to end
+    if (headType !== 'none') {
+      const adx = end.x - c2.x;
+      const ady = end.y - c2.y;
+      const alen = Math.sqrt(adx * adx + ady * ady);
+      if (alen > 0) {
+        const ux = adx / alen;
+        const uy = ady / alen;
+        this.drawArrowhead(ctx, end.x, end.y, ux, uy, hl, hw, headType, color);
+      }
     }
+
+    // Draw arrowhead at tail (start) — direction from c1 to start
+    if (tailType !== 'none') {
+      const adx = start.x - c1.x;
+      const ady = start.y - c1.y;
+      const alen = Math.sqrt(adx * adx + ady * ady);
+      if (alen > 0) {
+        const ux = adx / alen;
+        const uy = ady / alen;
+        this.drawArrowhead(ctx, start.x, start.y, ux, uy, hl, hw, tailType, color);
+      }
+    }
+  }
+
+  private drawArrowhead(
+    ctx: CanvasRenderingContext2D,
+    tipX: number,
+    tipY: number,
+    ux: number,
+    uy: number,
+    length: number,
+    halfWidth: number,
+    headType: 'full' | 'half',
+    color: string,
+  ): void {
+    ctx.beginPath();
+    ctx.moveTo(tipX, tipY);
+    ctx.lineTo(tipX - ux * length + uy * halfWidth, tipY - uy * length - ux * halfWidth);
+    if (headType === 'full') {
+      ctx.lineTo(tipX - ux * length - uy * halfWidth, tipY - uy * length + ux * halfWidth);
+    }
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
   }
 
   // ── Utility ─────────────────────────────────────────────

@@ -68,6 +68,8 @@ export type Arrow = {
   startAnchor: ArrowAnchor;
   endAnchor: ArrowAnchor;
   annotations?: { above?: AnnotationId; below?: AnnotationId };
+  arrowheadHead?: 'full' | 'half' | 'none';
+  arrowheadTail?: 'full' | 'half' | 'none';
 };
 
 export type RichTextNode = {

@@ -92,6 +92,77 @@ describe('CDXML parser', () => {
     );
   });
 
+  it('parses arrowhead configuration — full head, no tail', () => {
+    const cdxml = `<CDXML><page>
+      <arrow id="1" Head3D="200 90 0" Tail3D="100 90 0"
+             ArrowheadHead="Full" ArrowheadType="Solid"/>
+    </page></CDXML>`;
+    const result = parseCdxml(cdxml);
+    expect(result.arrows[0]?.arrowheadHead).toBe('full');
+    expect(result.arrows[0]?.arrowheadTail).toBe('none');
+    expect(result.arrows[0]?.type).toBe('forward');
+  });
+
+  it('parses equilibrium arrow — head and tail arrowheads', () => {
+    const cdxml = `<CDXML><page>
+      <arrow id="1" Head3D="200 90 0" Tail3D="100 90 0"
+             ArrowheadHead="Full" ArrowheadTail="Full" ArrowheadType="Solid"/>
+    </page></CDXML>`;
+    const result = parseCdxml(cdxml);
+    expect(result.arrows[0]?.arrowheadHead).toBe('full');
+    expect(result.arrows[0]?.arrowheadTail).toBe('full');
+    expect(result.arrows[0]?.type).toBe('equilibrium');
+  });
+
+  it('parses retro arrow type', () => {
+    const cdxml = `<CDXML><page>
+      <arrow id="1" Head3D="200 90 0" Tail3D="100 90 0"
+             ArrowheadHead="Full" ArrowheadType="RetroSynthetic"/>
+    </page></CDXML>`;
+    const result = parseCdxml(cdxml);
+    expect(result.arrows[0]?.type).toBe('reversible');
+  });
+
+  it('parses half arrowhead', () => {
+    const cdxml = `<CDXML><page>
+      <arrow id="1" Head3D="200 90 0" Tail3D="100 90 0" ArrowheadHead="Half"/>
+    </page></CDXML>`;
+    const result = parseCdxml(cdxml);
+    expect(result.arrows[0]?.arrowheadHead).toBe('half');
+    expect(result.arrows[0]?.arrowheadTail).toBe('none');
+  });
+
+  it('parses arrow with no arrowheads as forward with none', () => {
+    const cdxml = `<CDXML><page>
+      <arrow id="1" Head3D="200 90 0" Tail3D="100 90 0"/>
+    </page></CDXML>`;
+    const result = parseCdxml(cdxml);
+    expect(result.arrows[0]?.arrowheadHead).toBe('none');
+    expect(result.arrows[0]?.arrowheadTail).toBe('none');
+  });
+
+  it('parses curved arrow with CurvePoints', () => {
+    const cdxml = `<CDXML><page>
+      <arrow id="1" Head3D="200 90 0" Tail3D="100 90 0" ArrowheadHead="Full"
+             CurvePoints="100 90 0 120 60 0 180 60 0 200 90 0"/>
+    </page></CDXML>`;
+    const result = parseCdxml(cdxml);
+    const g = result.arrows[0]?.geometry;
+    // Control points should NOT be collinear (actual curve)
+    expect(g?.c1.y).not.toBeCloseTo(g?.start.y ?? 0, 0);
+  });
+
+  it('skips superseded graphics', () => {
+    const cdxml = `<CDXML><page>
+      <graphic id="1" SupersededBy="2" BoundingBox="200 90 100 90"
+               GraphicType="Line" ArrowType="FullHead"/>
+      <graphic id="3" BoundingBox="50 50 150 50" GraphicType="Line"/>
+    </page></CDXML>`;
+    const result = parseCdxml(cdxml);
+    // Only the non-superseded graphic should be parsed
+    expect(result.graphics).toHaveLength(1);
+  });
+
   it('parses free text annotations', () => {
     const cdxml = `<CDXML><page>
       <t id="50" p="150 95" LineHeight="auto"><s font="3" size="10" color="0">Aniline</s></t>

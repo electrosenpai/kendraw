@@ -240,21 +240,98 @@ export function parseCdxml(xml: string): CdxmlParseResult {
     const tx = (tp[0] ?? 0) * SCALE;
     const ty = (tp[1] ?? 0) * SCALE;
 
-    const arrowHead = arEl.getAttribute('ArrowheadHead') ?? '';
-    let type: Arrow['type'] = 'forward';
-    if (arrowHead.toLowerCase().includes('retro')) type = 'reversible';
+    // --- Arrowhead configuration ---
+    const headAttr = (arEl.getAttribute('ArrowheadHead') ?? '').toLowerCase();
+    const tailAttr = (arEl.getAttribute('ArrowheadTail') ?? '').toLowerCase();
+    const typeAttr = (arEl.getAttribute('ArrowheadType') ?? '').toLowerCase();
 
-    arrows.push({
-      id: crypto.randomUUID() as ArrowId,
-      type,
-      geometry: {
+    const arrowheadHead: Arrow['arrowheadHead'] =
+      headAttr === 'full' ? 'full' : headAttr === 'half' ? 'half' : headAttr ? 'full' : 'none';
+    const arrowheadTail: Arrow['arrowheadTail'] =
+      tailAttr === 'full' ? 'full' : tailAttr === 'half' ? 'half' : tailAttr ? 'full' : 'none';
+
+    // Determine arrow type from arrowhead configuration
+    let type: Arrow['type'] = 'forward';
+    if (typeAttr.includes('retro')) {
+      type = 'reversible';
+    } else if (arrowheadHead !== 'none' && arrowheadTail !== 'none') {
+      type = 'equilibrium';
+    }
+
+    // --- Curve geometry ---
+    // CurvePoints provides explicit Bézier control points (space-separated 3D coords).
+    // AngularSize indicates an arc-based arrow.
+    const curvePoints = arEl.getAttribute('CurvePoints');
+    const angularSize = arEl.getAttribute('AngularSize');
+    let geometry: Arrow['geometry'];
+
+    if (curvePoints) {
+      // CurvePoints is "x1 y1 z1 x2 y2 z2 x3 y3 z3 x4 y4 z4" (4 points = cubic Bézier)
+      const pts = curvePoints.split(/\s+/).map(Number);
+      const numPoints = Math.floor(pts.length / 3);
+      if (numPoints >= 4) {
+        // Full cubic Bézier: 4 control points
+        geometry = {
+          start: { x: (pts[0] ?? 0) * SCALE, y: (pts[1] ?? 0) * SCALE },
+          c1: { x: (pts[3] ?? 0) * SCALE, y: (pts[4] ?? 0) * SCALE },
+          c2: { x: (pts[6] ?? 0) * SCALE, y: (pts[7] ?? 0) * SCALE },
+          end: { x: (pts[9] ?? 0) * SCALE, y: (pts[10] ?? 0) * SCALE },
+        };
+      } else if (numPoints === 3) {
+        // Quadratic Bézier elevated to cubic: use middle point as both c1 and c2
+        const mx = (pts[3] ?? 0) * SCALE;
+        const my = (pts[4] ?? 0) * SCALE;
+        geometry = {
+          start: { x: (pts[0] ?? 0) * SCALE, y: (pts[1] ?? 0) * SCALE },
+          c1: { x: mx, y: my },
+          c2: { x: mx, y: my },
+          end: { x: (pts[6] ?? 0) * SCALE, y: (pts[7] ?? 0) * SCALE },
+        };
+      } else {
+        // Fall back to straight line
+        geometry = {
+          start: { x: tx, y: ty },
+          c1: { x: tx + (hx - tx) * 0.33, y: ty + (hy - ty) * 0.33 },
+          c2: { x: tx + (hx - tx) * 0.66, y: ty + (hy - ty) * 0.66 },
+          end: { x: hx, y: hy },
+        };
+      }
+    } else if (angularSize) {
+      // Arc-based arrow: approximate arc with a cubic Bézier
+      const angle = parseFloat(angularSize) || 0;
+      const midX = (tx + hx) / 2;
+      const midY = (ty + hy) / 2;
+      const dx = hx - tx;
+      const dy = hy - ty;
+      // Perpendicular offset proportional to angular size
+      const bulge = (Math.abs(angle) / 180) * Math.sqrt(dx * dx + dy * dy) * 0.5;
+      const nx = dy === 0 && dx === 0 ? 0 : -dy / Math.sqrt(dx * dx + dy * dy);
+      const ny = dy === 0 && dx === 0 ? 1 : dx / Math.sqrt(dx * dx + dy * dy);
+      const sign = angle >= 0 ? 1 : -1;
+      geometry = {
+        start: { x: tx, y: ty },
+        c1: { x: midX + nx * bulge * sign - dx * 0.17, y: midY + ny * bulge * sign - dy * 0.17 },
+        c2: { x: midX + nx * bulge * sign + dx * 0.17, y: midY + ny * bulge * sign + dy * 0.17 },
+        end: { x: hx, y: hy },
+      };
+    } else {
+      // Straight arrow: collinear control points
+      geometry = {
         start: { x: tx, y: ty },
         c1: { x: tx + (hx - tx) * 0.33, y: ty + (hy - ty) * 0.33 },
         c2: { x: tx + (hx - tx) * 0.66, y: ty + (hy - ty) * 0.66 },
         end: { x: hx, y: hy },
-      },
+      };
+    }
+
+    arrows.push({
+      id: crypto.randomUUID() as ArrowId,
+      type,
+      geometry,
       startAnchor: { kind: 'free' },
       endAnchor: { kind: 'free' },
+      arrowheadHead,
+      arrowheadTail,
     });
   }
 
@@ -282,8 +359,10 @@ export function parseCdxml(xml: string): CdxmlParseResult {
   }
 
   // --- Parse <graphic> elements ---
+  // Skip graphics that are superseded by arrow elements (they are duplicates).
   const allGraphics = doc.querySelectorAll('graphic');
   for (const gEl of allGraphics) {
+    if (gEl.getAttribute('SupersededBy')) continue;
     const gType = gEl.getAttribute('GraphicType') ?? '';
     const bb = gEl.getAttribute('BoundingBox');
     if (!bb) continue;
