@@ -346,7 +346,50 @@ export function Canvas({ store, onMoleculeSearch, showPropertyPanel = true }: Ca
         return;
       }
 
-      // Tool shortcuts (non-modifier)
+      // ChemDraw atom hotkeys — change element of selected atoms (Section 5.4)
+      if (!isMod && selection.atomIds.length > 0) {
+        const atomHotkeys: Record<string, number> = {
+          c: 6,
+          C: 6, // Carbon
+          n: 7,
+          N: 7, // Nitrogen
+          o: 8,
+          O: 8, // Oxygen
+          s: 16,
+          S: 16, // Sulfur
+          f: 9,
+          F: 9, // Fluorine
+          i: 53,
+          I: 53, // Iodine
+          l: 17,
+          L: 17, // Chlorine (ChemDraw convention: L=Cl)
+        };
+        const newElement = atomHotkeys[e.key];
+        if (newElement !== undefined) {
+          for (const id of selection.atomIds) {
+            store.dispatch({ type: 'update-atom', id, changes: { element: newElement } });
+          }
+          return;
+        }
+
+        // ChemDraw bond hotkeys (when bonds could be inferred from selection)
+        // 1=single, 2=double, 3=triple, d=dash, w=wedge, y=wavy
+        const bondStyleKeys: Record<string, ToolState['bondStyle']> = {
+          '1': 'single',
+          '2': 'double',
+          '3': 'triple',
+          d: 'dash',
+          w: 'wedge',
+          y: 'aromatic',
+        };
+        const bStyle = bondStyleKeys[e.key];
+        if (bStyle) {
+          updateToolState({ tool: 'add-bond', bondStyle: bStyle });
+          return;
+        }
+      }
+
+      // Tool shortcuts (non-modifier, no selection)
       if (!isMod) {
         const toolMap: Record<string, Partial<ToolState>> = {
           v: { tool: 'select' },
