@@ -128,12 +128,17 @@ const ICN = {
       <path d="M3 7h14M3 13h14M7 3v14M13 3v14" />
     </I>
   ),
+  import: (
+    <I>
+      <path d="M4 14h12M10 3v9M10 12l-3-3M10 12l3-3" />
+    </I>
+  ),
 };
 
 // ── Tool definitions ────────────────────────────────────────
 
 interface ToolDef {
-  id: ToolId | 'molecules' | 'undo' | 'redo' | 'fit';
+  id: ToolId | 'molecules' | 'import' | 'undo' | 'redo' | 'fit';
   icon: React.ReactNode;
   label: string;
   shortcut: string;
@@ -202,6 +207,13 @@ const GROUPS: { label: string; tools: ToolDef[] }[] = [
         shortcut: 'M',
         description: 'Browse molecule library',
       },
+      {
+        id: 'import',
+        icon: ICN.import,
+        label: 'Import File',
+        shortcut: 'Ctrl+I',
+        description: 'Import CDXML, MOL, SMILES files',
+      },
     ],
   },
   {
@@ -269,6 +281,7 @@ interface ToolPaletteProps {
   onUndo?: (() => void) | undefined;
   onRedo?: (() => void) | undefined;
   onMoleculeSearch?: (() => void) | undefined;
+  onImportFile?: (() => void) | undefined;
   onFitToScreen?: (() => void) | undefined;
   canUndo?: boolean;
   canRedo?: boolean;
@@ -279,6 +292,7 @@ export function ToolPalette({
   onToolStateChange,
   onUndo,
   onRedo,
+  onImportFile,
   onMoleculeSearch,
   onFitToScreen,
   canUndo = true,
@@ -304,6 +318,10 @@ export function ToolPalette({
         onMoleculeSearch?.();
         return;
       }
+      if (def.id === 'import') {
+        onImportFile?.();
+        return;
+      }
       if (def.id === 'undo') {
         onUndo?.();
         return;
@@ -319,7 +337,7 @@ export function ToolPalette({
       onToolStateChange({ tool: def.id as ToolId });
       setSubmenu(null);
     },
-    [onToolStateChange, onMoleculeSearch, onUndo, onRedo, onFitToScreen],
+    [onToolStateChange, onMoleculeSearch, onImportFile, onUndo, onRedo, onFitToScreen],
   );
 
   const handleContext = useCallback(

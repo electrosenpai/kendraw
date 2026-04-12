@@ -64,10 +64,16 @@ function pointToSegmentDist(
 interface CanvasProps {
   store: SceneStore;
   onMoleculeSearch?: (() => void) | undefined;
+  onImportFile?: (() => void) | undefined;
   showPropertyPanel?: boolean | undefined;
 }
 
-export function Canvas({ store, onMoleculeSearch, showPropertyPanel = true }: CanvasProps) {
+export function Canvas({
+  store,
+  onMoleculeSearch,
+  onImportFile,
+  showPropertyPanel = true,
+}: CanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<CanvasRenderer | null>(null);
   const spatialIndexRef = useRef(new SpatialIndex());
@@ -1010,6 +1016,7 @@ export function Canvas({ store, onMoleculeSearch, showPropertyPanel = true }: Ca
             setSelection(clearSelection(selection));
           }}
           onMoleculeSearch={onMoleculeSearch}
+          onImportFile={onImportFile}
           onFitToScreen={fitToScreen}
           canUndo={store.canUndo()}
           canRedo={store.canRedo()}
@@ -1032,6 +1039,14 @@ export function Canvas({ store, onMoleculeSearch, showPropertyPanel = true }: Ca
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onDoubleClick={handleDoubleClick}
+          onDragOver={(e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'copy';
+          }}
+          onDrop={(e) => {
+            e.preventDefault();
+            onImportFile?.();
+          }}
           style={{
             width: '100%',
             height: '100%',

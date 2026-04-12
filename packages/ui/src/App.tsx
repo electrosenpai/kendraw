@@ -4,6 +4,7 @@ import { TabBar } from './TabBar';
 import { ShortcutCheatsheet } from './ShortcutCheatsheet';
 import { AboutPage } from './AboutPage';
 import { MoleculeSearch } from './MoleculeSearch';
+import { ImportDialog } from './ImportDialog';
 import { workspaceStore, type WorkspaceState } from './workspace-store';
 import { useResponsiveLayout } from './hooks/useResponsiveLayout';
 
@@ -24,6 +25,7 @@ export function App() {
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [showMolSearch, setShowMolSearch] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const layout = useResponsiveLayout();
 
   // Panel widths (persisted in localStorage)
@@ -75,6 +77,10 @@ export function App() {
       if (isMod && (e.key === 'm' || e.key === 'l')) {
         e.preventDefault();
         setShowMolSearch((s) => !s);
+      }
+      if (isMod && e.key === 'i') {
+        e.preventDefault();
+        setShowImport((s) => !s);
       }
       if (isMod && e.key === 'b') {
         e.preventDefault();
@@ -153,6 +159,7 @@ export function App() {
           key={workspace.activeTabId}
           store={activeStore}
           onMoleculeSearch={() => setShowMolSearch(true)}
+          onImportFile={() => setShowImport(true)}
           showPropertyPanel={panelVisible && effectivePanelW > 0}
         />
       ) : (
@@ -178,6 +185,9 @@ export function App() {
       {showAbout && <AboutPage onClose={() => setShowAbout(false)} />}
       {showMolSearch && activeStore && (
         <MoleculeSearch store={activeStore} onClose={() => setShowMolSearch(false)} />
+      )}
+      {showImport && activeStore && (
+        <ImportDialog store={activeStore} onClose={() => setShowImport(false)} />
       )}
     </div>
   );
