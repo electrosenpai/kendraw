@@ -1,10 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import {
-  createSceneStore,
-  createEmptyDocument,
-  createAtom,
-  NotImplementedError,
-} from '../index.js';
+import { createSceneStore, createEmptyDocument, createAtom } from '../index.js';
 
 describe('createEmptyDocument', () => {
   it('returns a valid document with one page', () => {
@@ -207,25 +202,25 @@ describe('SceneStore', () => {
     });
   });
 
-  describe('undo / redo', () => {
-    it('undo throws NotImplementedError', () => {
-      const store = createSceneStore();
-      expect(() => store.undo()).toThrow(NotImplementedError);
-    });
-
-    it('redo throws NotImplementedError', () => {
-      const store = createSceneStore();
-      expect(() => store.redo()).toThrow(NotImplementedError);
-    });
-
-    it('canUndo returns false', () => {
+  describe('undo / redo (basic contract)', () => {
+    it('canUndo is false when no actions dispatched', () => {
       const store = createSceneStore();
       expect(store.canUndo()).toBe(false);
     });
 
-    it('canRedo returns false', () => {
+    it('canRedo is false when no undo performed', () => {
       const store = createSceneStore();
       expect(store.canRedo()).toBe(false);
+    });
+
+    it('undo on empty history is a safe no-op', () => {
+      const store = createSceneStore();
+      expect(() => store.undo()).not.toThrow();
+    });
+
+    it('redo on empty redo stack is a safe no-op', () => {
+      const store = createSceneStore();
+      expect(() => store.redo()).not.toThrow();
     });
   });
 });
