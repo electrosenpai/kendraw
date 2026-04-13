@@ -142,8 +142,10 @@ export function renderSpectrum(
     for (let i = 0; i < nPoints; i++) {
       const ppm = maxPpm - (i / (nPoints - 1)) * ppmRange;
       const val = nH * lorentzian(ppm, peak.shift_ppm, LORENTZIAN_HALF_WIDTH_PPM);
-      spectrum[i]! += val;
-      if (spectrum[i]! > maxIntensity) maxIntensity = spectrum[i]!;
+      const prev = spectrum[i] ?? 0;
+      spectrum[i] = prev + val;
+      const cur = spectrum[i] ?? 0;
+      if (cur > maxIntensity) maxIntensity = cur;
     }
   }
 
@@ -154,7 +156,7 @@ export function renderSpectrum(
   ctx.moveTo(MARGIN.left, MARGIN.top + plotH);
   for (let i = 0; i < nPoints; i++) {
     const x = MARGIN.left + (i / (nPoints - 1)) * plotW;
-    const y = MARGIN.top + plotH - (spectrum[i]! / maxIntensity) * plotH * 0.85;
+    const y = MARGIN.top + plotH - ((spectrum[i] ?? 0) / maxIntensity) * plotH * 0.85;
     if (i === 0) ctx.moveTo(x, y);
     else ctx.lineTo(x, y);
   }
@@ -168,7 +170,8 @@ export function renderSpectrum(
 
   // Draw individual peaks
   for (let pi = 0; pi < prediction.peaks.length; pi++) {
-    const peak = prediction.peaks[pi]!;
+    const peak = prediction.peaks[pi];
+    if (!peak) continue;
     const cx = ppmToX(peak.shift_ppm);
     const color = CONF_COLORS[peak.confidence] ?? '#888888';
     const nH = peak.atom_indices.length;

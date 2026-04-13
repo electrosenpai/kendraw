@@ -5,7 +5,7 @@ export default tseslint.config(
   eslint.configs.recommended,
   ...tseslint.configs.strict,
   {
-    ignores: ['**/dist/**', '**/node_modules/**', '**/coverage/**', 'backend/**', '**/*.cjs'],
+    ignores: ['**/dist/**', '**/node_modules/**', '**/coverage/**', 'backend/**', '**/*.cjs', 'draw-molecules-ref/**'],
   },
   {
     files: ['**/*.ts', '**/*.tsx'],

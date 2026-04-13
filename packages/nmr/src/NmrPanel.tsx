@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import type { SceneStore, NmrPrediction, Page, AtomId } from '@kendraw/scene';
+import type { SceneStore, NmrPrediction, Page } from '@kendraw/scene';
 import { KendrawApiClient } from '@kendraw/api-client';
 import { writeMolV2000 } from '@kendraw/io';
 import {
@@ -204,7 +204,7 @@ export default function NmrPanel({ store, onClose, height, onHeightChange }: Nmr
   );
 
   const handleCanvasMouseUp = useCallback(
-    (e: React.MouseEvent<HTMLCanvasElement>) => {
+    (_e: React.MouseEvent<HTMLCanvasElement>) => {
       if (isPanning) {
         setIsPanning(false);
         panRef.current = null;
