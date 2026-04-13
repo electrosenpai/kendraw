@@ -470,6 +470,8 @@ def _count_vicinal_h(
     """Count hydrogen atoms 3 bonds away from parent carbon (vicinal H).
 
     Excludes H atoms that are part of the same equivalent group.
+    Excludes exchangeable protons (H on O, N, S) — these are typically
+    fast-exchanging and decoupled in standard NMR conditions.
     """
     parent = mol.GetAtomWithIdx(parent_idx)
     vicinal_h = 0
@@ -477,6 +479,9 @@ def _count_vicinal_h(
 
     for nbr in parent.GetNeighbors():
         if nbr.GetAtomicNum() == 1:
+            continue
+        # Skip counting H on heteroatoms (exchangeable protons)
+        if nbr.GetAtomicNum() in (7, 8, 16):
             continue
         for nbr2 in nbr.GetNeighbors():
             if nbr2.GetIdx() == parent_idx:
