@@ -1,0 +1,120 @@
+# generated: 2026-04-13
+# last_updated: 2026-04-13
+# project: Kendraw NMR Prediction
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: _bmad-output/implementation-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - MVP Epics: 1-6 (core NMR prediction feature)
+# - V1 Epics: 7-11 (accuracy upgrade, 13C, advanced export, overlay)
+# - Epic transitions to 'in-progress' when first story is created
+# - Stories worked sequentially by default (solo dev)
+
+generated: '2026-04-13'
+last_updated: '2026-04-13T19:23:00Z'
+project: Kendraw NMR Prediction
+project_key: NOKEY
+tracking_system: file-system
+story_location: _bmad-output/implementation-artifacts
+
+development_status:
+  # === MVP EPICS ===
+
+  # Epic 1: NMR Prediction & Spectrum Display
+  epic-1: done
+  1-1-additive-shift-table-data: done
+  1-2-nmr-prediction-service: done
+  1-3-nmr-api-endpoint: done
+  1-4-scene-state-extension-api-client: done
+  1-5-nmr-panel-shell-toggle: done
+  1-6-spectrum-renderer: done
+  epic-1-retrospective: optional
+
+  # Epic 2: Bidirectional Highlighting
+  epic-2: backlog
+  2-1-highlighted-atoms-shared-state: backlog
+  2-2-click-peak-highlight-atom: backlog
+  2-3-click-atom-highlight-peak: backlog
+  epic-2-retrospective: optional
+
+  # Epic 3: Confidence Indicators & Transparency
+  epic-3: backlog
+  3-1-backend-confidence-scoring: backlog
+  3-2-confidence-peak-rendering: backlog
+  3-3-peak-tooltip: backlog
+  3-4-nmrshiftdb2-install-prompt: backlog
+  epic-3-retrospective: optional
+
+  # Epic 4: Spectrum Interaction
+  epic-4: backlog
+  4-1-panel-resize: backlog
+  4-2-spectrum-zoom: backlog
+  4-3-spectrum-pan: backlog
+  4-4-frequency-selector: backlog
+  epic-4-retrospective: optional
+
+  # Epic 5: Export & Publication
+  epic-5: backlog
+  5-1-png-export-with-metadata: backlog
+  epic-5-retrospective: optional
+
+  # Epic 6: Accessibility & Responsive
+  epic-6: backlog
+  6-1-keyboard-navigation: backlog
+  6-2-screen-reader-data-table: backlog
+  6-3-touch-interaction: backlog
+  6-4-responsive-layout: backlog
+  epic-6-retrospective: optional
+
+  # === V1 EPICS ===
+
+  # Epic 7: 13C Prediction & DEPT
+  epic-7: backlog
+  7-1-13c-additive-tables-prediction: backlog
+  7-2-dept-classification: backlog
+  epic-7-retrospective: optional
+
+  # Epic 8: HOSE Code & NMRShiftDB2
+  epic-8: backlog
+  8-1-nmrshiftdb2-data-download-cli: backlog
+  8-2-hose-code-prediction-engine: backlog
+  8-3-transparent-method-display: backlog
+  8-4-health-endpoint-nmr-status: backlog
+  epic-8-retrospective: optional
+
+  # Epic 9: Multiplicity & J-Coupling
+  epic-9: backlog
+  9-1-multiplicity-coupling-prediction: backlog
+  epic-9-retrospective: optional
+
+  # Epic 10: Advanced Export
+  epic-10: backlog
+  10-1-svg-pdf-export: backlog
+  10-2-csv-data-export: backlog
+  epic-10-retrospective: optional
+
+  # Epic 11: Experimental Overlay (Late V1)
+  epic-11: backlog
+  11-1-jcamp-dx-import: backlog
+  11-2-predicted-vs-experimental-overlay: backlog
+  epic-11-retrospective: optional
