@@ -17,6 +17,9 @@ export type {
   Page,
   DocumentMetadata,
   Document,
+  NmrPeak,
+  NmrMetadata,
+  NmrPrediction,
 } from './types.js';
 
 export type {
@@ -33,6 +36,7 @@ export type {
   RemoveArrowCommand,
   AddAnnotationCommand,
   RemoveAnnotationCommand,
+  SetNmrPredictionCommand,
   SceneDiff,
 } from './commands.js';
 

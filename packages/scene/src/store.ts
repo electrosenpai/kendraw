@@ -191,6 +191,19 @@ function applyCommand(state: Document, command: Command): { next: Document; diff
       });
       return { next, diff: { type: 'annotation-removed', id: command.id } };
     }
+    case 'set-nmr-prediction': {
+      const next = produce(state, (draft) => {
+        const page = draft.pages[pageIndex];
+        if (page) {
+          if (command.prediction === undefined) {
+            delete page.nmrPrediction;
+          } else {
+            page.nmrPrediction = command.prediction;
+          }
+        }
+      });
+      return { next, diff: { type: 'nmr-prediction-set' } };
+    }
   }
 }
 

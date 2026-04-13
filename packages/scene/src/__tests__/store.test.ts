@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { createSceneStore, createEmptyDocument, createAtom } from '../index.js';
+import { createSceneStore, createEmptyDocument, createAtom, type NmrPrediction } from '../index.js';
 
 describe('createEmptyDocument', () => {
   it('returns a valid document with one page', () => {
@@ -245,5 +245,36 @@ describe('createAtom', () => {
     const a = createAtom(0, 0);
     const b = createAtom(0, 0);
     expect(a.id).not.toBe(b.id);
+  });
+});
+
+describe('set-nmr-prediction command', () => {
+  it('stores NMR prediction on the active page', () => {
+    const store = createSceneStore();
+    const prediction: NmrPrediction = {
+      nucleus: '1H',
+      peaks: [{ atom_index: 0, atom_indices: [0], shift_ppm: 7.3, confidence: 3, method: 'additive' }],
+      metadata: { engine_version: '0.1.0', data_version: null, method: 'additive' },
+    };
+    store.dispatch({ type: 'set-nmr-prediction', prediction });
+    expect(store.getState().pages[0]?.nmrPrediction).toEqual(prediction);
+  });
+
+  it('clears NMR prediction when set to undefined', () => {
+    const store = createSceneStore();
+    const prediction: NmrPrediction = {
+      nucleus: '1H',
+      peaks: [],
+      metadata: { engine_version: '0.1.0', data_version: null, method: 'additive' },
+    };
+    store.dispatch({ type: 'set-nmr-prediction', prediction });
+    expect(store.getState().pages[0]?.nmrPrediction).toBeDefined();
+    store.dispatch({ type: 'set-nmr-prediction', prediction: undefined });
+    expect(store.getState().pages[0]?.nmrPrediction).toBeUndefined();
+  });
+
+  it('empty page has no nmrPrediction by default', () => {
+    const store = createSceneStore();
+    expect(store.getState().pages[0]?.nmrPrediction).toBeUndefined();
   });
 });

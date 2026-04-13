@@ -7,6 +7,7 @@ import type {
   ArrowId,
   Annotation,
   AnnotationId,
+  NmrPrediction,
 } from './types.js';
 
 export type AddAtomCommand = { type: 'add-atom'; atom: Atom };
@@ -29,6 +30,11 @@ export type RemoveArrowCommand = { type: 'remove-arrow'; id: ArrowId };
 export type AddAnnotationCommand = { type: 'add-annotation'; annotation: Annotation };
 export type RemoveAnnotationCommand = { type: 'remove-annotation'; id: AnnotationId };
 
+export type SetNmrPredictionCommand = {
+  type: 'set-nmr-prediction';
+  prediction: NmrPrediction | undefined;
+};
+
 export type Command =
   | AddAtomCommand
   | RemoveAtomCommand
@@ -41,7 +47,8 @@ export type Command =
   | AddArrowCommand
   | RemoveArrowCommand
   | AddAnnotationCommand
-  | RemoveAnnotationCommand;
+  | RemoveAnnotationCommand
+  | SetNmrPredictionCommand;
 
 export type SceneDiff =
   | { type: 'atom-added'; id: AtomId }
@@ -56,4 +63,5 @@ export type SceneDiff =
   | { type: 'arrow-removed'; id: ArrowId }
   | { type: 'annotation-added'; id: AnnotationId }
   | { type: 'annotation-removed'; id: AnnotationId }
+  | { type: 'nmr-prediction-set' }
   | { type: 'state-restored' };

@@ -15,6 +15,26 @@ export interface ConversionResult {
   error?: string;
 }
 
+export interface NmrPeak {
+  atom_index: number;
+  atom_indices: number[];
+  shift_ppm: number;
+  confidence: 1 | 2 | 3;
+  method: string;
+}
+
+export interface NmrMetadata {
+  engine_version: string;
+  data_version: string | null;
+  method: string;
+}
+
+export interface NmrPrediction {
+  nucleus: string;
+  peaks: NmrPeak[];
+  metadata: NmrMetadata;
+}
+
 export class KendrawApiClient {
   constructor(private baseUrl: string = 'http://localhost:8081') {}
 
@@ -44,6 +64,23 @@ export class KendrawApiClient {
     });
     if (!res.ok) throw new Error(`API error: ${res.status}`);
     return res.json() as Promise<ConversionResult>;
+  }
+
+  async predictNmr(
+    input: string,
+    format: string = 'smiles',
+    nucleus: string = '1H',
+  ): Promise<NmrPrediction> {
+    const res = await fetch(`${this.baseUrl}/compute/nmr`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ input, format, nucleus }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: `API error: ${res.status}` }));
+      throw new Error(err.detail ?? `API error: ${res.status}`);
+    }
+    return res.json() as Promise<NmrPrediction>;
   }
 
   async health(): Promise<{ status: string }> {

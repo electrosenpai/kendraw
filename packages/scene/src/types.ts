@@ -99,6 +99,27 @@ export type Viewport = {
   zoom: number;
 };
 
+// NMR prediction types (mirrors backend NmrPrediction schema)
+export type NmrPeak = {
+  atom_index: number;
+  atom_indices: number[];
+  shift_ppm: number;
+  confidence: 1 | 2 | 3;
+  method: string;
+};
+
+export type NmrMetadata = {
+  engine_version: string;
+  data_version: string | null;
+  method: string;
+};
+
+export type NmrPrediction = {
+  nucleus: string;
+  peaks: NmrPeak[];
+  metadata: NmrMetadata;
+};
+
 export type Page = {
   id: string;
   atoms: Record<AtomId, Atom>;
@@ -107,6 +128,7 @@ export type Page = {
   annotations: Record<AnnotationId, Annotation>;
   groups: Record<GroupId, Group>;
   viewport: Viewport;
+  nmrPrediction?: NmrPrediction;
 };
 
 export type DocumentMetadata = {

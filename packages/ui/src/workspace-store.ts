@@ -3,6 +3,7 @@ import {
   createEmptyDocument,
   type SceneStore,
   type Document,
+  type AtomId,
 } from '@kendraw/scene';
 import { KendrawDB, AutoSaveScheduler } from '@kendraw/persistence';
 
@@ -25,6 +26,7 @@ class WorkspaceStore {
   private state: WorkspaceState = { tabs: [], activeTabId: null };
   private listeners = new Set<WorkspaceListener>();
   private autoSaveSchedulers = new Map<string, AutoSaveScheduler>();
+  private _highlightedAtomIds: Set<AtomId> = new Set();
 
   getState(): WorkspaceState {
     return this.state;
@@ -95,6 +97,21 @@ class WorkspaceStore {
       doc.metadata.title = name;
     }
     this.updateTabTitle(id, name);
+  }
+
+  getHighlightedAtomIds(): Set<AtomId> {
+    return this._highlightedAtomIds;
+  }
+
+  setHighlightedAtoms(ids: Set<AtomId>): void {
+    this._highlightedAtomIds = ids;
+    this.notify();
+  }
+
+  clearHighlightedAtoms(): void {
+    if (this._highlightedAtomIds.size === 0) return;
+    this._highlightedAtomIds = new Set();
+    this.notify();
   }
 
   private restored = false;
