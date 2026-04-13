@@ -19,6 +19,10 @@ export interface NmrPeak {
   atom_index: number;
   atom_indices: number[];
   shift_ppm: number;
+  integral: number;
+  multiplicity: string;
+  coupling_hz: number[];
+  environment: string;
   confidence: 1 | 2 | 3;
   method: string;
 }
@@ -31,6 +35,7 @@ export interface NmrMetadata {
 
 export interface NmrPrediction {
   nucleus: string;
+  solvent: string;
   peaks: NmrPeak[];
   metadata: NmrMetadata;
 }
@@ -70,11 +75,12 @@ export class KendrawApiClient {
     input: string,
     format: string = 'smiles',
     nucleus: string = '1H',
+    solvent: string = 'CDCl3',
   ): Promise<NmrPrediction> {
     const res = await fetch(`${this.baseUrl}/compute/nmr`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ input, format, nucleus }),
+      body: JSON.stringify({ input, format, nucleus, solvent }),
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({ detail: `API error: ${res.status}` }));

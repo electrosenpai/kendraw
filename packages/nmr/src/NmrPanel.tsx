@@ -11,6 +11,16 @@ import {
 } from './SpectrumRenderer.js';
 
 type Nucleus = '1H' | '13C';
+type SolventId = 'CDCl3' | 'DMSO-d6' | 'CD3OD' | 'acetone-d6' | 'C6D6' | 'D2O';
+
+const SOLVENTS: Array<{ id: SolventId; label: string }> = [
+  { id: 'CDCl3', label: 'CDCl3' },
+  { id: 'DMSO-d6', label: 'DMSO-d6' },
+  { id: 'CD3OD', label: 'CD3OD' },
+  { id: 'acetone-d6', label: 'acetone-d6' },
+  { id: 'C6D6', label: 'C\u2086D\u2086' },
+  { id: 'D2O', label: 'D\u2082O' },
+];
 
 interface NmrPanelProps {
   store: SceneStore;
@@ -34,8 +44,35 @@ function getMolBlock(page: Page): string | null {
   }
 }
 
+function formatMultiplicity(mult: string, coupling: number[]): string {
+  const label = mult === 's' ? 'singlet' : mult === 'd' ? 'doublet'
+    : mult === 't' ? 'triplet' : mult === 'q' ? 'quartet'
+    : mult === 'quint' ? 'quintet' : mult === 'sext' ? 'sextet'
+    : mult === 'sept' ? 'septet' : 'multiplet';
+  if (coupling.length > 0) {
+    return `${label} (J = ${coupling.map(j => j.toFixed(1)).join(', ')} Hz)`;
+  }
+  return label;
+}
+
+function exportCsv(prediction: NmrPrediction): void {
+  const header = 'delta_ppm,multiplicity,J_Hz,integral,environment,confidence,method\n';
+  const rows = prediction.peaks.map(p =>
+    `${p.shift_ppm.toFixed(2)},${p.multiplicity},"${p.coupling_hz.map(j => j.toFixed(1)).join(';')}",${p.integral},${p.environment},${p.confidence},${p.method}`
+  ).join('\n');
+  const csv = header + rows;
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `nmr_${prediction.nucleus}_${prediction.solvent}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export default function NmrPanel({ store, onClose, height, onHeightChange }: NmrPanelProps) {
   const [nucleus, setNucleus] = useState<Nucleus>('1H');
+  const [solvent, setSolvent] = useState<SolventId>('CDCl3');
   const [prediction, setPrediction] = useState<NmrPrediction | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -52,6 +89,17 @@ export default function NmrPanel({ store, onClose, height, onHeightChange }: Nmr
   const panelRef = useRef<HTMLDivElement>(null);
   const predictAbortRef = useRef<AbortController | null>(null);
 
+  // Signal navigation
+  const navigateSignal = useCallback((direction: 1 | -1) => {
+    if (!prediction || prediction.peaks.length === 0) return;
+    const count = prediction.peaks.length;
+    if (selectedPeakIdx === null) {
+      setSelectedPeakIdx(direction === 1 ? 0 : count - 1);
+    } else {
+      setSelectedPeakIdx((selectedPeakIdx + direction + count) % count);
+    }
+  }, [prediction, selectedPeakIdx]);
+
   // Predict NMR
   const predict = useCallback(async () => {
     const doc = store.getState();
@@ -65,7 +113,6 @@ export default function NmrPanel({ store, onClose, height, onHeightChange }: Nmr
       return;
     }
 
-    // Abort previous in-flight request
     predictAbortRef.current?.abort();
     const controller = new AbortController();
     predictAbortRef.current = controller;
@@ -73,10 +120,11 @@ export default function NmrPanel({ store, onClose, height, onHeightChange }: Nmr
     setLoading(true);
     setError(null);
     try {
-      const result = await apiClient.predictNmr(molBlock, 'mol', nucleus);
+      const result = await apiClient.predictNmr(molBlock, 'mol', nucleus, solvent);
       if (controller.signal.aborted) return;
       setPrediction(result);
       setViewport(computeDefaultViewport(result));
+      setSelectedPeakIdx(null);
       store.dispatch({ type: 'set-nmr-prediction', prediction: result });
     } catch (e) {
       if (controller.signal.aborted) return;
@@ -86,9 +134,9 @@ export default function NmrPanel({ store, onClose, height, onHeightChange }: Nmr
     } finally {
       if (!controller.signal.aborted) setLoading(false);
     }
-  }, [store, nucleus]);
+  }, [store, nucleus, solvent]);
 
-  // Predict on mount
+  // Predict on mount and when solvent changes
   useEffect(() => {
     void predict();
   }, [predict]);
@@ -97,7 +145,6 @@ export default function NmrPanel({ store, onClose, height, onHeightChange }: Nmr
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
     const unsub = store.subscribe((_doc, diff) => {
-      // Only re-predict on structural changes, not on nmr-prediction-set
       if (diff.type === 'nmr-prediction-set') return;
       clearTimeout(timer);
       timer = setTimeout(() => void predict(), 500);
@@ -107,6 +154,18 @@ export default function NmrPanel({ store, onClose, height, onHeightChange }: Nmr
       clearTimeout(timer);
     };
   }, [store, predict]);
+
+  // Keyboard shortcuts for signal navigation
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Tab' && panelRef.current?.contains(document.activeElement)) {
+        e.preventDefault();
+        navigateSignal(e.shiftKey ? -1 : 1);
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [navigateSignal]);
 
   // Render spectrum
   useEffect(() => {
@@ -143,7 +202,7 @@ export default function NmrPanel({ store, onClose, height, onHeightChange }: Nmr
         const dx = x - panRef.current.startX;
         const ppmPerPx =
           (panRef.current.startVp.maxPpm - panRef.current.startVp.minPpm) /
-          (rect.width - 88); // margins
+          (rect.width - 88);
         const ppmDelta = dx * ppmPerPx;
         setViewport({
           minPpm: panRef.current.startVp.minPpm + ppmDelta,
@@ -172,7 +231,6 @@ export default function NmrPanel({ store, onClose, height, onHeightChange }: Nmr
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
 
-      // Right-click or middle-click for pan
       if (e.button === 1 || (e.button === 0 && e.altKey)) {
         e.preventDefault();
         setIsPanning(true);
@@ -183,24 +241,12 @@ export default function NmrPanel({ store, onClose, height, onHeightChange }: Nmr
       const hit = hitTestPeaks(hitBoxesRef.current, x, y);
       if (hit !== null) {
         setSelectedPeakIdx(hit);
-        // Highlight atoms on canvas
-        if (prediction) {
-          const peak = prediction.peaks[hit];
-          if (peak) {
-            // Dispatch highlighted atoms via nmr-prediction-set
-            // The atom_indices from the prediction refer to H atoms in the AddHs molecule,
-            // but we need the parent heavy-atom indices from the scene
-            // For now, use the peak data as-is — the atom_indices are AddHs indices
-            // TODO: map to scene atom IDs in Epic 2
-          }
-        }
       } else {
         setSelectedPeakIdx(null);
-        // Start drag-select for zoom
         setDragSelect({ startX: x, endX: x });
       }
     },
-    [viewport, prediction],
+    [viewport],
   );
 
   const handleCanvasMouseUp = useCallback(
@@ -219,7 +265,6 @@ export default function NmrPanel({ store, onClose, height, onHeightChange }: Nmr
           const minX = Math.min(dragSelect.startX, dragSelect.endX) - 44;
           const maxX = Math.max(dragSelect.startX, dragSelect.endX) - 44;
 
-          // Only zoom if drag was significant (>10px)
           if (Math.abs(dragSelect.endX - dragSelect.startX) > 10) {
             const ppmRange = viewport.maxPpm - viewport.minPpm;
             const newMax = viewport.maxPpm - (minX / plotW) * ppmRange;
@@ -235,14 +280,12 @@ export default function NmrPanel({ store, onClose, height, onHeightChange }: Nmr
     [isPanning, dragSelect, viewport],
   );
 
-  // Double-click to reset zoom
   const handleCanvasDoubleClick = useCallback(() => {
     if (prediction) {
       setViewport(computeDefaultViewport(prediction));
     }
   }, [prediction]);
 
-  // Scroll to zoom
   const handleWheel = useCallback(
     (e: React.WheelEvent<HTMLCanvasElement>) => {
       e.preventDefault();
@@ -285,9 +328,12 @@ export default function NmrPanel({ store, onClose, height, onHeightChange }: Nmr
     [height, onHeightChange],
   );
 
+  const selectedPeak = prediction && selectedPeakIdx !== null ? prediction.peaks[selectedPeakIdx] : null;
+
   return (
     <div
       ref={panelRef}
+      tabIndex={-1}
       style={{
         height,
         display: 'flex',
@@ -297,6 +343,7 @@ export default function NmrPanel({ store, onClose, height, onHeightChange }: Nmr
         borderTop: '1px solid var(--kd-glass-border, rgba(255, 255, 255, 0.06))',
         overflow: 'hidden',
         animation: 'nmr-slide-up 320ms ease-out',
+        outline: 'none',
       }}
     >
       {/* Drag handle */}
@@ -326,7 +373,7 @@ export default function NmrPanel({ store, onClose, height, onHeightChange }: Nmr
           borderBottom: '1px solid var(--kd-color-border-subtle, #2a2a2a)',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span
             style={{
               fontSize: 12,
@@ -335,11 +382,11 @@ export default function NmrPanel({ store, onClose, height, onHeightChange }: Nmr
               letterSpacing: '0.02em',
             }}
           >
-            NMR Prediction
+            NMR
             {loading && (
               <span
                 style={{
-                  marginLeft: 8,
+                  marginLeft: 6,
                   color: 'var(--kd-color-accent, #4dabf7)',
                   animation: 'nmr-pulse 1.5s ease-in-out infinite',
                 }}
@@ -357,8 +404,8 @@ export default function NmrPanel({ store, onClose, height, onHeightChange }: Nmr
                 onClick={() => n === '1H' && setNucleus(n)}
                 disabled={n === '13C'}
                 style={{
-                  padding: '2px 8px',
-                  fontSize: 11,
+                  padding: '2px 6px',
+                  fontSize: 10,
                   fontFamily: 'var(--kd-font-mono, monospace)',
                   border: 'none',
                   borderRadius: 'var(--kd-radius-sm, 4px)',
@@ -381,11 +428,98 @@ export default function NmrPanel({ store, onClose, height, onHeightChange }: Nmr
             ))}
           </div>
 
+          {/* Solvent dropdown */}
+          <select
+            value={solvent}
+            onChange={(e) => setSolvent(e.target.value as SolventId)}
+            style={{
+              padding: '2px 4px',
+              fontSize: 10,
+              fontFamily: 'var(--kd-font-mono, monospace)',
+              background: 'var(--kd-color-bg-secondary, #1a1a1a)',
+              color: 'var(--kd-color-text-secondary, #a0a0a0)',
+              border: '1px solid var(--kd-color-border, #333)',
+              borderRadius: 'var(--kd-radius-sm, 4px)',
+              cursor: 'pointer',
+              outline: 'none',
+            }}
+          >
+            {SOLVENTS.map(s => (
+              <option key={s.id} value={s.id}>{s.label}</option>
+            ))}
+          </select>
+
           {/* Peak count */}
           {prediction && prediction.peaks.length > 0 && (
             <span style={{ fontSize: 10, color: 'var(--kd-color-text-muted, #666)' }}>
               {prediction.peaks.length} peak{prediction.peaks.length !== 1 ? 's' : ''}
             </span>
+          )}
+
+          {/* Signal navigation */}
+          {prediction && prediction.peaks.length > 1 && (
+            <div style={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+              <button
+                onClick={() => navigateSignal(-1)}
+                style={{
+                  width: 20, height: 20,
+                  border: '1px solid var(--kd-color-border, #333)',
+                  borderRadius: 'var(--kd-radius-sm, 4px)',
+                  background: 'transparent',
+                  color: 'var(--kd-color-text-secondary, #a0a0a0)',
+                  cursor: 'pointer',
+                  fontSize: 11,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: 0,
+                }}
+                title="Previous signal (Shift+Tab)"
+              >
+                {'\u25C0'}
+              </button>
+              <span style={{ fontSize: 9, color: 'var(--kd-color-text-muted, #666)', minWidth: 24, textAlign: 'center' }}>
+                {selectedPeakIdx !== null ? `${selectedPeakIdx + 1}/${prediction.peaks.length}` : '-'}
+              </span>
+              <button
+                onClick={() => navigateSignal(1)}
+                style={{
+                  width: 20, height: 20,
+                  border: '1px solid var(--kd-color-border, #333)',
+                  borderRadius: 'var(--kd-radius-sm, 4px)',
+                  background: 'transparent',
+                  color: 'var(--kd-color-text-secondary, #a0a0a0)',
+                  cursor: 'pointer',
+                  fontSize: 11,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: 0,
+                }}
+                title="Next signal (Tab)"
+              >
+                {'\u25B6'}
+              </button>
+            </div>
+          )}
+
+          {/* CSV export */}
+          {prediction && prediction.peaks.length > 0 && (
+            <button
+              onClick={() => exportCsv(prediction)}
+              style={{
+                padding: '2px 6px',
+                fontSize: 10,
+                border: '1px solid var(--kd-color-border, #333)',
+                borderRadius: 'var(--kd-radius-sm, 4px)',
+                background: 'transparent',
+                color: 'var(--kd-color-text-secondary, #a0a0a0)',
+                cursor: 'pointer',
+              }}
+              title="Export signal table as CSV"
+            >
+              CSV
+            </button>
           )}
         </div>
 
@@ -400,9 +534,9 @@ export default function NmrPanel({ store, onClose, height, onHeightChange }: Nmr
             padding: '0 4px',
             lineHeight: 1,
           }}
-          title="Close NMR panel (Ctrl+Shift+N)"
+          title="Close NMR panel (Ctrl+M)"
         >
-          \u00D7
+          {'\u00D7'}
         </button>
       </div>
 
@@ -417,6 +551,27 @@ export default function NmrPanel({ store, onClose, height, onHeightChange }: Nmr
           }}
         >
           {error}
+        </div>
+      )}
+
+      {/* Selected peak info bar */}
+      {selectedPeak && (
+        <div
+          style={{
+            padding: '3px 12px',
+            fontSize: 10,
+            fontFamily: 'var(--kd-font-mono, monospace)',
+            color: 'var(--kd-color-text-secondary, #a0a0a0)',
+            background: 'rgba(77, 171, 247, 0.05)',
+            borderBottom: '1px solid var(--kd-color-border-subtle, #2a2a2a)',
+            display: 'flex',
+            gap: 12,
+          }}
+        >
+          <span>{'\u03B4'} {selectedPeak.shift_ppm.toFixed(2)} ppm</span>
+          <span>{selectedPeak.integral}H</span>
+          <span>{formatMultiplicity(selectedPeak.multiplicity, selectedPeak.coupling_hz)}</span>
+          <span style={{ color: 'var(--kd-color-text-muted, #666)' }}>{selectedPeak.environment}</span>
         </div>
       )}
 

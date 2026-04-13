@@ -104,6 +104,10 @@ export type NmrPeak = {
   atom_index: number;
   atom_indices: number[];
   shift_ppm: number;
+  integral: number;
+  multiplicity: string;
+  coupling_hz: number[];
+  environment: string;
   confidence: 1 | 2 | 3;
   method: string;
 };
@@ -116,6 +120,7 @@ export type NmrMetadata = {
 
 export type NmrPrediction = {
   nucleus: string;
+  solvent: string;
   peaks: NmrPeak[];
   metadata: NmrMetadata;
 };

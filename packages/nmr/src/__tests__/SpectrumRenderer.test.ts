@@ -6,8 +6,9 @@ describe('computeDefaultViewport', () => {
   it('returns default range for empty peaks', () => {
     const pred: NmrPrediction = {
       nucleus: '1H',
+      solvent: 'CDCl3',
       peaks: [],
-      metadata: { engine_version: '0.1.0', data_version: null, method: 'additive' },
+      metadata: { engine_version: '0.2.0', data_version: null, method: 'additive' },
     };
     const vp = computeDefaultViewport(pred);
     expect(vp.minPpm).toBeLessThan(vp.maxPpm);
@@ -17,11 +18,12 @@ describe('computeDefaultViewport', () => {
   it('pads around peak range', () => {
     const pred: NmrPrediction = {
       nucleus: '1H',
+      solvent: 'CDCl3',
       peaks: [
-        { atom_index: 0, atom_indices: [0], shift_ppm: 2.0, confidence: 3, method: 'additive' },
-        { atom_index: 1, atom_indices: [1], shift_ppm: 7.0, confidence: 3, method: 'additive' },
+        { atom_index: 0, atom_indices: [0], shift_ppm: 2.0, integral: 1, multiplicity: 's', coupling_hz: [], environment: 'methyl', confidence: 3, method: 'additive' },
+        { atom_index: 1, atom_indices: [1], shift_ppm: 7.0, integral: 1, multiplicity: 's', coupling_hz: [], environment: 'aromatic', confidence: 3, method: 'additive' },
       ],
-      metadata: { engine_version: '0.1.0', data_version: null, method: 'additive' },
+      metadata: { engine_version: '0.2.0', data_version: null, method: 'additive' },
     };
     const vp = computeDefaultViewport(pred);
     expect(vp.minPpm).toBeLessThan(2.0);

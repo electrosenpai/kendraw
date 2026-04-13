@@ -253,8 +253,9 @@ describe('set-nmr-prediction command', () => {
     const store = createSceneStore();
     const prediction: NmrPrediction = {
       nucleus: '1H',
-      peaks: [{ atom_index: 0, atom_indices: [0], shift_ppm: 7.3, confidence: 3, method: 'additive' }],
-      metadata: { engine_version: '0.1.0', data_version: null, method: 'additive' },
+      solvent: 'CDCl3',
+      peaks: [{ atom_index: 0, atom_indices: [0], shift_ppm: 7.3, integral: 1, multiplicity: 's', coupling_hz: [], environment: 'aromatic', confidence: 3, method: 'additive' }],
+      metadata: { engine_version: '0.2.0', data_version: null, method: 'additive' },
     };
     store.dispatch({ type: 'set-nmr-prediction', prediction });
     expect(store.getState().pages[0]?.nmrPrediction).toEqual(prediction);
@@ -264,8 +265,9 @@ describe('set-nmr-prediction command', () => {
     const store = createSceneStore();
     const prediction: NmrPrediction = {
       nucleus: '1H',
+      solvent: 'CDCl3',
       peaks: [],
-      metadata: { engine_version: '0.1.0', data_version: null, method: 'additive' },
+      metadata: { engine_version: '0.2.0', data_version: null, method: 'additive' },
     };
     store.dispatch({ type: 'set-nmr-prediction', prediction });
     expect(store.getState().pages[0]?.nmrPrediction).toBeDefined();

@@ -193,19 +193,18 @@ export function renderSpectrum(
     const r = isHovered || isSelected ? 6 : 4;
     drawConfidenceMarker(ctx, cx, peakTopY - r - 2, r, peak.confidence, color, isSelected);
 
-    // Peak label
+    // Peak label — shift + multiplicity
     ctx.fillStyle = isSelected ? '#ffffff' : isHovered ? '#eeeeee' : '#cccccc';
     ctx.font = `${isHovered || isSelected ? 11 : 10}px "JetBrains Mono", "IBM Plex Mono", monospace`;
     ctx.textAlign = 'center';
-    const label = peak.shift_ppm.toFixed(2);
+    const mult = peak.multiplicity ?? 's';
+    const label = `${peak.shift_ppm.toFixed(2)} ${mult}`;
     ctx.fillText(label, cx, peakTopY - r - 8);
 
     // nH indicator
-    if (nH > 1) {
-      ctx.font = '9px Inter, system-ui, sans-serif';
-      ctx.fillStyle = '#888888';
-      ctx.fillText(`${nH}H`, cx, MARGIN.top + plotH + 4);
-    }
+    ctx.font = '9px Inter, system-ui, sans-serif';
+    ctx.fillStyle = '#888888';
+    ctx.fillText(`${nH}H`, cx, MARGIN.top + plotH + 4);
 
     hitBoxes.push({ peakIdx: pi, x: cx, y: peakTopY, radius: Math.max(r + 4, 10) });
   }
