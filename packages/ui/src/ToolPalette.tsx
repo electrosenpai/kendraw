@@ -133,12 +133,17 @@ const ICN = {
       <path d="M4 14h12M10 3v9M10 12l-3-3M10 12l3-3" />
     </I>
   ),
+  nmr: (
+    <I>
+      <path d="M2 14h3l2-8 2 12 2-6 2 4 2-10 2 6h3" />
+    </I>
+  ),
 };
 
 // ── Tool definitions ────────────────────────────────────────
 
 interface ToolDef {
-  id: ToolId | 'molecules' | 'import' | 'undo' | 'redo' | 'fit';
+  id: ToolId | 'molecules' | 'import' | 'undo' | 'redo' | 'fit' | 'nmr';
   icon: React.ReactNode;
   label: string;
   shortcut: string;
@@ -235,6 +240,18 @@ const GROUPS: { label: string; tools: ToolDef[] }[] = [
       },
     ],
   },
+  {
+    label: '',
+    tools: [
+      {
+        id: 'nmr',
+        icon: ICN.nmr,
+        label: 'NMR',
+        shortcut: 'Ctrl+M',
+        description: 'Toggle NMR spectrum prediction panel',
+      },
+    ],
+  },
 ];
 
 const ACTIONS: ToolDef[] = [
@@ -283,6 +300,8 @@ interface ToolPaletteProps {
   onMoleculeSearch?: (() => void) | undefined;
   onImportFile?: (() => void) | undefined;
   onFitToScreen?: (() => void) | undefined;
+  onNmrToggle?: (() => void) | undefined;
+  nmrOpen?: boolean;
   canUndo?: boolean;
   canRedo?: boolean;
 }
@@ -295,6 +314,8 @@ export function ToolPalette({
   onImportFile,
   onMoleculeSearch,
   onFitToScreen,
+  onNmrToggle,
+  nmrOpen = false,
   canUndo = true,
   canRedo = false,
 }: ToolPaletteProps) {
@@ -334,10 +355,14 @@ export function ToolPalette({
         onFitToScreen?.();
         return;
       }
+      if (def.id === 'nmr') {
+        onNmrToggle?.();
+        return;
+      }
       onToolStateChange({ tool: def.id as ToolId });
       setSubmenu(null);
     },
-    [onToolStateChange, onMoleculeSearch, onImportFile, onUndo, onRedo, onFitToScreen],
+    [onToolStateChange, onMoleculeSearch, onImportFile, onUndo, onRedo, onFitToScreen, onNmrToggle],
   );
 
   const handleContext = useCallback(
@@ -360,7 +385,7 @@ export function ToolPalette({
             <Btn
               key={def.id}
               def={def}
-              active={toolState.tool === def.id}
+              active={def.id === 'nmr' ? nmrOpen : toolState.tool === def.id}
               badge={def.id === 'add-atom' ? getSymbol(toolState.element) : undefined}
               badgeColor={def.id === 'add-atom' ? getColor(toolState.element) : undefined}
               onClick={() => handleClick(def)}

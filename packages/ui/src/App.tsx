@@ -84,7 +84,12 @@ export function App() {
         e.preventDefault();
         workspaceStore.createTab();
       }
-      if (isMod && (e.key === 'm' || e.key === 'l')) {
+      if (isMod && e.key === 'm' && !e.shiftKey) {
+        e.preventDefault();
+        setNmrOpen((v) => !v);
+        return;
+      }
+      if (isMod && e.key === 'l') {
         e.preventDefault();
         setShowMolSearch((s) => !s);
       }
@@ -99,10 +104,6 @@ export function App() {
       if (isMod && e.key === 'j') {
         e.preventDefault();
         setPanelVisible((v) => !v);
-      }
-      if (isMod && e.shiftKey && e.key === 'N') {
-        e.preventDefault();
-        setNmrOpen((v) => !v);
       }
     }
     window.addEventListener('keydown', handleKeyDown);
@@ -182,6 +183,8 @@ export function App() {
           onMoleculeSearch={() => setShowMolSearch(true)}
           onImportFile={() => setShowImport(true)}
           showPropertyPanel={panelVisible && effectivePanelW > 0}
+          nmrOpen={nmrOpen}
+          onNmrToggle={() => setNmrOpen((v) => !v)}
         />
       ) : (
         <>

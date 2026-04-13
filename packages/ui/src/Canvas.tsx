@@ -67,6 +67,8 @@ interface CanvasProps {
   onMoleculeSearch?: (() => void) | undefined;
   onImportFile?: (() => void) | undefined;
   showPropertyPanel?: boolean | undefined;
+  nmrOpen?: boolean | undefined;
+  onNmrToggle?: (() => void) | undefined;
 }
 
 export function Canvas({
@@ -74,6 +76,8 @@ export function Canvas({
   onMoleculeSearch,
   onImportFile,
   showPropertyPanel = true,
+  nmrOpen = false,
+  onNmrToggle,
 }: CanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<CanvasRenderer | null>(null);
@@ -367,32 +371,7 @@ export function Canvas({
         return;
       }
 
-      // Mirror H (Ctrl+M)
-      if (isMod && e.key === 'm') {
-        e.preventDefault();
-        const page = store.getState().pages[store.getState().activePageIndex];
-        if (page && selection.atomIds.length > 0) {
-          const atoms = selection.atomIds
-            .map((id) => page.atoms[id])
-            .filter((a): a is NonNullable<typeof a> => !!a);
-          const center = computeCenter(atoms);
-          const mirrored = e.shiftKey
-            ? mirrorAtomsV(atoms, center.y)
-            : mirrorAtomsH(atoms, center.x);
-          for (const ma of mirrored) {
-            const orig = page.atoms[ma.id];
-            if (orig) {
-              store.dispatch({
-                type: 'move-atom',
-                id: ma.id,
-                dx: ma.x - orig.x,
-                dy: ma.y - orig.y,
-              });
-            }
-          }
-        }
-        return;
-      }
+      // Ctrl+M is now handled at App level for NMR panel toggle
 
       // Select all (Ctrl+A)
       if (isMod && e.key === 'a') {
@@ -1046,6 +1025,8 @@ export function Canvas({
           onMoleculeSearch={onMoleculeSearch}
           onImportFile={onImportFile}
           onFitToScreen={fitToScreen}
+          onNmrToggle={onNmrToggle}
+          nmrOpen={nmrOpen}
           canUndo={store.canUndo()}
           canRedo={store.canRedo()}
         />
