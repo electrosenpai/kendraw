@@ -1,0 +1,23 @@
+{
+  "name": "@kendraw/nmr",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "NMR prediction panel — lazy-loaded spectrum display and interaction",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@kendraw/api-client": "workspace:*",
+    "@kendraw/io": "workspace:*",
+    "@kendraw/scene": "workspace:*",
+    "react": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.18"
+  }
+}

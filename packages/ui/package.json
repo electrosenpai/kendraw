@@ -20,6 +20,7 @@
     "@kendraw/persistence": "workspace:*",
     "@kendraw/renderer-canvas": "workspace:*",
     "@kendraw/renderer-svg": "workspace:*",
+    "@kendraw/nmr": "workspace:*",
     "@kendraw/scene": "workspace:*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"

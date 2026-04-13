@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useSyncExternalStore } from 'react';
+import { useState, useEffect, useCallback, useSyncExternalStore, lazy, Suspense } from 'react';
 import { Canvas } from './Canvas';
 import { TabBar } from './TabBar';
 import { ShortcutCheatsheet } from './ShortcutCheatsheet';
@@ -7,6 +7,8 @@ import { MoleculeSearch } from './MoleculeSearch';
 import { ImportDialog } from './ImportDialog';
 import { workspaceStore, type WorkspaceState } from './workspace-store';
 import { useResponsiveLayout } from './hooks/useResponsiveLayout';
+
+const LazyNmrPanel = lazy(() => import('@kendraw/nmr'));
 
 function subscribeToWorkspace(onStoreChange: () => void) {
   return workspaceStore.subscribe(onStoreChange);
@@ -38,6 +40,11 @@ export function App() {
     return saved ? parseInt(saved, 10) : PANEL_DEFAULT;
   });
   const [panelVisible, setPanelVisible] = useState(true);
+  const [nmrOpen, setNmrOpen] = useState(false);
+  const [nmrHeight, setNmrHeight] = useState(() => {
+    const saved = localStorage.getItem('kd-nmr-h');
+    return saved ? parseInt(saved, 10) : Math.round(window.innerHeight * 0.33);
+  });
 
   // Persist widths
   useEffect(() => {
@@ -46,6 +53,9 @@ export function App() {
   useEffect(() => {
     localStorage.setItem('kd-panel-w', String(panelW));
   }, [panelW]);
+  useEffect(() => {
+    localStorage.setItem('kd-nmr-h', String(nmrHeight));
+  }, [nmrHeight]);
 
   useEffect(() => {
     let cancelled = false;
@@ -90,6 +100,10 @@ export function App() {
         e.preventDefault();
         setPanelVisible((v) => !v);
       }
+      if (isMod && e.shiftKey && e.key === 'N') {
+        e.preventDefault();
+        setNmrOpen((v) => !v);
+      }
     }
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -131,9 +145,16 @@ export function App() {
     <div
       style={{
         display: 'grid',
-        gridTemplateRows: '36px 1fr 24px',
+        gridTemplateRows: nmrOpen ? `36px 1fr ${nmrHeight}px 24px` : '36px 1fr 24px',
         gridTemplateColumns: `${effectiveToolbarW}px 1fr ${effectivePanelW > 0 ? effectivePanelW + 'px' : '0px'}`,
-        gridTemplateAreas: `
+        gridTemplateAreas: nmrOpen
+          ? `
+          "tabbar tabbar tabbar"
+          "toolbar canvas properties"
+          "nmr nmr nmr"
+          "status status status"
+        `
+          : `
           "tabbar tabbar tabbar"
           "toolbar canvas properties"
           "status status status"
@@ -179,6 +200,35 @@ export function App() {
           <div style={{ gridArea: 'properties' }} />
           <div style={{ gridArea: 'status' }} />
         </>
+      )}
+
+      {nmrOpen && activeStore && (
+        <div style={{ gridArea: 'nmr' }}>
+          <Suspense
+            fallback={
+              <div
+                style={{
+                  height: nmrHeight,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: 'var(--kd-glass-bg)',
+                  color: 'var(--kd-color-text-muted)',
+                  fontSize: 12,
+                }}
+              >
+                Loading NMR...
+              </div>
+            }
+          >
+            <LazyNmrPanel
+              store={activeStore}
+              onClose={() => setNmrOpen(false)}
+              height={nmrHeight}
+              onHeightChange={setNmrHeight}
+            />
+          </Suspense>
+        </div>
       )}
 
       {showShortcuts && <ShortcutCheatsheet onClose={() => setShowShortcuts(false)} />}

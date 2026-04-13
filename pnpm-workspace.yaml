@@ -6,6 +6,7 @@ packages:
   - 'packages/persistence'
   - 'packages/io'
   - 'packages/api-client'
+  - 'packages/nmr'
   - 'packages/ui'
   - 'packages/constraints'
   - 'packages/scene-poc' # Throwaway POC #1 — remove after Sprint 0
