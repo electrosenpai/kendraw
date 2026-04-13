@@ -14,8 +14,6 @@ import {
   RING_TEMPLATES,
   computeCenter,
   rotateAtoms,
-  mirrorAtomsH,
-  mirrorAtomsV,
   defaultCurlyGeometry,
   floodSelectMolecule,
   calculateBondTarget,
