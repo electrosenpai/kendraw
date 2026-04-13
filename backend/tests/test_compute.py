@@ -11,9 +11,18 @@ def test_compute_service_stub() -> None:
     assert result.canonical_smiles == "CCO"
 
 
-def test_compute_service_mol_stub() -> None:
-    """compute_from_mol returns empty stub without RDKit."""
+def test_compute_service_mol() -> None:
+    """compute_from_mol returns properties for a valid MOL block."""
     service = ComputeService()
-    result = service.compute_from_mol("")
-    assert result.formula == ""
-    assert result.molecular_weight == 0.0
+    if service._rdkit_available:
+        from rdkit import Chem
+
+        mol = Chem.MolFromSmiles("C")
+        mol_block = Chem.MolToMolBlock(mol)
+        result = service.compute_from_mol(mol_block)
+        assert result.formula != ""
+        assert result.molecular_weight > 0.0
+    else:
+        result = service.compute_from_mol("")
+        assert result.formula == ""
+        assert result.molecular_weight == 0.0

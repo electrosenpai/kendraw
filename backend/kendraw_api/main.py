@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from kendraw_api.routers.compute import router as compute_router
 from kendraw_api.routers.convert import router as convert_router
 from kendraw_api.routers.health import router as health_router
+from kendraw_api.routers.nmr import router as nmr_router
 from kendraw_observability.logging import setup_logging
 from kendraw_settings.config import get_settings
 
@@ -35,6 +36,7 @@ def create_app() -> FastAPI:
     app.include_router(health_router)
     app.include_router(compute_router)
     app.include_router(convert_router)
+    app.include_router(nmr_router)
     return app
 
 

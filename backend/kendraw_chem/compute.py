@@ -68,7 +68,7 @@ class ComputeService:
             exact_mass=round(Descriptors.ExactMolWt(mol), 6),
             canonical_smiles=Chem.MolToSmiles(mol),
             inchi=inchi.MolToInchi(mol) or "",
-            inchi_key=inchi.MolToInchiKey(inchi.MolToInchi(mol) or "") or "",
+            inchi_key=inchi.InchiToInchiKey(inchi.MolToInchi(mol) or "") or "",
         )
 
     def _compute_rdkit_mol(self, mol_block: str) -> MolecularProperties:
