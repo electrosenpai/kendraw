@@ -153,8 +153,9 @@ interface ToolDef {
 }
 
 const GROUPS: { label: string; tools: ToolDef[] }[] = [
+  // Group 1 — Selection
   {
-    label: '',
+    label: 'Selection',
     tools: [
       {
         id: 'select',
@@ -164,17 +165,25 @@ const GROUPS: { label: string; tools: ToolDef[] }[] = [
         description: 'Select and move atoms',
       },
       { id: 'pan', icon: ICN.pan, label: 'Pan', shortcut: 'H', description: 'Pan the canvas' },
+    ],
+  },
+  // Group 2 — Bonds
+  {
+    label: 'Bonds',
+    tools: [
       {
-        id: 'eraser',
-        icon: ICN.eraser,
-        label: 'Eraser',
-        shortcut: 'E',
-        description: 'Delete atoms and bonds',
+        id: 'add-bond',
+        icon: ICN.bond,
+        label: 'Single Bond',
+        shortcut: '1',
+        description: 'Draw bonds (right-click for type)',
+        hasSubmenu: true,
       },
     ],
   },
+  // Group 3 — Atoms
   {
-    label: '',
+    label: 'Atoms',
     tools: [
       {
         id: 'add-atom',
@@ -184,14 +193,12 @@ const GROUPS: { label: string; tools: ToolDef[] }[] = [
         description: 'Place atoms (right-click for elements)',
         hasSubmenu: true,
       },
-      {
-        id: 'add-bond',
-        icon: ICN.bond,
-        label: 'Bond',
-        shortcut: 'B',
-        description: 'Draw bonds (right-click for type)',
-        hasSubmenu: true,
-      },
+    ],
+  },
+  // Group 4 — Structures
+  {
+    label: 'Structures',
+    tools: [
       {
         id: 'ring',
         icon: ICN.ring,
@@ -202,27 +209,9 @@ const GROUPS: { label: string; tools: ToolDef[] }[] = [
       },
     ],
   },
+  // Group 5 — Annotations
   {
-    label: '',
-    tools: [
-      {
-        id: 'molecules',
-        icon: ICN.molecule,
-        label: 'Molecules',
-        shortcut: 'M',
-        description: 'Browse molecule library',
-      },
-      {
-        id: 'import',
-        icon: ICN.import,
-        label: 'Import File',
-        shortcut: 'Ctrl+I',
-        description: 'Import CDXML, MOL, SMILES files',
-      },
-    ],
-  },
-  {
-    label: '',
+    label: 'Annotations',
     tools: [
       {
         id: 'arrow',
@@ -234,14 +223,28 @@ const GROUPS: { label: string; tools: ToolDef[] }[] = [
       {
         id: 'curly-arrow',
         icon: ICN.curly,
-        label: 'Curly',
+        label: 'Curly Arrow',
         shortcut: 'U',
         description: 'Curved mechanism arrows',
       },
     ],
   },
+  // Group 6 — Editing
   {
-    label: '',
+    label: 'Editing',
+    tools: [
+      {
+        id: 'eraser',
+        icon: ICN.eraser,
+        label: 'Eraser',
+        shortcut: 'E',
+        description: 'Delete atoms and bonds',
+      },
+    ],
+  },
+  // Group 7 — Analysis
+  {
+    label: 'Analysis',
     tools: [
       {
         id: 'nmr',
@@ -249,6 +252,20 @@ const GROUPS: { label: string; tools: ToolDef[] }[] = [
         label: 'NMR',
         shortcut: 'Ctrl+M',
         description: 'Toggle NMR spectrum prediction panel',
+      },
+      {
+        id: 'molecules',
+        icon: ICN.molecule,
+        label: 'Molecules',
+        shortcut: 'Ctrl+L',
+        description: 'Browse molecule library',
+      },
+      {
+        id: 'import',
+        icon: ICN.import,
+        label: 'Import',
+        shortcut: 'Ctrl+I',
+        description: 'Import CDXML, MOL, SMILES files',
       },
     ],
   },
@@ -282,12 +299,15 @@ const ACTIONS: ToolDef[] = [
 ];
 
 const BOND_OPTIONS: { id: ToolState['bondStyle']; label: string; sym: string }[] = [
-  { id: 'single', label: 'Single', sym: '—' },
-  { id: 'double', label: 'Double', sym: '=' },
-  { id: 'triple', label: 'Triple', sym: '≡' },
+  { id: 'single', label: 'Single (1)', sym: '—' },
+  { id: 'double', label: 'Double (2)', sym: '=' },
+  { id: 'triple', label: 'Triple (3)', sym: '≡' },
+  { id: 'wedge', label: 'Wedge (W)', sym: '▸' },
+  { id: 'dash', label: 'Dashed (D)', sym: '┄' },
+  { id: 'bold', label: 'Bold (B)', sym: '━' },
+  { id: 'wavy', label: 'Wavy (Y)', sym: '∿' },
+  { id: 'hashed-wedge', label: 'Hashed Wedge', sym: '▹' },
   { id: 'aromatic', label: 'Aromatic', sym: '◎' },
-  { id: 'wedge', label: 'Wedge', sym: '▸' },
-  { id: 'dash', label: 'Dash', sym: '┄' },
 ];
 
 // ── Main component ──────────────────────────────────────────

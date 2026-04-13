@@ -14,13 +14,23 @@ export const RING_TEMPLATES: RingTemplate[] = [
   {
     id: 'cyclopropane',
     name: 'Cyclopropane',
+    shortcut: '3',
     atomCount: 3,
     elements: [6, 6, 6],
     bondOrders: [1, 1, 1],
   },
   {
+    id: 'cyclobutane',
+    name: 'Cyclobutane',
+    shortcut: '4',
+    atomCount: 4,
+    elements: [6, 6, 6, 6],
+    bondOrders: [1, 1, 1, 1],
+  },
+  {
     id: 'cyclopentane',
     name: 'Cyclopentane',
+    shortcut: '5',
     atomCount: 5,
     elements: [6, 6, 6, 6, 6],
     bondOrders: [1, 1, 1, 1, 1],
@@ -68,6 +78,22 @@ export const RING_TEMPLATES: RingTemplate[] = [
     atomCount: 5,
     elements: [16, 6, 6, 6, 6],
     bondOrders: [1, 2, 1, 1, 2],
+  },
+  {
+    id: 'cycloheptane',
+    name: 'Cycloheptane',
+    shortcut: '7',
+    atomCount: 7,
+    elements: [6, 6, 6, 6, 6, 6, 6],
+    bondOrders: [1, 1, 1, 1, 1, 1, 1],
+  },
+  {
+    id: 'cyclooctane',
+    name: 'Cyclooctane',
+    shortcut: '8',
+    atomCount: 8,
+    elements: [6, 6, 6, 6, 6, 6, 6, 6],
+    bondOrders: [1, 1, 1, 1, 1, 1, 1, 1],
   },
 ];
 

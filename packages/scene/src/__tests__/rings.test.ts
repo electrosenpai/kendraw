@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { RING_TEMPLATES, generateRing } from '../rings.js';
 
 describe('Ring templates', () => {
-  it('has 8 ring templates', () => {
-    expect(RING_TEMPLATES).toHaveLength(8);
+  it('has 11 ring templates', () => {
+    expect(RING_TEMPLATES).toHaveLength(11);
   });
 
   it('benzene has 6 atoms and aromatic bonds', () => {
