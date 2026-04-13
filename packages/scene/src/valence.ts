@@ -40,7 +40,10 @@ export function validateValence(page: Page): ValenceIssue[] {
     if (!valences) continue; // skip unknown elements
 
     const bondSum = bondOrderSum.get(atom.id) ?? 0;
-    const effectiveValence = bondSum + Math.abs(atom.charge);
+    // For aromatic bonds (fractional sums from order 1.5), round down —
+    // e.g. benzene C has 3×1.5 = 4.5 but is chemically valid at valence 4
+    const roundedBondSum = Number.isInteger(bondSum) ? bondSum : Math.floor(bondSum);
+    const effectiveValence = roundedBondSum + Math.abs(atom.charge);
 
     const isValid = valences.some((v) => effectiveValence <= v);
     if (!isValid) {

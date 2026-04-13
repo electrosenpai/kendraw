@@ -505,21 +505,36 @@ export class CanvasRenderer implements Renderer {
         break;
 
       case 'aromatic': {
+        // Render like a double bond (solid inner line) — standard Kekulé style
         ctx.lineWidth = S.lineWidth;
-        this.line(ctx, x1, y1, x2, y2);
-        // Dashed second line (Kekulé-like aromatic indicator)
-        ctx.setLineDash([3, 3]);
         const side2 = this.getDoubleBondSide(bond, from, to, page);
-        const s = side2 || 1;
-        const shrink2 = len * 0.1;
-        this.line(
-          ctx,
-          x1 + ux * shrink2 + px * offset * s,
-          y1 + uy * shrink2 + py * offset * s,
-          x2 - ux * shrink2 + px * offset * s,
-          y2 - uy * shrink2 + py * offset * s,
-        );
-        ctx.setLineDash([]);
+        if (side2 === 0) {
+          this.line(
+            ctx,
+            x1 + px * offset * 0.5,
+            y1 + py * offset * 0.5,
+            x2 + px * offset * 0.5,
+            y2 + py * offset * 0.5,
+          );
+          this.line(
+            ctx,
+            x1 - px * offset * 0.5,
+            y1 - py * offset * 0.5,
+            x2 - px * offset * 0.5,
+            y2 - py * offset * 0.5,
+          );
+        } else {
+          const s = side2 || 1;
+          this.line(ctx, x1, y1, x2, y2);
+          const shrink2 = len * 0.1;
+          this.line(
+            ctx,
+            x1 + ux * shrink2 + px * offset * s,
+            y1 + uy * shrink2 + py * offset * s,
+            x2 - ux * shrink2 + px * offset * s,
+            y2 - uy * shrink2 + py * offset * s,
+          );
+        }
         break;
       }
 
