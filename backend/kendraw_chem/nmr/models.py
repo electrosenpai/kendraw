@@ -9,6 +9,10 @@ class NmrPeak(BaseModel):
     atom_index: int
     atom_indices: list[int]
     shift_ppm: float
+    integral: int
+    multiplicity: str
+    coupling_hz: list[float]
+    environment: str
     confidence: int
     method: str
 
@@ -25,5 +29,6 @@ class NmrPrediction(BaseModel):
     """Complete NMR prediction response."""
 
     nucleus: str
+    solvent: str
     peaks: list[NmrPeak]
     metadata: NmrMetadata

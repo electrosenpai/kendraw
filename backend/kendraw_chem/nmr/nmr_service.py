@@ -10,8 +10,9 @@ from __future__ import annotations
 from typing import Any
 
 from kendraw_chem.nmr.models import NmrMetadata, NmrPrediction
+from kendraw_chem.nmr.shift_tables import DEFAULT_SOLVENT, SOLVENT_IDS
 
-ENGINE_VERSION = "0.1.0"
+ENGINE_VERSION = "0.2.0"
 
 
 class NmrService:
@@ -34,12 +35,14 @@ class NmrService:
         self,
         input_str: str,
         format: str = "smiles",
+        solvent: str = DEFAULT_SOLVENT,
     ) -> NmrPrediction:
         """Predict 1H NMR chemical shifts.
 
         Args:
             input_str: Molecular structure as SMILES or MOL block.
             format: Input format — "smiles" or "mol".
+            solvent: Deuterated solvent ID (e.g. "CDCl3", "DMSO-d6").
 
         Returns:
             NmrPrediction with peaks and metadata.
@@ -47,11 +50,20 @@ class NmrService:
         Raises:
             ValueError: If input is invalid or molecule exceeds atom limit.
         """
-        if not self._rdkit_available:
-            return self._stub_prediction()
-        return self._predict_rdkit(input_str, format)
+        if solvent not in SOLVENT_IDS:
+            msg = (
+                f"Unsupported solvent: {solvent!r}. "
+                f"Supported: {', '.join(SOLVENT_IDS)}"
+            )
+            raise ValueError(msg)
 
-    def _predict_rdkit(self, input_str: str, format: str) -> NmrPrediction:
+        if not self._rdkit_available:
+            return self._stub_prediction(solvent)
+        return self._predict_rdkit(input_str, format, solvent)
+
+    def _predict_rdkit(
+        self, input_str: str, format: str, solvent: str,
+    ) -> NmrPrediction:
         from kendraw_settings.config import get_settings
 
         mol = self._parse_input(input_str, format)
@@ -66,13 +78,14 @@ class NmrService:
             )
             raise ValueError(msg)
 
-        # Run additive prediction (MVP)
+        # Run additive prediction
         from kendraw_chem.nmr.additive import predict_additive
 
-        peaks = predict_additive(mol)
+        peaks = predict_additive(mol, solvent=solvent)
 
         return NmrPrediction(
             nucleus="1H",
+            solvent=solvent,
             peaks=peaks,
             metadata=NmrMetadata(
                 engine_version=ENGINE_VERSION,
@@ -103,9 +116,10 @@ class NmrService:
         raise ValueError(msg)
 
     @staticmethod
-    def _stub_prediction() -> NmrPrediction:
+    def _stub_prediction(solvent: str = DEFAULT_SOLVENT) -> NmrPrediction:
         return NmrPrediction(
             nucleus="1H",
+            solvent=solvent,
             peaks=[],
             metadata=NmrMetadata(
                 engine_version=ENGINE_VERSION,

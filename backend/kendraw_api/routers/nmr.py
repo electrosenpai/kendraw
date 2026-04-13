@@ -16,6 +16,7 @@ class NmrRequest(BaseModel):
     input: str
     format: str = "smiles"
     nucleus: str = "1H"
+    solvent: str = "CDCl3"
 
 
 @router.post("/nmr", response_model=NmrPrediction)
@@ -27,7 +28,9 @@ def predict_nmr(request: NmrRequest) -> NmrPrediction:
             detail=f"Unsupported nucleus: {request.nucleus}. Only '1H' is supported.",
         )
     try:
-        return _service.predict_nmr(request.input, format=request.format)
+        return _service.predict_nmr(
+            request.input, format=request.format, solvent=request.solvent,
+        )
     except ValueError as exc:
         status = 413 if "exceeds limit" in str(exc) else 400
         raise HTTPException(status_code=status, detail=str(exc)) from exc

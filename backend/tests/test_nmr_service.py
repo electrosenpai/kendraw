@@ -37,7 +37,8 @@ def test_predict_nmr_valid_smiles() -> None:
     assert result.nucleus == "1H"
     assert len(result.peaks) > 0
     assert result.metadata.method == "additive"
-    assert result.metadata.engine_version == "0.1.0"
+    assert result.metadata.engine_version == "0.2.0"
+    assert result.solvent == "CDCl3"
 
 
 @needs_rdkit
@@ -62,7 +63,7 @@ def test_predict_nmr_empty_string_raises() -> None:
 
 @needs_rdkit
 def test_predict_nmr_ethanol_peak_fields() -> None:
-    """Ethanol peaks contain all required fields."""
+    """Ethanol peaks contain all required fields including new ones."""
     from kendraw_chem.nmr.nmr_service import NmrService
 
     service = NmrService()
@@ -70,8 +71,49 @@ def test_predict_nmr_ethanol_peak_fields() -> None:
     for peak in result.peaks:
         assert isinstance(peak.atom_index, int)
         assert isinstance(peak.shift_ppm, float)
+        assert isinstance(peak.integral, int)
+        assert peak.integral > 0
+        assert isinstance(peak.multiplicity, str)
+        assert peak.multiplicity in ("s", "d", "t", "q", "quint", "sext", "sept", "m")
+        assert isinstance(peak.coupling_hz, list)
+        assert isinstance(peak.environment, str)
         assert peak.confidence in (1, 2, 3)
         assert peak.method == "additive"
+
+
+@needs_rdkit
+def test_predict_nmr_with_solvent() -> None:
+    """predict_nmr accepts solvent parameter."""
+    from kendraw_chem.nmr.nmr_service import NmrService
+
+    service = NmrService()
+    result = service.predict_nmr("CCO", solvent="DMSO-d6")
+    assert result.solvent == "DMSO-d6"
+    assert len(result.peaks) > 0
+
+
+@needs_rdkit
+def test_predict_nmr_invalid_solvent_raises() -> None:
+    """predict_nmr with invalid solvent raises ValueError."""
+    from kendraw_chem.nmr.nmr_service import NmrService
+
+    service = NmrService()
+    with pytest.raises(ValueError, match="Unsupported solvent"):
+        service.predict_nmr("CCO", solvent="acetonitrile-d3")
+
+
+@needs_rdkit
+def test_predict_nmr_solvent_affects_shifts() -> None:
+    """Different solvents produce different shifts for exchangeable protons."""
+    from kendraw_chem.nmr.nmr_service import NmrService
+
+    service = NmrService()
+    cdcl3 = service.predict_nmr("CCO", solvent="CDCl3")
+    dmso = service.predict_nmr("CCO", solvent="DMSO-d6")
+    # OH peak should shift in DMSO vs CDCl3
+    cdcl3_shifts = sorted(p.shift_ppm for p in cdcl3.peaks)
+    dmso_shifts = sorted(p.shift_ppm for p in dmso.peaks)
+    assert cdcl3_shifts != dmso_shifts
 
 
 @needs_rdkit
