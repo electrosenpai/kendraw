@@ -17,7 +17,7 @@ export type ToolId =
 export interface ToolState {
   tool: ToolId;
   element: number;
-  bondStyle: 'single' | 'double' | 'triple' | 'wedge' | 'dash' | 'aromatic';
+  bondStyle: 'single' | 'double' | 'triple' | 'wedge' | 'dash' | 'aromatic' | 'wavy' | 'bold' | 'hashed-wedge';
   ringTemplate: string;
   arrowType: 'forward' | 'equilibrium' | 'reversible';
   curlyType: 'pair' | 'radical';

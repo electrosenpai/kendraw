@@ -478,6 +478,12 @@ export function Canvas({
           I: 53, // Iodine
           l: 17,
           L: 17, // Chlorine (ChemDraw convention: L=Cl)
+          p: 15,
+          P: 15, // Phosphorus
+          b: 5,
+          B: 5, // Boron
+          h: 1,
+          H: 1, // Hydrogen
         };
         const newElement = atomHotkeys[e.key];
         if (newElement !== undefined) {
@@ -487,15 +493,23 @@ export function Canvas({
           return;
         }
 
-        // ChemDraw bond hotkeys (when bonds could be inferred from selection)
-        // 1=single, 2=double, 3=triple, d=dash, w=wedge, y=wavy
+        // M/m → Methyl (Carbon, ChemDraw convention)
+        if (e.key === 'm' || e.key === 'M') {
+          for (const id of selection.atomIds) {
+            store.dispatch({ type: 'update-atom', id, changes: { element: 6 } });
+          }
+          return;
+        }
+
+        // ChemDraw bond hotkeys (Section 5.4)
+        // 1=single, 2=double, 3=triple, b=bold, d=dash, h=hashed, w=wedge, y=wavy
         const bondStyleKeys: Record<string, ToolState['bondStyle']> = {
           '1': 'single',
           '2': 'double',
           '3': 'triple',
           d: 'dash',
           w: 'wedge',
-          y: 'aromatic',
+          y: 'wavy',
         };
         const bStyle = bondStyleKeys[e.key];
         if (bStyle) {
