@@ -138,6 +138,7 @@ export function Canvas({
   const panStartRef = useRef({ x: 0, y: 0, panX: 0, panY: 0 });
   const isMovingRef = useRef(false);
   const moveStartRef = useRef({ x: 0, y: 0 });
+  const spaceHeldRef = useRef(false);
   const [cursorPos, setCursorPos] = useState<{ x: number; y: number } | null>(null);
 
   const updateToolState = useCallback((partial: Partial<ToolState>) => {
@@ -227,6 +228,26 @@ export function Canvas({
     },
     [zoom, pan],
   );
+
+  // Space key tracking for Photoshop-style pan
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === ' ' && !e.repeat) {
+        spaceHeldRef.current = true;
+      }
+    }
+    function onKeyUp(e: KeyboardEvent) {
+      if (e.key === ' ') {
+        spaceHeldRef.current = false;
+      }
+    }
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+    };
+  }, []);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -486,7 +507,9 @@ export function Canvas({
           '1': 'single',
           '2': 'double',
           '3': 'triple',
+          b: 'bold',
           d: 'dash',
+          h: 'hashed-wedge',
           w: 'wedge',
           y: 'wavy',
         };
@@ -523,6 +546,23 @@ export function Canvas({
           return;
         }
 
+        // Ring template shortcuts (3-8) when ring tool is active
+        if (toolState.tool === 'ring') {
+          const ringMap: Record<string, string> = {
+            '3': 'cyclopropane',
+            '4': 'cyclobutane',
+            '5': 'cyclopentane',
+            '6': 'cyclohexane',
+            '7': 'cycloheptane',
+            '8': 'cyclooctane',
+          };
+          const rt = ringMap[e.key];
+          if (rt) {
+            updateToolState({ ringTemplate: rt });
+            return;
+          }
+        }
+
         // Element shortcuts (number keys map to COMMON_ELEMENTS)
         const elementMap: Record<string, number> = {
           '1': 6,
@@ -546,7 +586,7 @@ export function Canvas({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selection, store, updateToolState]);
+  }, [selection, store, updateToolState, toolState.tool]);
 
   // Zoom via wheel
   useEffect(() => {
@@ -565,8 +605,8 @@ export function Canvas({
     (e: React.MouseEvent<HTMLDivElement>) => {
       const { x, y } = toCanvasCoords(e);
 
-      // Pan with middle button or pan tool
-      if (e.button === 1 || toolState.tool === 'pan') {
+      // Pan with middle button, pan tool, or space+drag (Photoshop-style)
+      if (e.button === 1 || toolState.tool === 'pan' || spaceHeldRef.current) {
         isPanningRef.current = true;
         panStartRef.current = { x: e.clientX, y: e.clientY, panX: pan.x, panY: pan.y };
         return;
