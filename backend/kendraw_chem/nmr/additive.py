@@ -17,6 +17,7 @@ from kendraw_chem.nmr.shift_tables import (
     BASE_SHIFTS,
     CONFIDENCE_REFERENCE_COUNTS,
     DEFAULT_SOLVENT,
+    HETEROCYCLIC_SHIFTS,
     J_COUPLING_CONSTANTS,
     SOLVENT_PROTON_OFFSETS,
     SUBSTITUENT_INCREMENTS,
@@ -281,15 +282,27 @@ def _collect_substituents(
     return subs
 
 
-def _compute_aromatic_shift(mol: Mol, parent_idx: int) -> float:
-    """Compute aromatic proton shift with substituent effects.
+def _compute_aromatic_shift(
+    mol: Mol, parent_idx: int,
+) -> tuple[float, bool]:
+    """Compute aromatic proton shift with substituent and heterocycle effects.
 
-    Uses Hammett-type corrections based on ring substituent positions.
+    For carbocyclic aromatic rings, uses Hammett-type corrections.
+    For heterocyclic aromatic rings (containing N, O, or S), uses
+    position-specific absolute shifts from HETEROCYCLIC_SHIFTS table.
+
+    Returns (shift, is_heterocyclic). When is_heterocyclic is True,
+    the caller should skip substituent increments (already accounted for).
     """
-    base = BASE_SHIFTS["aromatic"]
-
     ring_info = mol.GetRingInfo()
 
+    # First check if this atom is in a heterocyclic aromatic ring
+    hetero_shift = _heterocyclic_shift(mol, parent_idx, ring_info)
+    if hetero_shift is not None:
+        return hetero_shift, True
+
+    # Fall back to benzene base + substituent corrections
+    base = BASE_SHIFTS["aromatic"]
     correction = 0.0
     ring_count = 0
 
@@ -332,9 +345,76 @@ def _compute_aromatic_shift(mol: Mol, parent_idx: int) -> float:
                     correction += effect
 
     if ring_count == 0:
-        return base
+        return base, False
 
-    return round(base + correction / max(ring_count, 1), 2)
+    return round(base + correction / max(ring_count, 1), 2), False
+
+
+_HETEROATOM_SYMBOLS: dict[int, str] = {7: "N", 8: "O", 16: "S"}
+
+
+def _heterocyclic_shift(
+    mol: Mol,
+    parent_idx: int,
+    ring_info,  # noqa: ANN001
+) -> float | None:
+    """Compute shift for a proton on a heterocyclic aromatic ring.
+
+    Returns None if the atom is not in a heterocyclic aromatic ring,
+    otherwise returns the appropriate position-specific shift.
+    """
+    for ring in ring_info.AtomRings():
+        if parent_idx not in ring:
+            continue
+        ring_list = list(ring)
+        ring_size = len(ring)
+        if ring_size not in (5, 6):
+            continue
+        if not all(mol.GetAtomWithIdx(a).GetIsAromatic() for a in ring_list):
+            continue
+
+        # Find heteroatoms in this ring
+        heteroatoms: list[tuple[int, str]] = []
+        for idx in ring_list:
+            atom = mol.GetAtomWithIdx(idx)
+            sym = _HETEROATOM_SYMBOLS.get(atom.GetAtomicNum())
+            if sym:
+                heteroatoms.append((idx, sym))
+
+        if not heteroatoms:
+            continue
+
+        # Use the nearest heteroatom to determine position
+        my_pos = ring_list.index(parent_idx)
+        best_dist = ring_size
+        best_sym = heteroatoms[0][1]
+
+        for h_idx, h_sym in heteroatoms:
+            h_pos = ring_list.index(h_idx)
+            dist = min(
+                abs(h_pos - my_pos),
+                ring_size - abs(h_pos - my_pos),
+            )
+            if dist < best_dist:
+                best_dist = dist
+                best_sym = h_sym
+
+        # Map distance to position label
+        if best_dist == 1:
+            pos = "alpha"
+        elif best_dist == 2:
+            pos = "beta"
+        elif best_dist == 3 and ring_size == 6:
+            pos = "gamma"
+        else:
+            pos = "beta"  # fallback for further positions
+
+        key = (best_sym, ring_size, pos)
+        shift = HETEROCYCLIC_SHIFTS.get(key)
+        if shift is not None:
+            return round(shift, 2)
+
+    return None
 
 
 def _classify_ring_substituent(mol: Mol, atom) -> str | None:  # noqa: ANN001
@@ -562,15 +642,19 @@ def predict_additive(
         )
 
         # Base shift — special handling for aromatic
+        skip_increments = False
         if env_key == "aromatic":
-            base_shift = _compute_aromatic_shift(mol_h, parent_idx)
+            base_shift, skip_increments = _compute_aromatic_shift(
+                mol_h, parent_idx,
+            )
         else:
             base_shift = BASE_SHIFTS.get(env_key, BASE_SHIFTS["methyl"])
 
-        # Sum substituent increments
+        # Sum substituent increments (skip for heterocyclic aromatics)
         increment = 0.0
-        for sub_key in substituent_keys:
-            increment += SUBSTITUENT_INCREMENTS.get(sub_key, 0.0)
+        if not skip_increments:
+            for sub_key in substituent_keys:
+                increment += SUBSTITUENT_INCREMENTS.get(sub_key, 0.0)
 
         shift_ppm = base_shift + increment
 
@@ -586,14 +670,18 @@ def predict_additive(
     # Group equivalent protons (same shift and same environment)
     groups: dict[tuple[float, str], list[int]] = {}
     parent_map: dict[tuple[float, str], int] = {}
+    parents_map: dict[tuple[float, str], list[int]] = {}
     confidence_map: dict[tuple[float, str], int] = {}
     for h_idx, parent_idx, shift, env, conf in raw_predictions:
         key = (shift, env)
         if key not in groups:
             groups[key] = []
             parent_map[key] = parent_idx
+            parents_map[key] = []
             confidence_map[key] = conf
         groups[key].append(h_idx)
+        if parent_idx not in parents_map[key]:
+            parents_map[key].append(parent_idx)
 
     # Build peaks with multiplicity
     peaks: list[NmrPeak] = []
@@ -609,6 +697,7 @@ def predict_additive(
             NmrPeak(
                 atom_index=sorted_indices[0],
                 atom_indices=sorted_indices,
+                parent_indices=sorted(parents_map[(shift, env)]),
                 shift_ppm=shift,
                 integral=len(sorted_indices),
                 multiplicity=mult,

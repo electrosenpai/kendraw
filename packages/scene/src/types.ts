@@ -103,6 +103,7 @@ export type Viewport = {
 export type NmrPeak = {
   atom_index: number;
   atom_indices: number[];
+  parent_indices: number[];
   shift_ppm: number;
   integral: number;
   multiplicity: string;

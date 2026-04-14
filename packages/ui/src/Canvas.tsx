@@ -67,6 +67,8 @@ interface CanvasProps {
   showPropertyPanel?: boolean | undefined;
   nmrOpen?: boolean | undefined;
   onNmrToggle?: (() => void) | undefined;
+  highlightedAtomIds?: Set<AtomId> | undefined;
+  onHighlightAtoms?: ((ids: Set<AtomId>) => void) | undefined;
 }
 
 export function Canvas({
@@ -76,6 +78,8 @@ export function Canvas({
   showPropertyPanel = true,
   nmrOpen = false,
   onNmrToggle,
+  highlightedAtomIds,
+  onHighlightAtoms,
 }: CanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<CanvasRenderer | null>(null);
@@ -165,6 +169,11 @@ export function Canvas({
   useEffect(() => {
     rendererRef.current?.setSelectedAtoms(new Set(selection.atomIds));
   }, [selection]);
+
+  // Sync NMR highlights to renderer
+  useEffect(() => {
+    rendererRef.current?.setHighlightedAtoms(highlightedAtomIds ?? new Set());
+  }, [highlightedAtomIds]);
 
   // Sync zoom/pan to renderer
   useEffect(() => {
@@ -622,6 +631,10 @@ export function Canvas({
             } else {
               setSelection(addToSelection(createSelection(), { atomIds: [hitId] }));
             }
+          }
+          // NMR bidirectional highlight: clicking an atom highlights the corresponding peak
+          if (nmrOpen && onHighlightAtoms) {
+            onHighlightAtoms(new Set([hitId]));
           }
           // In all cases, prepare for potential move drag
           isMovingRef.current = true;

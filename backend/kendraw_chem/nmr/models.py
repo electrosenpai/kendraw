@@ -8,6 +8,7 @@ class NmrPeak(BaseModel):
 
     atom_index: int
     atom_indices: list[int]
+    parent_indices: list[int]
     shift_ppm: float
     integral: int
     multiplicity: str

@@ -8,6 +8,7 @@ def _peak(**overrides):  # noqa: ANN003, ANN202
     defaults = {
         "atom_index": 0,
         "atom_indices": [0],
+        "parent_indices": [0],
         "shift_ppm": 7.3,
         "integral": 1,
         "multiplicity": "s",

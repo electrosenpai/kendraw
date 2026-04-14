@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useSyncExternalStore, lazy, Suspense } from 'react';
+import type { AtomId } from '@kendraw/scene';
 import { Canvas } from './Canvas';
 import { TabBar } from './TabBar';
 import { ShortcutCheatsheet } from './ShortcutCheatsheet';
@@ -45,6 +46,7 @@ export function App() {
     const saved = localStorage.getItem('kd-nmr-h');
     return saved ? parseInt(saved, 10) : Math.round(window.innerHeight * 0.33);
   });
+  const [highlightedAtomIds, setHighlightedAtomIds] = useState<Set<AtomId>>(new Set());
 
   // Persist widths
   useEffect(() => {
@@ -185,6 +187,8 @@ export function App() {
           showPropertyPanel={panelVisible && effectivePanelW > 0}
           nmrOpen={nmrOpen}
           onNmrToggle={() => setNmrOpen((v) => !v)}
+          highlightedAtomIds={highlightedAtomIds}
+          onHighlightAtoms={setHighlightedAtomIds}
         />
       ) : (
         <>
@@ -229,6 +233,8 @@ export function App() {
               onClose={() => setNmrOpen(false)}
               height={nmrHeight}
               onHeightChange={setNmrHeight}
+              highlightedAtomIds={highlightedAtomIds}
+              onHighlightAtoms={setHighlightedAtomIds}
             />
           </Suspense>
         </div>

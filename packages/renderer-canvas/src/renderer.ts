@@ -37,6 +37,7 @@ export interface Renderer {
   detach(): void;
   render(doc: Document, diff?: SceneDiff): void;
   setSelectedAtoms(ids: Set<AtomId>): void;
+  setHighlightedAtoms(ids: Set<AtomId>): void;
   setSelectionRect(rect: { x1: number; y1: number; x2: number; y2: number } | null): void;
   setViewport(zoom: number, panX: number, panY: number): void;
   setValenceIssues(ids: Set<AtomId>): void;
@@ -68,6 +69,7 @@ export class CanvasRenderer implements Renderer {
   private container: HTMLElement | null = null;
   private resizeObserver: ResizeObserver | null = null;
   private selectedAtoms = new Set<AtomId>();
+  private highlightedAtoms = new Set<AtomId>();
   private valenceIssues = new Set<AtomId>();
   private selectionRect: { x1: number; y1: number; x2: number; y2: number } | null = null;
   private lastDoc: Document | null = null;
@@ -106,6 +108,10 @@ export class CanvasRenderer implements Renderer {
 
   setSelectedAtoms(ids: Set<AtomId>): void {
     this.selectedAtoms = ids;
+    if (this.lastDoc) this.render(this.lastDoc);
+  }
+  setHighlightedAtoms(ids: Set<AtomId>): void {
+    this.highlightedAtoms = ids;
     if (this.lastDoc) this.render(this.lastDoc);
   }
   setSelectionRect(rect: { x1: number; y1: number; x2: number; y2: number } | null): void {
@@ -257,8 +263,20 @@ export class CanvasRenderer implements Renderer {
     justification?: 'left' | 'right',
   ): void {
     const selected = this.selectedAtoms.has(atom.id);
+    const highlighted = this.highlightedAtoms.has(atom.id);
     const valenceWarn = this.valenceIssues.has(atom.id);
     const S = this.S;
+
+    // NMR highlight halo (gold)
+    if (highlighted) {
+      ctx.beginPath();
+      ctx.arc(atom.x, atom.y, ATOM_RADIUS + 6, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255, 193, 7, 0.18)';
+      ctx.fill();
+      ctx.strokeStyle = '#ffc107';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
 
     // Valence warning ring
     if (valenceWarn) {

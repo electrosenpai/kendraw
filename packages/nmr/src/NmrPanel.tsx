@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import type { SceneStore, NmrPrediction, Page } from '@kendraw/scene';
+import type { SceneStore, NmrPrediction, Page, AtomId } from '@kendraw/scene';
 import { KendrawApiClient } from '@kendraw/api-client';
 import { writeMolV2000 } from '@kendraw/io';
 import {
@@ -27,6 +27,8 @@ interface NmrPanelProps {
   onClose: () => void;
   height: number;
   onHeightChange: (h: number) => void;
+  highlightedAtomIds?: Set<AtomId>;
+  onHighlightAtoms?: (ids: Set<AtomId>) => void;
 }
 
 const apiClient = new KendrawApiClient();
@@ -55,6 +57,50 @@ function formatMultiplicity(mult: string, coupling: number[]): string {
   return label;
 }
 
+function exportPng(
+  prediction: NmrPrediction,
+  viewport: SpectrumViewport,
+): void {
+  const W = 1200;
+  const H = 500;
+  const canvas = document.createElement('canvas');
+  const dpr = 2; // high-res export
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  // White background for publication
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, W, H);
+
+  // Render spectrum with white-bg color overrides
+  renderSpectrum(ctx, prediction, {
+    width: W,
+    height: H - 40, // leave room for metadata footer
+    dpr,
+    viewport,
+    hoveredPeakIdx: null,
+    selectedPeakIdx: null,
+    exportMode: true,
+  });
+
+  // Metadata footer
+  ctx.fillStyle = '#333333';
+  ctx.font = '11px "IBM Plex Mono", "Fira Code", monospace';
+  ctx.textAlign = 'left';
+  const meta = `${prediction.nucleus} NMR | Solvent: ${prediction.solvent} | ${prediction.peaks.length} peaks | Kendraw`;
+  ctx.fillText(meta, 20, H - 12);
+
+  // Trigger download
+  const url = canvas.toDataURL('image/png');
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `nmr_${prediction.nucleus}_${prediction.solvent}.png`;
+  a.click();
+}
+
 function exportCsv(prediction: NmrPrediction): void {
   const header = 'delta_ppm,multiplicity,J_Hz,integral,environment,confidence,method\n';
   const rows = prediction.peaks.map(p =>
@@ -70,7 +116,7 @@ function exportCsv(prediction: NmrPrediction): void {
   URL.revokeObjectURL(url);
 }
 
-export default function NmrPanel({ store, onClose, height, onHeightChange }: NmrPanelProps) {
+export default function NmrPanel({ store, onClose, height, onHeightChange, highlightedAtomIds, onHighlightAtoms }: NmrPanelProps) {
   const [nucleus, setNucleus] = useState<Nucleus>('1H');
   const [solvent, setSolvent] = useState<SolventId>('CDCl3');
   const [prediction, setPrediction] = useState<NmrPrediction | null>(null);
@@ -88,6 +134,59 @@ export default function NmrPanel({ store, onClose, height, onHeightChange }: Nmr
   const hitBoxesRef = useRef<PeakHitBox[]>([]);
   const panelRef = useRef<HTMLDivElement>(null);
   const predictAbortRef = useRef<AbortController | null>(null);
+
+  // Map mol block atom index → scene AtomId (mol block order = Object.values(page.atoms) order)
+  const getAtomIds = useCallback((): AtomId[] => {
+    const doc = store.getState();
+    const page = doc.pages[doc.activePageIndex];
+    if (!page) return [];
+    return Object.keys(page.atoms) as AtomId[];
+  }, [store]);
+
+  // Peak click → highlight atoms on the molecule
+  const handlePeakHighlight = useCallback((peakIdx: number | null) => {
+    setSelectedPeakIdx(peakIdx);
+    if (!onHighlightAtoms || !prediction) return;
+    if (peakIdx === null) {
+      onHighlightAtoms(new Set());
+      return;
+    }
+    const peak = prediction.peaks[peakIdx];
+    if (!peak?.parent_indices) {
+      onHighlightAtoms(new Set());
+      return;
+    }
+    const atomIds = getAtomIds();
+    const highlighted = new Set<AtomId>();
+    for (const pi of peak.parent_indices) {
+      const id = atomIds[pi];
+      if (id) highlighted.add(id);
+    }
+    onHighlightAtoms(highlighted);
+  }, [onHighlightAtoms, prediction, getAtomIds]);
+
+  // Reverse: when highlightedAtomIds changes from canvas → find matching peak
+  useEffect(() => {
+    if (!highlightedAtomIds || highlightedAtomIds.size === 0 || !prediction) return;
+    const atomIds = getAtomIds();
+    // Build reverse map: AtomId → mol block index
+    const idToIdx = new Map<AtomId, number>();
+    atomIds.forEach((id, i) => idToIdx.set(id, i));
+    // Find which peak matches
+    const highlightedIndices = new Set<number>();
+    for (const id of highlightedAtomIds) {
+      const idx = idToIdx.get(id);
+      if (idx !== undefined) highlightedIndices.add(idx);
+    }
+    for (let pi = 0; pi < prediction.peaks.length; pi++) {
+      const peak = prediction.peaks[pi];
+      if (!peak?.parent_indices) continue;
+      if (peak.parent_indices.some(idx => highlightedIndices.has(idx))) {
+        setSelectedPeakIdx(pi);
+        return;
+      }
+    }
+  }, [highlightedAtomIds, prediction, getAtomIds]);
 
   // Signal navigation
   const navigateSignal = useCallback((direction: 1 | -1) => {
@@ -125,6 +224,7 @@ export default function NmrPanel({ store, onClose, height, onHeightChange }: Nmr
       setPrediction(result);
       setViewport(computeDefaultViewport(result));
       setSelectedPeakIdx(null);
+      onHighlightAtoms?.(new Set());
       store.dispatch({ type: 'set-nmr-prediction', prediction: result });
     } catch (e) {
       if (controller.signal.aborted) return;
@@ -240,9 +340,9 @@ export default function NmrPanel({ store, onClose, height, onHeightChange }: Nmr
 
       const hit = hitTestPeaks(hitBoxesRef.current, x, y);
       if (hit !== null) {
-        setSelectedPeakIdx(hit);
+        handlePeakHighlight(hit);
       } else {
-        setSelectedPeakIdx(null);
+        handlePeakHighlight(null);
         setDragSelect({ startX: x, endX: x });
       }
     },
@@ -519,6 +619,25 @@ export default function NmrPanel({ store, onClose, height, onHeightChange }: Nmr
               title="Export signal table as CSV"
             >
               CSV
+            </button>
+          )}
+
+          {/* PNG export */}
+          {prediction && prediction.peaks.length > 0 && (
+            <button
+              onClick={() => exportPng(prediction, viewport)}
+              style={{
+                padding: '2px 6px',
+                fontSize: 10,
+                border: '1px solid var(--kd-color-border, #333)',
+                borderRadius: 'var(--kd-radius-sm, 4px)',
+                background: 'transparent',
+                color: 'var(--kd-color-text-secondary, #a0a0a0)',
+                cursor: 'pointer',
+              }}
+              title="Export spectrum as PNG"
+            >
+              PNG
             </button>
           )}
         </div>
