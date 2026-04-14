@@ -120,6 +120,32 @@ AROMATIC_SUBSTITUENT_EFFECTS: dict[str, dict[str, float]] = {
 }
 
 # ---------------------------------------------------------------------------
+# Heterocyclic aromatic proton shifts
+# Absolute shift values (not relative to benzene) for protons on common
+# heteroaromatic rings. Keyed by (heteroatom_symbol, ring_size, position).
+# position = "alpha" (adjacent to heteroatom), "beta" (2 bonds),
+#            "gamma" (3 bonds, only in 6-membered rings)
+# Derived from open-access NMR databases (NMRShiftDB2, SDBS).
+# ---------------------------------------------------------------------------
+
+HETEROCYCLIC_SHIFTS: dict[tuple[str, int, str], float] = {
+    # Pyridine (6-membered, N)
+    ("N", 6, "alpha"): 8.50,
+    ("N", 6, "beta"):  7.20,
+    ("N", 6, "gamma"): 7.60,
+    # Pyrimidine (6-membered, 2x N) — use same as pyridine alpha for simplicity
+    # Pyrrole (5-membered, N)
+    ("N", 5, "alpha"): 6.70,
+    ("N", 5, "beta"):  6.20,
+    # Furan (5-membered, O)
+    ("O", 5, "alpha"): 7.40,
+    ("O", 5, "beta"):  6.30,
+    # Thiophene (5-membered, S)
+    ("S", 5, "alpha"): 7.20,
+    ("S", 5, "beta"):  7.00,
+}
+
+# ---------------------------------------------------------------------------
 # Solvent correction offsets
 # Derived from Draw-molecules reference (open-access NMR literature consensus)
 # Each solvent has per-environment ppm offsets relative to CDCl3
