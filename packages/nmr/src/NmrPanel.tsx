@@ -57,6 +57,16 @@ function formatMultiplicity(mult: string, coupling: number[]): string {
   return label;
 }
 
+const CONF_LABELS: Record<number, { label: string; color: string }> = {
+  3: { label: 'High confidence', color: '#51cf66' },
+  2: { label: 'Moderate \u2014 heterocyclic correction', color: '#ffd43b' },
+  1: { label: 'Low \u2014 fused heterocyclic extrapolation', color: '#ff6b6b' },
+};
+
+function formatEnvironment(env: string): string {
+  return env.replace(/_/g, ' ').replace(/\balpha\b/, '\u03B1').replace(/\bbeta\b/, '\u03B2');
+}
+
 function exportPng(
   prediction: NmrPrediction,
   viewport: SpectrumViewport,
@@ -124,6 +134,7 @@ export default function NmrPanel({ store, onClose, height, onHeightChange, highl
   const [error, setError] = useState<string | null>(null);
   const [hoveredPeakIdx, setHoveredPeakIdx] = useState<number | null>(null);
   const [selectedPeakIdx, setSelectedPeakIdx] = useState<number | null>(null);
+  const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
   const [viewport, setViewport] = useState<SpectrumViewport>({ minPpm: -0.5, maxPpm: 12 });
   const [dragSelect, setDragSelect] = useState<{ startX: number; endX: number } | null>(null);
   const [isPanning, setIsPanning] = useState(false);
@@ -318,6 +329,7 @@ export default function NmrPanel({ store, onClose, height, onHeightChange, highl
 
       const hit = hitTestPeaks(hitBoxesRef.current, x, y);
       setHoveredPeakIdx(hit);
+      setTooltipPos(hit !== null ? { x: e.clientX, y: e.clientY } : null);
       canvas.style.cursor = hit !== null ? 'pointer' : 'default';
     },
     [isPanning, dragSelect],
@@ -694,16 +706,93 @@ export default function NmrPanel({ store, onClose, height, onHeightChange, highl
         </div>
       )}
 
-      {/* Spectrum canvas */}
-      <canvas
-        ref={canvasRef}
-        onMouseMove={handleCanvasMouseMove}
-        onMouseDown={handleCanvasMouseDown}
-        onMouseUp={handleCanvasMouseUp}
-        onDoubleClick={handleCanvasDoubleClick}
-        onWheel={handleWheel}
-        style={{ flex: 1, width: '100%', minHeight: 0 }}
-      />
+      {/* Spectrum canvas with tooltip overlay */}
+      <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
+        <canvas
+          ref={canvasRef}
+          onMouseMove={handleCanvasMouseMove}
+          onMouseDown={handleCanvasMouseDown}
+          onMouseUp={handleCanvasMouseUp}
+          onDoubleClick={handleCanvasDoubleClick}
+          onWheel={handleWheel}
+          onMouseLeave={() => { setHoveredPeakIdx(null); setTooltipPos(null); }}
+          style={{ width: '100%', height: '100%' }}
+        />
+
+        {/* Confidence tooltip — Sally's 3-tier design */}
+        {hoveredPeakIdx !== null && tooltipPos && prediction && (() => {
+          const peak = prediction.peaks[hoveredPeakIdx];
+          if (!peak) return null;
+          const conf = CONF_LABELS[peak.confidence] ?? { label: 'Unknown', color: '#888888' };
+          const panelRect = panelRef.current?.getBoundingClientRect();
+          if (!panelRect) return null;
+          const tx = tooltipPos.x - panelRect.left + 16;
+          const ty = tooltipPos.y - panelRect.top - 80;
+          return (
+            <div
+              style={{
+                position: 'absolute',
+                left: Math.min(tx, panelRect.width - 220),
+                top: Math.max(ty, 4),
+                width: 200,
+                padding: '8px 10px',
+                background: 'rgba(20, 20, 20, 0.88)',
+                backdropFilter: 'blur(16px)',
+                WebkitBackdropFilter: 'blur(16px)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                borderLeft: `3px solid ${conf.color}`,
+                borderRadius: 8,
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
+                pointerEvents: 'none',
+                zIndex: 10,
+                fontFamily: 'var(--kd-font-mono, monospace)',
+              }}
+            >
+              {/* Tier 1: Headline — shift + assignment */}
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#f0f0f0', marginBottom: 4 }}>
+                {peak.shift_ppm.toFixed(2)} ppm
+                <span style={{ fontWeight: 400, color: '#a0a0a0', marginLeft: 6, fontSize: 11 }}>
+                  {peak.integral}H {formatEnvironment(peak.environment)}
+                </span>
+              </div>
+
+              {/* Tier 2: Signal — multiplicity + J */}
+              <div style={{ fontSize: 10, color: '#999', marginBottom: 6 }}>
+                {formatMultiplicity(peak.multiplicity, peak.coupling_hz)}
+              </div>
+
+              {/* Tier 3: Trust layer — confidence bar + label + method */}
+              <div style={{ marginBottom: 4 }}>
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                }}>
+                  {/* Confidence bar */}
+                  <div style={{
+                    width: 48, height: 5, borderRadius: 3,
+                    background: 'rgba(255, 255, 255, 0.08)',
+                    overflow: 'hidden',
+                  }}>
+                    <div style={{
+                      width: `${(peak.confidence / 3) * 100}%`,
+                      height: '100%',
+                      borderRadius: 3,
+                      background: conf.color,
+                    }} />
+                  </div>
+                  <span style={{ fontSize: 9, color: conf.color }}>
+                    {conf.label}
+                  </span>
+                </div>
+              </div>
+
+              {/* Method line */}
+              <div style={{ fontSize: 9, color: '#666' }}>
+                {peak.method}
+              </div>
+            </div>
+          );
+        })()}
+      </div>
 
       <style>{`
         @keyframes nmr-slide-up {
