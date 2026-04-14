@@ -479,6 +479,32 @@ def _classify_ring_substituent(mol: Mol, atom: Any) -> str | None:
     return None
 
 
+def _is_substituted_vinyl(mol: Mol, parent_idx: int) -> bool:
+    """Check if a vinyl carbon is part of a C=C with non-H substituents.
+
+    Vinyl protons on substituted alkenes (e.g. cinnamaldehyde, styrene)
+    are poorly predicted by simple additive tables — flag for low confidence.
+    """
+    atom = mol.GetAtomWithIdx(parent_idx)
+    for nbr in atom.GetNeighbors():
+        if nbr.GetAtomicNum() != 6:
+            continue
+        bond = mol.GetBondBetweenAtoms(parent_idx, nbr.GetIdx())
+        if bond is None or bond.GetBondTypeAsDouble() != 2.0:
+            continue
+        # Found the C=C partner — check if either carbon has non-H substituents
+        # beyond the double bond itself
+        for vinyl_c in (atom, nbr):
+            for sub in vinyl_c.GetNeighbors():
+                if sub.GetAtomicNum() == 1:
+                    continue
+                if sub.GetIdx() in (parent_idx, nbr.GetIdx()):
+                    continue
+                # Non-H, non-partner substituent found
+                return True
+    return False
+
+
 def _confidence_from_counts(env_key: str) -> int:
     """Map reference count to confidence tier (1-3)."""
     count = CONFIDENCE_REFERENCE_COUNTS.get(env_key, 0)
@@ -650,7 +676,7 @@ def predict_additive(
     # Collect raw predictions per hydrogen
     raw_predictions: list[tuple[int, int, float, str, int, str]] = []
 
-    for atom in mol_h.GetAtoms():
+    for atom in mol_h.GetAtoms():  # type: ignore[no-untyped-call]
         if atom.GetAtomicNum() != 1:
             continue
 
@@ -686,7 +712,12 @@ def predict_additive(
         shift_ppm = _apply_solvent_correction(shift_ppm, env_key, solvent)
 
         # Confidence: fused heterocyclic=1, simple heterocyclic=2, else ref counts
-        if is_fused_heterocyclic:
+        # QW-2: vinyl protons on substituted C=C get confidence=1
+        is_substituted_vinyl = False
+        if env_key == "vinyl":
+            is_substituted_vinyl = _is_substituted_vinyl(mol_h, parent_idx)
+
+        if is_fused_heterocyclic or is_substituted_vinyl:
             confidence = 1
         elif is_heterocyclic:
             confidence = 2
@@ -698,6 +729,8 @@ def predict_additive(
             method = "additive — heterocyclic (fused, attenuated)"
         elif is_heterocyclic:
             method = "additive — heterocyclic correction"
+        elif is_substituted_vinyl:
+            method = "additive — substituted vinyl (low confidence)"
         else:
             method = "additive"
 

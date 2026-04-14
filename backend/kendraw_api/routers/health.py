@@ -6,8 +6,15 @@ from kendraw_settings.config import get_settings
 router = APIRouter(tags=["system"])
 
 
+class NmrStatus(BaseModel):
+    method: str
+    engine_version: str
+    environments: int
+
+
 class HealthResponse(BaseModel):
     status: str
+    nmr: NmrStatus | None = None
 
 
 class VersionResponse(BaseModel):
@@ -17,7 +24,18 @@ class VersionResponse(BaseModel):
 
 @router.get("/health")
 def health() -> HealthResponse:
-    return HealthResponse(status="ok")
+    try:
+        from kendraw_chem.nmr.nmr_service import ENGINE_VERSION
+        from kendraw_chem.nmr.shift_tables import BASE_SHIFTS
+
+        nmr = NmrStatus(
+            method="additive",
+            engine_version=ENGINE_VERSION,
+            environments=len(BASE_SHIFTS),
+        )
+    except Exception:
+        nmr = None
+    return HealthResponse(status="ok", nmr=nmr)
 
 
 @router.get("/version")

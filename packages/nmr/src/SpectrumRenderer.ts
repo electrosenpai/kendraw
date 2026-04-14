@@ -23,6 +23,8 @@ export interface RenderOptions {
   hoveredPeakIdx: number | null;
   selectedPeakIdx: number | null;
   exportMode?: boolean;
+  solvent?: string;
+  showNoise?: boolean;
 }
 
 export interface PeakHitBox {
@@ -36,6 +38,16 @@ const CONF_COLORS: Record<number, string> = {
   3: '#51cf66',
   2: '#ffd43b',
   1: '#ff6b6b',
+};
+
+// Solvent residual proton peaks — dashed marker + label on spectrum
+const SOLVENT_RESIDUAL_PEAKS: Record<string, { shift: number; label: string }[]> = {
+  CDCl3: [{ shift: 7.26, label: 'CHCl\u2083' }],
+  'DMSO-d6': [{ shift: 2.50, label: 'DMSO' }],
+  CD3OD: [{ shift: 3.31, label: 'CHD\u2082OD' }],
+  'acetone-d6': [{ shift: 2.05, label: 'acetone' }],
+  C6D6: [{ shift: 7.16, label: 'C\u2086D\u2085H' }],
+  D2O: [{ shift: 4.79, label: 'HDO' }],
 };
 
 const MARGIN = { top: 24, right: 44, bottom: 34, left: 44 };
@@ -63,7 +75,7 @@ export function renderSpectrum(
   prediction: NmrPrediction | null,
   options: RenderOptions,
 ): PeakHitBox[] {
-  const { width, height, dpr, viewport, hoveredPeakIdx, selectedPeakIdx, exportMode } = options;
+  const { width, height, dpr, viewport, hoveredPeakIdx, selectedPeakIdx, exportMode, solvent, showNoise } = options;
   const hitBoxes: PeakHitBox[] = [];
 
   // Color scheme: dark UI vs white-bg export
@@ -182,6 +194,87 @@ export function renderSpectrum(
   ctx.strokeStyle = envelopeStroke;
   ctx.lineWidth = 1;
   ctx.stroke();
+
+  // QW-1: Solvent label (top-right) + residual peak markers (dashed vertical lines)
+  if (solvent) {
+    // Solvent label top-right
+    const solventDisplay = solvent === 'C6D6' ? 'C\u2086D\u2086'
+      : solvent === 'D2O' ? 'D\u2082O'
+      : solvent === 'DMSO-d6' ? 'DMSO-d\u2086'
+      : solvent === 'acetone-d6' ? 'Acetone-d\u2086'
+      : solvent;
+    ctx.fillStyle = exportMode ? '#999999' : '#555555';
+    ctx.font = '9px Inter, system-ui, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(solventDisplay, MARGIN.left + plotW - 4, MARGIN.top + 12);
+
+    // Residual peak dashed lines
+    const residuals = SOLVENT_RESIDUAL_PEAKS[solvent];
+    if (residuals) {
+      for (const rp of residuals) {
+        if (rp.shift >= minPpm && rp.shift <= maxPpm) {
+          const rx = ppmToX(rp.shift);
+          ctx.save();
+          ctx.setLineDash([4, 4]);
+          ctx.strokeStyle = exportMode ? '#cccccc' : '#333333';
+          ctx.lineWidth = 0.8;
+          ctx.beginPath();
+          ctx.moveTo(rx, MARGIN.top);
+          ctx.lineTo(rx, MARGIN.top + plotH);
+          ctx.stroke();
+          ctx.restore();
+          // Label above axis
+          ctx.fillStyle = exportMode ? '#aaaaaa' : '#555555';
+          ctx.font = '8px Inter, system-ui, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(rp.label, rx, MARGIN.top + plotH + 26);
+        }
+      }
+    }
+  }
+
+  // QW-7: TMS reference marker at 0 ppm
+  if (minPpm <= 0 && maxPpm >= 0) {
+    const tmsX = ppmToX(0);
+    ctx.save();
+    ctx.setLineDash([2, 3]);
+    ctx.strokeStyle = exportMode ? '#bbbbbb' : '#444444';
+    ctx.lineWidth = 0.6;
+    ctx.beginPath();
+    ctx.moveTo(tmsX, MARGIN.top);
+    ctx.lineTo(tmsX, MARGIN.top + plotH);
+    ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle = exportMode ? '#999999' : '#666666';
+    ctx.font = '8px "IBM Plex Mono", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('TMS', tmsX, MARGIN.top - 2);
+  }
+
+  // QW-9: NS = 1 (simulated) label
+  ctx.fillStyle = exportMode ? '#aaaaaa' : '#555555';
+  ctx.font = '8px Inter, system-ui, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('NS = 1 (simulated)', MARGIN.left + 4, MARGIN.top + 12);
+
+  // QW-10: Baseline noise (optional)
+  if (showNoise) {
+    ctx.save();
+    ctx.strokeStyle = exportMode ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.03)';
+    ctx.lineWidth = 0.5;
+    ctx.beginPath();
+    const baseY = MARGIN.top + plotH;
+    let seed = 42;
+    for (let i = 0; i < nPoints; i++) {
+      seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+      const noise = ((seed / 0x7fffffff) - 0.5) * plotH * 0.015;
+      const x = MARGIN.left + (i / (nPoints - 1)) * plotW;
+      if (i === 0) ctx.moveTo(x, baseY + noise);
+      else ctx.lineTo(x, baseY + noise);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
 
   // Draw individual peaks
   for (let pi = 0; pi < prediction.peaks.length; pi++) {

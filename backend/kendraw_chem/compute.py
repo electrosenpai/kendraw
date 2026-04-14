@@ -64,11 +64,13 @@ class ComputeService:
 
         return MolecularProperties(
             formula=Chem.rdMolDescriptors.CalcMolFormula(mol),
-            molecular_weight=round(Descriptors.MolWt(mol), 3),
-            exact_mass=round(Descriptors.ExactMolWt(mol), 6),
+            molecular_weight=round(Descriptors.MolWt(mol), 3),  # type: ignore[attr-defined]
+            exact_mass=round(Descriptors.ExactMolWt(mol), 6),  # type: ignore[attr-defined]
             canonical_smiles=Chem.MolToSmiles(mol),
-            inchi=inchi.MolToInchi(mol) or "",
-            inchi_key=inchi.InchiToInchiKey(inchi.MolToInchi(mol) or "") or "",
+            inchi=inchi.MolToInchi(mol) or "",  # type: ignore[no-untyped-call]
+            inchi_key=inchi.InchiToInchiKey(  # type: ignore[no-untyped-call]
+                inchi.MolToInchi(mol) or ""  # type: ignore[no-untyped-call]
+            ) or "",
         )
 
     def _compute_rdkit_mol(self, mol_block: str) -> MolecularProperties:

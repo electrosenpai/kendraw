@@ -138,6 +138,8 @@ export default function NmrPanel({ store, onClose, height, onHeightChange, highl
   const [viewport, setViewport] = useState<SpectrumViewport>({ minPpm: -0.5, maxPpm: 12 });
   const [dragSelect, setDragSelect] = useState<{ startX: number; endX: number } | null>(null);
   const [isPanning, setIsPanning] = useState(false);
+  const [pinnedPeakIdx, setPinnedPeakIdx] = useState<number | null>(null);
+  const [showNoise, setShowNoise] = useState(false);
   const panRef = useRef<{ startX: number; startVp: SpectrumViewport } | null>(null);
 
   const dragRef = useRef<{ startY: number; startH: number } | null>(null);
@@ -266,17 +268,21 @@ export default function NmrPanel({ store, onClose, height, onHeightChange, highl
     };
   }, [store, predict]);
 
-  // Keyboard shortcuts for signal navigation
+  // Keyboard shortcuts for signal navigation + QW-8: Ctrl+Shift+E for PNG export
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === 'Tab' && panelRef.current?.contains(document.activeElement)) {
         e.preventDefault();
         navigateSignal(e.shiftKey ? -1 : 1);
       }
+      if (e.key === 'E' && e.ctrlKey && e.shiftKey && prediction) {
+        e.preventDefault();
+        exportPng(prediction, viewport);
+      }
     }
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [navigateSignal]);
+  }, [navigateSignal, prediction, viewport]);
 
   // Render spectrum
   useEffect(() => {
@@ -295,10 +301,12 @@ export default function NmrPanel({ store, onClose, height, onHeightChange, highl
       height: rect.height,
       dpr,
       viewport,
-      hoveredPeakIdx,
+      hoveredPeakIdx: pinnedPeakIdx ?? hoveredPeakIdx,
       selectedPeakIdx,
+      solvent,
+      showNoise,
     });
-  }, [prediction, viewport, hoveredPeakIdx, selectedPeakIdx, height]);
+  }, [prediction, viewport, hoveredPeakIdx, selectedPeakIdx, height, solvent, showNoise, pinnedPeakIdx]);
 
   // Canvas mouse interactions
   const handleCanvasMouseMove = useCallback(
@@ -352,8 +360,11 @@ export default function NmrPanel({ store, onClose, height, onHeightChange, highl
 
       const hit = hitTestPeaks(hitBoxesRef.current, x, y);
       if (hit !== null) {
+        // QW-5: Toggle pin on click
+        setPinnedPeakIdx(prev => prev === hit ? null : hit);
         handlePeakHighlight(hit);
       } else {
+        setPinnedPeakIdx(null);
         handlePeakHighlight(null);
         setDragSelect({ startX: x, endX: x });
       }
@@ -647,11 +658,28 @@ export default function NmrPanel({ store, onClose, height, onHeightChange, highl
                 color: 'var(--kd-color-text-secondary, #a0a0a0)',
                 cursor: 'pointer',
               }}
-              title="Export spectrum as PNG"
+              title="Export spectrum as PNG (Ctrl+Shift+E)"
             >
               PNG
             </button>
           )}
+
+          {/* QW-10: Noise toggle */}
+          <button
+            onClick={() => setShowNoise(n => !n)}
+            style={{
+              padding: '2px 6px',
+              fontSize: 10,
+              border: '1px solid var(--kd-color-border, #333)',
+              borderRadius: 'var(--kd-radius-sm, 4px)',
+              background: showNoise ? 'var(--kd-color-accent-muted, rgba(77, 171, 247, 0.15))' : 'transparent',
+              color: showNoise ? 'var(--kd-color-accent, #4dabf7)' : 'var(--kd-color-text-secondary, #a0a0a0)',
+              cursor: 'pointer',
+            }}
+            title="Toggle baseline noise simulation"
+          >
+            Noise
+          </button>
         </div>
 
         <button
@@ -719,9 +747,11 @@ export default function NmrPanel({ store, onClose, height, onHeightChange, highl
           style={{ width: '100%', height: '100%' }}
         />
 
-        {/* Confidence tooltip — Sally's 3-tier design */}
-        {hoveredPeakIdx !== null && tooltipPos && prediction && (() => {
-          const peak = prediction.peaks[hoveredPeakIdx];
+        {/* Confidence tooltip — Sally's 3-tier design (with pin support QW-5) */}
+        {(pinnedPeakIdx ?? hoveredPeakIdx) !== null && tooltipPos && prediction && (() => {
+          const activeIdx = pinnedPeakIdx ?? hoveredPeakIdx;
+          if (activeIdx === null) return null;
+          const peak = prediction.peaks[activeIdx];
           if (!peak) return null;
           const conf = CONF_LABELS[peak.confidence] ?? { label: 'Unknown', color: '#888888' };
           const panelRect = panelRef.current?.getBoundingClientRect();
@@ -743,7 +773,7 @@ export default function NmrPanel({ store, onClose, height, onHeightChange, highl
                 borderLeft: `3px solid ${conf.color}`,
                 borderRadius: 8,
                 boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
-                pointerEvents: 'none',
+                pointerEvents: pinnedPeakIdx !== null ? 'auto' : 'none',
                 zIndex: 10,
                 fontFamily: 'var(--kd-font-mono, monospace)',
               }}
@@ -792,6 +822,18 @@ export default function NmrPanel({ store, onClose, height, onHeightChange, highl
             </div>
           );
         })()}
+      </div>
+
+      {/* QW-6: Version footer */}
+      <div style={{
+        padding: '2px 12px',
+        fontSize: 8,
+        color: 'var(--kd-color-text-muted, #555)',
+        textAlign: 'right',
+        flexShrink: 0,
+        borderTop: '1px solid var(--kd-color-border-subtle, #1a1a1a)',
+      }}>
+        Kendraw NMR v0.2.0 — Additive prediction engine
       </div>
 
       <style>{`

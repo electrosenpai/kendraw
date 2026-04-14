@@ -98,7 +98,7 @@ class ConvertService:
         elif input_format == "mol":
             mol = Chem.MolFromMolBlock(input_data)
         elif input_format == "inchi":
-            mol = inchi.MolFromInchi(input_data)
+            mol = inchi.MolFromInchi(input_data)  # type: ignore[no-untyped-call]
 
         if mol is None:
             msg = f"Failed to parse {input_format} input"
@@ -110,7 +110,7 @@ class ConvertService:
         elif output_format == "mol":
             return str(Chem.MolToMolBlock(mol))
         elif output_format == "inchi":
-            result = inchi.MolToInchi(mol)
+            result = inchi.MolToInchi(mol)  # type: ignore[no-untyped-call]
             if result is None:
                 msg = "Failed to generate InChI"
                 raise ValueError(msg)
