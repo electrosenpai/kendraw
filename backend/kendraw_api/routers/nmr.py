@@ -29,7 +29,9 @@ def predict_nmr(request: NmrRequest) -> NmrPrediction:
         )
     try:
         return _service.predict_nmr(
-            request.input, format=request.format, solvent=request.solvent,
+            request.input,
+            format=request.format,
+            solvent=request.solvent,
         )
     except ValueError as exc:
         status = 413 if "exceeds limit" in str(exc) else 400

@@ -13,12 +13,12 @@ from rdkit import Chem  # noqa: E402
 from kendraw_chem.nmr.additive import predict_additive  # noqa: E402
 
 
-def _predict(smiles: str, solvent: str = "CDCl3"):  # noqa: ANN202
+def _predict(smiles: str, solvent: str = "CDCl3"):
     mol = Chem.MolFromSmiles(smiles)
     return predict_additive(mol, solvent=solvent)
 
 
-def _find_peak_in_range(peaks, lo: float, hi: float):  # noqa: ANN001, ANN202
+def _find_peak_in_range(peaks, lo: float, hi: float):
     """Find a peak with shift_ppm in [lo, hi]."""
     for p in peaks:
         if lo <= p.shift_ppm <= hi:
@@ -30,6 +30,7 @@ def _find_peak_in_range(peaks, lo: float, hi: float):  # noqa: ANN001, ANN202
 # Ethanol (CCO)
 # Expected: CH3 triplet ~1.18, CH2 quartet ~3.69, OH singlet ~2.5 (CDCl3)
 # -----------------------------------------------------------------------
+
 
 class TestEthanol:
     def setup_method(self) -> None:
@@ -59,7 +60,6 @@ class TestEthanol:
         assert p.multiplicity == "q", f"Expected quartet, got {p.multiplicity}"
 
     def test_hydroxyl_present(self) -> None:
-        p = _find_peak_in_range(self.peaks, 1.5, 5.0)
         # OH can overlap with other peaks, just check it exists
         oh_peaks = [p for p in self.peaks if p.environment == "hydroxyl_oh"]
         assert len(oh_peaks) == 1
@@ -75,6 +75,7 @@ class TestEthanol:
 # Isopropanol (CC(C)O)
 # Expected: 2xCH3 doublet ~1.15, CH septet ~3.83, OH singlet
 # -----------------------------------------------------------------------
+
 
 class TestIsopropanol:
     def setup_method(self) -> None:
@@ -109,6 +110,7 @@ class TestIsopropanol:
 # Expected: CH3 doublet ~2.20, CHO quartet ~9.79
 # -----------------------------------------------------------------------
 
+
 class TestAcetaldehyde:
     def setup_method(self) -> None:
         self.peaks = _predict("CC=O")
@@ -141,6 +143,7 @@ class TestAcetaldehyde:
 # Ethyl Acetate (CCOC(C)=O)
 # Expected: CH3 triplet ~1.26, OCH2 quartet ~4.12, COCH3 singlet ~2.05
 # -----------------------------------------------------------------------
+
 
 class TestEthylAcetate:
     def setup_method(self) -> None:
@@ -175,6 +178,7 @@ class TestEthylAcetate:
 # Expected: 3xCH3 singlet ~1.28, OH singlet
 # -----------------------------------------------------------------------
 
+
 class TestTertButanol:
     def setup_method(self) -> None:
         self.peaks = _predict("CC(C)(C)O")
@@ -199,21 +203,22 @@ class TestTertButanol:
 # Solvent effect validation
 # -----------------------------------------------------------------------
 
+
 class TestSolventEffects:
     def test_dmso_shifts_oh_downfield(self) -> None:
         """DMSO-d6 should shift ethanol OH significantly downfield vs CDCl3."""
         cdcl3 = _predict("CCO", solvent="CDCl3")
         dmso = _predict("CCO", solvent="DMSO-d6")
-        oh_cdcl3 = [p for p in cdcl3 if p.environment == "hydroxyl_oh"][0]
-        oh_dmso = [p for p in dmso if p.environment == "hydroxyl_oh"][0]
+        oh_cdcl3 = next(p for p in cdcl3 if p.environment == "hydroxyl_oh")
+        oh_dmso = next(p for p in dmso if p.environment == "hydroxyl_oh")
         assert oh_dmso.shift_ppm > oh_cdcl3.shift_ppm + 0.5
 
     def test_c6d6_shifts_aromatic_upfield(self) -> None:
         """C6D6 should shift aromatic protons upfield vs CDCl3."""
         cdcl3 = _predict("c1ccccc1", solvent="CDCl3")
         c6d6 = _predict("c1ccccc1", solvent="C6D6")
-        ar_cdcl3 = [p for p in cdcl3 if p.environment == "aromatic"][0]
-        ar_c6d6 = [p for p in c6d6 if p.environment == "aromatic"][0]
+        ar_cdcl3 = next(p for p in cdcl3 if p.environment == "aromatic")
+        ar_c6d6 = next(p for p in c6d6 if p.environment == "aromatic")
         assert ar_c6d6.shift_ppm < ar_cdcl3.shift_ppm
 
     def test_all_solvents_produce_results(self) -> None:

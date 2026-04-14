@@ -9,7 +9,7 @@ Pure function: same mol + solvent always produces identical output.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from kendraw_chem.nmr.models import NmrPeak
 from kendraw_chem.nmr.shift_tables import (
@@ -24,7 +24,7 @@ from kendraw_chem.nmr.shift_tables import (
 )
 
 if TYPE_CHECKING:
-    from rdkit.Chem import Mol  # type: ignore[import-not-found]
+    from rdkit.Chem import Mol
 
 # Mapping from RDKit atomic number to substituent key
 _SUBSTITUENT_MAP: dict[int, str] = {
@@ -37,14 +37,16 @@ _SUBSTITUENT_MAP: dict[int, str] = {
 # Special base environments where the base shift already encodes the
 # neighbor's effect. When one of these is returned, the triggering
 # neighbor is excluded from substituent collection to avoid double-counting.
-_SPECIAL_ENVS = frozenset({
-    "alpha_to_halogen",
-    "alpha_to_carbonyl",
-    "alpha_to_oxygen",
-    "alpha_to_nitrogen",
-    "benzylic",
-    "allylic",
-})
+_SPECIAL_ENVS = frozenset(
+    {
+        "alpha_to_halogen",
+        "alpha_to_carbonyl",
+        "alpha_to_oxygen",
+        "alpha_to_nitrogen",
+        "benzylic",
+        "allylic",
+    }
+)
 
 
 def _classify_h_environment(
@@ -56,7 +58,7 @@ def _classify_h_environment(
 
     Returns (base_environment_key, list_of_substituent_keys).
     """
-    from rdkit import Chem  # type: ignore[import-not-found]
+    from rdkit import Chem
 
     parent = mol.GetAtomWithIdx(parent_idx)
     parent_num = parent.GetAtomicNum()
@@ -68,13 +70,8 @@ def _classify_h_environment(
             if nbr.GetAtomicNum() == 6:
                 for nbr2 in nbr.GetNeighbors():
                     if nbr2.GetAtomicNum() == 8:
-                        bond = mol.GetBondBetweenAtoms(
-                            nbr.GetIdx(), nbr2.GetIdx()
-                        )
-                        if (
-                            bond is not None
-                            and bond.GetBondTypeAsDouble() == 2.0
-                        ):
+                        bond = mol.GetBondBetweenAtoms(nbr.GetIdx(), nbr2.GetIdx())
+                        if bond is not None and bond.GetBondTypeAsDouble() == 2.0:
                             return "amide_nh", []
         return "amine_nh", []
 
@@ -82,17 +79,9 @@ def _classify_h_environment(
         for nbr in parent.GetNeighbors():
             if nbr.GetAtomicNum() == 6:
                 for nbr2 in nbr.GetNeighbors():
-                    if (
-                        nbr2.GetAtomicNum() == 8
-                        and nbr2.GetIdx() != parent_idx
-                    ):
-                        bond = mol.GetBondBetweenAtoms(
-                            nbr.GetIdx(), nbr2.GetIdx()
-                        )
-                        if (
-                            bond is not None
-                            and bond.GetBondTypeAsDouble() == 2.0
-                        ):
+                    if nbr2.GetAtomicNum() == 8 and nbr2.GetIdx() != parent_idx:
+                        bond = mol.GetBondBetweenAtoms(nbr.GetIdx(), nbr2.GetIdx())
+                        if bond is not None and bond.GetBondTypeAsDouble() == 2.0:
                             return "carboxylic_acid", []
         return "hydroxyl_oh", []
 
@@ -124,9 +113,7 @@ def _classify_h_environment(
             base_env = "aldehyde" if is_aldehyde else "vinyl"
     else:
         # SP3 carbon
-        h_count = sum(
-            1 for n in parent.GetNeighbors() if n.GetAtomicNum() == 1
-        )
+        h_count = sum(1 for n in parent.GetNeighbors() if n.GetAtomicNum() == 1)
         base_env, exclude_idx = _classify_sp3_carbon(mol, parent_idx, h_count)
 
     # Collect alpha substituents
@@ -137,7 +124,9 @@ def _classify_h_environment(
 
 
 def _classify_sp3_carbon(
-    mol: Mol, c_idx: int, h_count: int,
+    mol: Mol,
+    c_idx: int,
+    h_count: int,
 ) -> tuple[str, int | None]:
     """Classify an sp3 carbon's H environment based on neighbors."""
     from rdkit import Chem
@@ -170,11 +159,7 @@ def _classify_sp3_carbon(
         if nbr_num == 6 and nbr.GetIsAromatic():
             return "benzylic", nbr.GetIdx()
         # Allylic (bonded to sp2 carbon that's not aromatic)
-        if (
-            nbr_num == 6
-            and nbr.GetHybridization() == hyb.SP2
-            and not nbr.GetIsAromatic()
-        ):
+        if nbr_num == 6 and nbr.GetHybridization() == hyb.SP2 and not nbr.GetIsAromatic():
             return "allylic", nbr.GetIdx()
 
     if h_count >= 3:
@@ -215,10 +200,7 @@ def _collect_substituents(
                 has_oh = False
                 has_or = False
                 for nbr2 in atom.GetNeighbors():
-                    if (
-                        nbr2.GetAtomicNum() == 8
-                        and nbr2.GetIdx() != nbr.GetIdx()
-                    ):
+                    if nbr2.GetAtomicNum() == 8 and nbr2.GetIdx() != nbr.GetIdx():
                         if nbr2.GetTotalNumHs() > 0:
                             has_oh = True
                         else:
@@ -239,9 +221,7 @@ def _collect_substituents(
 
         # Nitrogen-based substituents
         if nbr_num == 7:
-            o_count = sum(
-                1 for n2 in nbr.GetNeighbors() if n2.GetAtomicNum() == 8
-            )
+            o_count = sum(1 for n2 in nbr.GetNeighbors() if n2.GetAtomicNum() == 8)
             if o_count >= 2:
                 subs.append("NO2")
             elif nbr.GetTotalNumHs() >= 2:
@@ -269,13 +249,8 @@ def _collect_substituents(
                     subs.append("C=C")
                 for nbr2 in nbr.GetNeighbors():
                     if nbr2.GetAtomicNum() == 7:
-                        cn_bond = mol.GetBondBetweenAtoms(
-                            nbr.GetIdx(), nbr2.GetIdx()
-                        )
-                        if (
-                            cn_bond is not None
-                            and cn_bond.GetBondTypeAsDouble() == 3.0
-                        ):
+                        cn_bond = mol.GetBondBetweenAtoms(nbr.GetIdx(), nbr2.GetIdx())
+                        if cn_bond is not None and cn_bond.GetBondTypeAsDouble() == 3.0:
                             subs.append("CN")
             continue
 
@@ -283,7 +258,8 @@ def _collect_substituents(
 
 
 def _compute_aromatic_shift(
-    mol: Mol, parent_idx: int,
+    mol: Mol,
+    parent_idx: int,
 ) -> tuple[float, bool, bool]:
     """Compute aromatic proton shift with substituent and heterocycle effects.
 
@@ -332,10 +308,7 @@ def _compute_aromatic_shift(
                 # Skip atoms that are part of a fused aromatic ring —
                 # their electronic influence is too complex for simple
                 # Hammett corrections and causes over-correction.
-                if (
-                    nbr.GetIsAromatic()
-                    and ring_info.NumAtomRings(nbr.GetIdx()) > 0
-                ):
+                if nbr.GetIsAromatic() and ring_info.NumAtomRings(nbr.GetIdx()) > 0:
                     continue
 
                 dist = min(
@@ -350,9 +323,7 @@ def _compute_aromatic_shift(
 
                 sub_key = _classify_ring_substituent(mol, nbr)
                 if sub_key and sub_key in AROMATIC_SUBSTITUENT_EFFECTS:
-                    effect = AROMATIC_SUBSTITUENT_EFFECTS[sub_key].get(
-                        pos_key, 0.0
-                    )
+                    effect = AROMATIC_SUBSTITUENT_EFFECTS[sub_key].get(pos_key, 0.0)
                     correction += effect
 
     if ring_count == 0:
@@ -365,7 +336,7 @@ _HETEROATOM_SYMBOLS: dict[int, str] = {7: "N", 8: "O", 16: "S"}
 
 
 def _is_in_fused_system(
-    ring_info,  # noqa: ANN001
+    ring_info: Any,
     ring_atoms: tuple[int, ...],
 ) -> bool:
     """Check if a ring shares atoms with any other ring (fused system)."""
@@ -380,7 +351,7 @@ def _is_in_fused_system(
 def _heterocyclic_shift(
     mol: Mol,
     parent_idx: int,
-    ring_info,  # noqa: ANN001
+    ring_info: Any,
 ) -> tuple[float, bool] | None:
     """Compute shift for a proton on a heterocyclic aromatic ring.
 
@@ -451,10 +422,7 @@ def _heterocyclic_shift(
         is_fused = _is_in_fused_system(ring_info, tuple(ring_list))
         if is_fused:
             benzene_base = BASE_SHIFTS["aromatic"]
-            if ring_size == 5:
-                factor = 0.3 if len(heteroatoms) >= 2 else 0.7
-            else:
-                factor = 1.0
+            factor = (0.3 if len(heteroatoms) >= 2 else 0.7) if ring_size == 5 else 1.0
             shift = benzene_base + factor * (shift - benzene_base)
 
         return round(shift, 2), is_fused
@@ -462,7 +430,7 @@ def _heterocyclic_shift(
     return None
 
 
-def _classify_ring_substituent(mol: Mol, atom) -> str | None:  # noqa: ANN001
+def _classify_ring_substituent(mol: Mol, atom: Any) -> str | None:
     """Classify a substituent atom attached to an aromatic ring."""
     num = atom.GetAtomicNum()
 
@@ -472,17 +440,14 @@ def _classify_ring_substituent(mol: Mol, atom) -> str | None:  # noqa: ANN001
     if num == 8:
         for nbr in atom.GetNeighbors():
             bond = mol.GetBondBetweenAtoms(atom.GetIdx(), nbr.GetIdx())
-            if bond is not None and bond.GetBondTypeAsDouble() == 2.0:
-                if nbr.GetAtomicNum() == 6:
-                    return "C=O_ketone"
+            if bond is not None and bond.GetBondTypeAsDouble() == 2.0 and nbr.GetAtomicNum() == 6:
+                return "C=O_ketone"
         if atom.GetTotalNumHs() > 0:
             return "OH"
         return "OR"
 
     if num == 7:
-        o_count = sum(
-            1 for n in atom.GetNeighbors() if n.GetAtomicNum() == 8
-        )
+        o_count = sum(1 for n in atom.GetNeighbors() if n.GetAtomicNum() == 8)
         if o_count >= 2:
             return "NO2"
         if atom.GetTotalNumHs() >= 2:
@@ -500,10 +465,7 @@ def _classify_ring_substituent(mol: Mol, atom) -> str | None:  # noqa: ANN001
                 bond = mol.GetBondBetweenAtoms(atom.GetIdx(), nbr.GetIdx())
                 if bond is not None and bond.GetBondTypeAsDouble() == 2.0:
                     for nbr2 in atom.GetNeighbors():
-                        if (
-                            nbr2.GetAtomicNum() == 8
-                            and nbr2.GetIdx() != nbr.GetIdx()
-                        ):
+                        if nbr2.GetAtomicNum() == 8 and nbr2.GetIdx() != nbr.GetIdx():
                             return "COOH"
                     if atom.GetTotalNumHs() > 0:
                         return "CHO"
@@ -528,7 +490,9 @@ def _confidence_from_counts(env_key: str) -> int:
 
 
 def _apply_solvent_correction(
-    shift: float, env_key: str, solvent: str,
+    shift: float,
+    env_key: str,
+    solvent: str,
 ) -> float:
     """Apply solvent-dependent shift correction."""
     offsets = SOLVENT_PROTON_OFFSETS.get(solvent, {})
@@ -539,6 +503,7 @@ def _apply_solvent_correction(
 # ---------------------------------------------------------------------------
 # Multiplicity computation
 # ---------------------------------------------------------------------------
+
 
 def _compute_multiplicity_and_coupling(
     mol: Mol,
@@ -553,8 +518,11 @@ def _compute_multiplicity_and_coupling(
     """
     # Heteroatom-bound protons are typically singlets (broad)
     if env_key in (
-        "hydroxyl_oh", "amine_nh", "amide_nh",
-        "carboxylic_acid", "thiol_sh",
+        "hydroxyl_oh",
+        "amine_nh",
+        "amide_nh",
+        "carboxylic_acid",
+        "thiol_sh",
     ):
         return "s", []
 
@@ -590,7 +558,9 @@ def _compute_multiplicity_and_coupling(
 
 
 def _count_vicinal_h(
-    mol: Mol, parent_idx: int, own_h_indices: list[int],
+    mol: Mol,
+    parent_idx: int,
+    own_h_indices: list[int],
 ) -> int:
     """Count hydrogen atoms 3 bonds away from parent carbon (vicinal H).
 
@@ -618,7 +588,9 @@ def _count_vicinal_h(
 
 
 def _aromatic_multiplicity(
-    mol: Mol, parent_idx: int, own_h_indices: list[int],
+    mol: Mol,
+    parent_idx: int,
+    own_h_indices: list[int],
 ) -> tuple[str, list[float]]:
     """Compute aromatic proton multiplicity from ortho-H neighbors."""
     parent = mol.GetAtomWithIdx(parent_idx)
@@ -645,8 +617,13 @@ def _aromatic_multiplicity(
 def _multiplicity_from_count(n: int) -> str:
     """Convert number of coupled protons to multiplicity string (n+1 rule)."""
     labels = {
-        0: "s", 1: "d", 2: "t", 3: "q",
-        4: "quint", 5: "sext", 6: "sept",
+        0: "s",
+        1: "d",
+        2: "t",
+        3: "q",
+        4: "quint",
+        5: "sext",
+        6: "sept",
     }
     return labels.get(n, "m")
 
@@ -654,6 +631,7 @@ def _multiplicity_from_count(n: int) -> str:
 # ---------------------------------------------------------------------------
 # Main prediction function
 # ---------------------------------------------------------------------------
+
 
 def predict_additive(
     mol: Mol,
@@ -670,7 +648,7 @@ def predict_additive(
     mol_h = Chem.AddHs(mol)
 
     # Collect raw predictions per hydrogen
-    raw_predictions: list[tuple[int, int, float, str, int]] = []
+    raw_predictions: list[tuple[int, int, float, str, int, str]] = []
 
     for atom in mol_h.GetAtoms():
         if atom.GetAtomicNum() != 1:
@@ -682,17 +660,15 @@ def predict_additive(
             continue
         parent_idx = neighbors[0].GetIdx()
 
-        env_key, substituent_keys = _classify_h_environment(
-            mol_h, h_idx, parent_idx
-        )
+        env_key, substituent_keys = _classify_h_environment(mol_h, h_idx, parent_idx)
 
         # Base shift — special handling for aromatic
         skip_increments = False
         is_heterocyclic = False
         is_fused_heterocyclic = False
         if env_key == "aromatic":
-            base_shift, is_heterocyclic, is_fused_heterocyclic = (
-                _compute_aromatic_shift(mol_h, parent_idx)
+            base_shift, is_heterocyclic, is_fused_heterocyclic = _compute_aromatic_shift(
+                mol_h, parent_idx
             )
             skip_increments = is_heterocyclic
         else:
@@ -725,9 +701,7 @@ def predict_additive(
         else:
             method = "additive"
 
-        raw_predictions.append(
-            (h_idx, parent_idx, shift_ppm, env_key, confidence, method)
-        )
+        raw_predictions.append((h_idx, parent_idx, shift_ppm, env_key, confidence, method))
 
     # Group equivalent protons (same shift and same environment)
     groups: dict[tuple[float, str], list[int]] = {}
@@ -754,7 +728,10 @@ def predict_additive(
         parent_idx = parent_map[(shift, env)]
 
         mult, coupling = _compute_multiplicity_and_coupling(
-            mol_h, parent_idx, env, sorted_indices,
+            mol_h,
+            parent_idx,
+            env,
+            sorted_indices,
         )
 
         peaks.append(

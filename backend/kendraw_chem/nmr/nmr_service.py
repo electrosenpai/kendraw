@@ -25,7 +25,7 @@ class NmrService:
     def __init__(self) -> None:
         self._rdkit_available = False
         try:
-            from rdkit import Chem  # type: ignore[import-not-found]  # noqa: F401
+            from rdkit import Chem  # noqa: F401
 
             self._rdkit_available = True
         except ImportError:
@@ -51,10 +51,7 @@ class NmrService:
             ValueError: If input is invalid or molecule exceeds atom limit.
         """
         if solvent not in SOLVENT_IDS:
-            msg = (
-                f"Unsupported solvent: {solvent!r}. "
-                f"Supported: {', '.join(SOLVENT_IDS)}"
-            )
+            msg = f"Unsupported solvent: {solvent!r}. Supported: {', '.join(SOLVENT_IDS)}"
             raise ValueError(msg)
 
         if not self._rdkit_available:
@@ -62,7 +59,10 @@ class NmrService:
         return self._predict_rdkit(input_str, format, solvent)
 
     def _predict_rdkit(
-        self, input_str: str, format: str, solvent: str,
+        self,
+        input_str: str,
+        format: str,
+        solvent: str,
     ) -> NmrPrediction:
         from kendraw_settings.config import get_settings
 
@@ -72,10 +72,7 @@ class NmrService:
         settings = get_settings()
         num_atoms = mol.GetNumAtoms()
         if num_atoms > settings.max_mol_atoms:
-            msg = (
-                f"Molecule has {num_atoms} atoms, "
-                f"exceeds limit of {settings.max_mol_atoms}"
-            )
+            msg = f"Molecule has {num_atoms} atoms, exceeds limit of {settings.max_mol_atoms}"
             raise ValueError(msg)
 
         # Run additive prediction

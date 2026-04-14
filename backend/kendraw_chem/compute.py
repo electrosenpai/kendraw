@@ -28,7 +28,7 @@ class ComputeService:
     def __init__(self) -> None:
         self._rdkit_available = False
         try:
-            from rdkit import Chem  # type: ignore[import-not-found]  # noqa: F401
+            from rdkit import Chem  # noqa: F401
 
             self._rdkit_available = True
         except ImportError:
@@ -55,7 +55,7 @@ class ComputeService:
 
     def _compute_rdkit(self, smiles: str) -> MolecularProperties:
         from rdkit import Chem
-        from rdkit.Chem import Descriptors, inchi  # type: ignore[import-not-found]
+        from rdkit.Chem import Descriptors, inchi
 
         mol = Chem.MolFromSmiles(smiles)
         if mol is None:

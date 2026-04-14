@@ -40,7 +40,7 @@ BASE_SHIFTS: dict[str, float] = {
     # Alpha to electronegative groups — CRITICAL: these encode the alpha effect
     "alpha_to_carbonyl": 2.1,
     "alpha_to_halogen": 3.5,
-    "alpha_to_oxygen": 3.4,    # R-CH2-OR / R-CH2-OH  (was missing — MF-1 fix)
+    "alpha_to_oxygen": 3.4,  # R-CH2-OR / R-CH2-OH  (was missing — MF-1 fix)
     "alpha_to_nitrogen": 2.6,  # R-CH2-NR2 / R-CH2-NH2 (was missing — MF-1 fix)
     # Unsaturated C-H
     "vinyl": 5.3,
@@ -52,7 +52,7 @@ BASE_SHIFTS: dict[str, float] = {
     "amide_nh": 7.5,
     "amine_nh": 1.5,
     "hydroxyl_oh": 2.5,  # CDCl3 default; highly solvent-dependent
-    "thiol_sh": 1.6,     # R-SH (was missing — SF-1 fix)
+    "thiol_sh": 1.6,  # R-SH (was missing — SF-1 fix)
 }
 
 # ---------------------------------------------------------------------------
@@ -96,27 +96,27 @@ SUBSTITUENT_INCREMENTS: dict[str, float] = {
 AROMATIC_SUBSTITUENT_EFFECTS: dict[str, dict[str, float]] = {
     # format: { substituent_type: { "ortho": delta, "meta": delta, "para": delta } }
     # Electron-donating groups (shield, shift upfield = negative)
-    "NH2":  {"ortho": -0.75, "meta": -0.25, "para": -0.65},
-    "OH":   {"ortho": -0.56, "meta": -0.12, "para": -0.45},
-    "OR":   {"ortho": -0.48, "meta": -0.09, "para": -0.44},
-    "NR2":  {"ortho": -0.66, "meta": -0.18, "para": -0.67},
+    "NH2": {"ortho": -0.75, "meta": -0.25, "para": -0.65},
+    "OH": {"ortho": -0.56, "meta": -0.12, "para": -0.45},
+    "OR": {"ortho": -0.48, "meta": -0.09, "para": -0.44},
+    "NR2": {"ortho": -0.66, "meta": -0.18, "para": -0.67},
     "alkyl": {"ortho": -0.14, "meta": -0.06, "para": -0.17},
     "phenyl": {"ortho": 0.37, "meta": 0.20, "para": 0.10},
     # Electron-withdrawing groups (deshield, shift downfield = positive)
-    "NO2":  {"ortho": 0.95, "meta": 0.26, "para": 0.38},
-    "CN":   {"ortho": 0.36, "meta": 0.18, "para": 0.28},
+    "NO2": {"ortho": 0.95, "meta": 0.26, "para": 0.38},
+    "CN": {"ortho": 0.36, "meta": 0.18, "para": 0.28},
     "COOH": {"ortho": 0.85, "meta": 0.18, "para": 0.27},
     "COOR": {"ortho": 0.71, "meta": 0.11, "para": 0.21},
     "C=O_ketone": {"ortho": 0.62, "meta": 0.14, "para": 0.21},
-    "CHO":  {"ortho": 0.56, "meta": 0.22, "para": 0.29},
+    "CHO": {"ortho": 0.56, "meta": 0.22, "para": 0.29},
     # Halogens (mixed inductive/resonance)
-    "F":    {"ortho": -0.26, "meta": 0.00, "para": -0.20},
-    "Cl":   {"ortho": 0.03, "meta": -0.02, "para": -0.09},
-    "Br":   {"ortho": 0.18, "meta": -0.08, "para": -0.04},
-    "I":    {"ortho": 0.39, "meta": -0.21, "para": 0.00},
+    "F": {"ortho": -0.26, "meta": 0.00, "para": -0.20},
+    "Cl": {"ortho": 0.03, "meta": -0.02, "para": -0.09},
+    "Br": {"ortho": 0.18, "meta": -0.08, "para": -0.04},
+    "I": {"ortho": 0.39, "meta": -0.21, "para": 0.00},
     # Sulfur
-    "SH":   {"ortho": -0.08, "meta": -0.10, "para": -0.24},
-    "SR":   {"ortho": -0.03, "meta": -0.08, "para": -0.18},
+    "SH": {"ortho": -0.08, "meta": -0.10, "para": -0.24},
+    "SR": {"ortho": -0.03, "meta": -0.08, "para": -0.18},
 }
 
 # ---------------------------------------------------------------------------
@@ -131,18 +131,18 @@ AROMATIC_SUBSTITUENT_EFFECTS: dict[str, dict[str, float]] = {
 HETEROCYCLIC_SHIFTS: dict[tuple[str, int, str], float] = {
     # Pyridine (6-membered, N)
     ("N", 6, "alpha"): 8.50,
-    ("N", 6, "beta"):  7.20,
+    ("N", 6, "beta"): 7.20,
     ("N", 6, "gamma"): 7.60,
     # Pyrimidine (6-membered, 2x N) — use same as pyridine alpha for simplicity
     # Pyrrole (5-membered, N)
     ("N", 5, "alpha"): 6.70,
-    ("N", 5, "beta"):  6.20,
+    ("N", 5, "beta"): 6.20,
     # Furan (5-membered, O)
     ("O", 5, "alpha"): 7.40,
-    ("O", 5, "beta"):  6.30,
+    ("O", 5, "beta"): 6.30,
     # Thiophene (5-membered, S)
     ("S", 5, "alpha"): 7.20,
-    ("S", 5, "beta"):  7.00,
+    ("S", 5, "beta"): 7.00,
 }
 
 # ---------------------------------------------------------------------------
@@ -187,7 +187,7 @@ SOLVENT_PROTON_OFFSETS: dict[str, SolventProfile] = {
         "aromatic": 0.01,
         "aldehyde": 0.04,
         "hydroxyl_oh": 0.0,  # OH exchanges with CD3OD — often invisible
-        "amine_nh": 0.0,     # NH exchanges — often invisible
+        "amine_nh": 0.0,  # NH exchanges — often invisible
         "thiol_sh": 0.14,
         "alkyne_terminal": 0.02,
     },
@@ -241,7 +241,7 @@ SOLVENT_PROTON_OFFSETS: dict[str, SolventProfile] = {
         "aromatic": 0.00,
         "aldehyde": 0.02,
         "hydroxyl_oh": 0.0,  # OH exchanges with D2O — disappears
-        "amine_nh": 0.0,     # NH exchanges — disappears
+        "amine_nh": 0.0,  # NH exchanges — disappears
         "thiol_sh": 0.08,
         "alkyne_terminal": 0.02,
     },
@@ -264,21 +264,21 @@ SOLVENT_RESIDUAL_PEAKS: dict[str, list[dict[str, float | str]]] = {
 
 J_COUPLING_CONSTANTS: dict[str, float] = {
     # Vicinal (3-bond) couplings
-    "vicinal_sp3_sp3": 7.0,        # H-C-C-H (both sp3), Karplus average
-    "vicinal_sp3_sp2": 6.5,        # H-C-C=X
+    "vicinal_sp3_sp3": 7.0,  # H-C-C-H (both sp3), Karplus average
+    "vicinal_sp3_sp2": 6.5,  # H-C-C=X
     "vicinal_sp2_sp2_trans": 16.0,  # H-C=C-H trans (alkene)
-    "vicinal_sp2_sp2_cis": 10.0,   # H-C=C-H cis (alkene)
+    "vicinal_sp2_sp2_cis": 10.0,  # H-C=C-H cis (alkene)
     "vicinal_aromatic_ortho": 7.8,  # Aromatic ortho coupling
-    "vicinal_aldehyde": 2.8,        # H-C-C(=O)H
-    "vicinal_alpha_hetero": 6.1,    # H-C-X-C-H (through heteroatom)
+    "vicinal_aldehyde": 2.8,  # H-C-C(=O)H
+    "vicinal_alpha_hetero": 6.1,  # H-C-X-C-H (through heteroatom)
     # Geminal (2-bond) couplings
-    "geminal_sp3": -12.0,           # H-C-H (sp3, usually not resolved)
-    "geminal_sp2": 2.1,             # H-C=H (terminal alkene)
+    "geminal_sp3": -12.0,  # H-C-H (sp3, usually not resolved)
+    "geminal_sp2": 2.1,  # H-C=H (terminal alkene)
     # Long-range (4-bond) couplings
     "long_range_aromatic_meta": 1.8,  # Aromatic meta coupling
     "long_range_aromatic_para": 0.7,  # Aromatic para coupling
-    "long_range_allylic": 1.6,       # Allylic coupling through pi system
-    "long_range_benzylic": 1.5,      # Benzylic coupling
+    "long_range_allylic": 1.6,  # Allylic coupling through pi system
+    "long_range_benzylic": 1.5,  # Benzylic coupling
 }
 
 # ---------------------------------------------------------------------------

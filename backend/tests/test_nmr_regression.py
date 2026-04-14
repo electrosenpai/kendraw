@@ -21,19 +21,19 @@ import pytest
 
 rdkit = pytest.importorskip("rdkit")
 
-from rdkit import Chem
+from rdkit import Chem  # noqa: E402
 
-from kendraw_chem.nmr.additive import (
-    _is_in_fused_system,
+from kendraw_chem.nmr.additive import (  # noqa: E402
     _heterocyclic_shift,
+    _is_in_fused_system,
     predict_additive,
 )
-from kendraw_chem.nmr.models import NmrPeak
-
+from kendraw_chem.nmr.models import NmrPeak  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _predict(smiles: str, solvent: str = "CDCl3") -> list[NmrPeak]:
     mol = Chem.MolFromSmiles(smiles)
@@ -56,6 +56,7 @@ def _peaks_in(peaks: list[NmrPeak], lo: float, hi: float) -> list[NmrPeak]:
 # =========================================================================
 # 1. ALIPHATIC SIMPLE
 # =========================================================================
+
 
 class TestAliphaticRegression:
     """Aliphatic proton predictions must remain stable."""
@@ -116,6 +117,7 @@ class TestAliphaticRegression:
 # 2. AROMATIC SIMPLE
 # =========================================================================
 
+
 class TestAromaticRegression:
     """Benzene-based aromatic predictions."""
 
@@ -144,7 +146,6 @@ class TestAromaticRegression:
 
     def test_nitrobenzene_deshielded(self) -> None:
         """[O-][N+](=O)c1ccccc1 — EWG deshields ortho H."""
-        peaks = _predict("[O-][N+](=O)c1ccccc1")
         shifts = _shifts("[O-][N+](=O)c1ccccc1")
         assert max(shifts) > 7.5, "Nitrobenzene ortho should be deshielded"
 
@@ -171,12 +172,12 @@ class TestAromaticRegression:
 # 3. SIMPLE HETEROCYCLES
 # =========================================================================
 
+
 class TestSimpleHeterocycleRegression:
     """Simple (unfused) heterocyclic aromatics — the B-2 fix."""
 
     def test_pyridine_alpha(self) -> None:
         """c1ccncc1 — alpha H ~8.5 ppm. MUST NOT REGRESS."""
-        peaks = _predict("c1ccncc1")
         shifts = _shifts("c1ccncc1")
         assert any(8.0 <= s <= 9.0 for s in shifts), "Pyridine alpha missing"
 
@@ -231,6 +232,7 @@ class TestSimpleHeterocycleRegression:
 # 4. FUSED HETEROCYCLES (NB-1 regression)
 # =========================================================================
 
+
 class TestFusedHeterocycleRegression:
     """Fused heterocyclic systems — the V3 regression that was fixed."""
 
@@ -255,7 +257,6 @@ class TestFusedHeterocycleRegression:
 
     def test_quinoline_alpha(self) -> None:
         """Quinoline H2 (alpha to N) should be > 8.0."""
-        peaks = _predict("c1ccc2ncccc2c1")
         shifts = _shifts("c1ccc2ncccc2c1")
         assert max(shifts) > 8.0, "Quinoline H2 too low"
 
@@ -317,6 +318,7 @@ class TestFusedHeterocycleRegression:
 # 5. PHARMACEUTICAL MOLECULES
 # =========================================================================
 
+
 class TestPharmaRegression:
     """Common pharmaceutical molecules."""
 
@@ -355,6 +357,7 @@ class TestPharmaRegression:
 # =========================================================================
 # 6. SOLVENT EFFECTS
 # =========================================================================
+
 
 class TestSolventRegression:
     """Solvent-dependent shift corrections."""
@@ -398,7 +401,7 @@ class TestSolventRegression:
         """Same SMILES + solvent → identical results."""
         r1 = _predict("CCO", "CDCl3")
         r2 = _predict("CCO", "CDCl3")
-        for p1, p2 in zip(r1, r2):
+        for p1, p2 in zip(r1, r2, strict=True):
             assert p1.shift_ppm == p2.shift_ppm
             assert p1.multiplicity == p2.multiplicity
 
@@ -406,6 +409,7 @@ class TestSolventRegression:
 # =========================================================================
 # 7. CONFIDENCE SCORING
 # =========================================================================
+
 
 class TestConfidenceRegression:
     """Confidence tiers must be correctly assigned by ring topology."""
@@ -465,6 +469,7 @@ class TestConfidenceRegression:
 # 8. METHOD STRINGS
 # =========================================================================
 
+
 class TestMethodRegression:
     """Method strings must reflect the prediction pathway used."""
 
@@ -502,6 +507,7 @@ class TestMethodRegression:
 # =========================================================================
 # 9. MULTIPLICITY AND COUPLING
 # =========================================================================
+
 
 class TestMultiplicityRegression:
     """Multiplicity patterns must match chemical topology."""
@@ -557,6 +563,7 @@ class TestMultiplicityRegression:
 # 10. RING DETECTION HELPERS
 # =========================================================================
 
+
 class TestRingHelpers:
     """Unit tests for fused ring detection functions."""
 
@@ -602,7 +609,7 @@ class TestRingHelpers:
                 continue
             result = _heterocyclic_shift(mol, parent.GetIdx(), ri)
             if result is not None:
-                shift, is_fused = result
+                _shift, is_fused = result
                 assert is_fused is True
                 found = True
                 break
@@ -629,6 +636,7 @@ class TestRingHelpers:
 # 11. EDGE CASES
 # =========================================================================
 
+
 class TestEdgeCases:
     """Boundary conditions and unusual molecules."""
 
@@ -641,7 +649,6 @@ class TestEdgeCases:
     def test_empty_peaks_for_no_h(self) -> None:
         """CCl4 — no protons, empty peaks list."""
         peaks = _predict("ClC(Cl)(Cl)Cl")
-        h_peaks = [p for p in peaks if p.environment != ""]
         # CCl4 has no H atoms — should be empty
         assert len(peaks) == 0
 

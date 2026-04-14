@@ -7,9 +7,7 @@ from kendraw_api.main import app
 
 async def test_nmr_endpoint_valid_smiles() -> None:
     """POST /compute/nmr with valid SMILES returns 200 with prediction."""
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         r = await client.post(
             "/compute/nmr",
             json={"input": "CCO", "format": "smiles", "nucleus": "1H"},
@@ -24,9 +22,7 @@ async def test_nmr_endpoint_valid_smiles() -> None:
 
 async def test_nmr_endpoint_default_params() -> None:
     """POST /compute/nmr with only input uses default format and nucleus."""
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         r = await client.post("/compute/nmr", json={"input": "C"})
     assert r.status_code == 200
     data = r.json()
@@ -35,9 +31,7 @@ async def test_nmr_endpoint_default_params() -> None:
 
 async def test_nmr_endpoint_invalid_smiles_returns_400() -> None:
     """POST /compute/nmr with invalid SMILES returns 400."""
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         r = await client.post(
             "/compute/nmr",
             json={"input": "INVALID", "format": "smiles", "nucleus": "1H"},
@@ -56,9 +50,7 @@ async def test_nmr_endpoint_invalid_smiles_returns_400() -> None:
 
 async def test_nmr_endpoint_unsupported_nucleus_returns_400() -> None:
     """POST /compute/nmr with unsupported nucleus returns 400."""
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         r = await client.post(
             "/compute/nmr",
             json={"input": "CCO", "format": "smiles", "nucleus": "13C"},
@@ -69,9 +61,7 @@ async def test_nmr_endpoint_unsupported_nucleus_returns_400() -> None:
 
 async def test_nmr_endpoint_response_structure() -> None:
     """Response JSON matches NmrPrediction schema."""
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         r = await client.post(
             "/compute/nmr",
             json={"input": "CCO", "format": "smiles", "nucleus": "1H"},
@@ -86,9 +76,7 @@ async def test_nmr_endpoint_response_structure() -> None:
 
 async def test_nmr_endpoint_in_openapi() -> None:
     """NMR endpoint appears in OpenAPI schema."""
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         r = await client.get("/openapi.json")
     assert r.status_code == 200
     schema = r.json()
@@ -109,9 +97,7 @@ async def test_nmr_endpoint_atom_limit_returns_413() -> None:
 
     with patch("kendraw_settings.config.get_settings") as mock_settings:
         mock_settings.return_value.max_mol_atoms = 2
-        async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test"
-        ) as client:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             r = await client.post(
                 "/compute/nmr",
                 json={"input": "CCCCCC", "format": "smiles", "nucleus": "1H"},
@@ -126,9 +112,7 @@ async def test_nmr_endpoint_stub_returns_200() -> None:
 
     service = NmrService()
     if not service._rdkit_available:
-        async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test"
-        ) as client:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             r = await client.post(
                 "/compute/nmr",
                 json={"input": "CCO", "format": "smiles", "nucleus": "1H"},

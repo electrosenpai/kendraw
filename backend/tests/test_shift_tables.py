@@ -106,9 +106,7 @@ def test_substituent_increments_values_in_reasonable_range() -> None:
     from kendraw_chem.nmr.shift_tables import SUBSTITUENT_INCREMENTS
 
     for key, value in SUBSTITUENT_INCREMENTS.items():
-        assert -2.0 <= value <= 2.0, (
-            f"SUBSTITUENT_INCREMENTS[{key!r}] = {value} out of range"
-        )
+        assert -2.0 <= value <= 2.0, f"SUBSTITUENT_INCREMENTS[{key!r}] = {value} out of range"
 
 
 def test_confidence_counts_are_positive_integers() -> None:
@@ -137,9 +135,7 @@ def test_confidence_counts_no_orphaned_keys() -> None:
     from kendraw_chem.nmr.shift_tables import BASE_SHIFTS, CONFIDENCE_REFERENCE_COUNTS
 
     for key in CONFIDENCE_REFERENCE_COUNTS:
-        assert key in BASE_SHIFTS, (
-            f"Orphaned confidence key not in BASE_SHIFTS: {key}"
-        )
+        assert key in BASE_SHIFTS, f"Orphaned confidence key not in BASE_SHIFTS: {key}"
 
 
 def test_base_shifts_required_environments() -> None:
@@ -147,8 +143,14 @@ def test_base_shifts_required_environments() -> None:
     from kendraw_chem.nmr.shift_tables import BASE_SHIFTS
 
     required = {
-        "methyl", "methylene", "aromatic", "aldehyde", "carboxylic_acid",
-        "alpha_to_oxygen", "alpha_to_nitrogen", "thiol_sh",
+        "methyl",
+        "methylene",
+        "aromatic",
+        "aldehyde",
+        "carboxylic_acid",
+        "alpha_to_oxygen",
+        "alpha_to_nitrogen",
+        "thiol_sh",
     }
     for env in required:
         assert env in BASE_SHIFTS, f"Missing required environment: {env}"

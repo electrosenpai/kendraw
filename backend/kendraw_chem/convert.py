@@ -26,7 +26,7 @@ class ConvertService:
     def __init__(self) -> None:
         self._rdkit_available = False
         try:
-            from rdkit import Chem  # type: ignore[import-not-found]  # noqa: F401
+            from rdkit import Chem  # noqa: F401
 
             self._rdkit_available = True
         except ImportError:
@@ -89,7 +89,7 @@ class ConvertService:
         output_format: str,
     ) -> str:
         from rdkit import Chem
-        from rdkit.Chem import inchi  # type: ignore[import-not-found]
+        from rdkit.Chem import inchi
 
         # Parse input
         mol = None

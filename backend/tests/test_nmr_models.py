@@ -1,7 +1,7 @@
 """Tests for NMR Pydantic response models."""
 
 
-def _peak(**overrides):  # noqa: ANN003, ANN202
+def _peak(**overrides):
     """Helper to build NmrPeak with sensible defaults."""
     from kendraw_chem.nmr.models import NmrPeak
 
