@@ -954,10 +954,25 @@ class TestAdvancedMultiplicityRegression:
 
     def test_multiplicity_format_valid(self) -> None:
         """All multiplicities are valid strings."""
-        valid = {"s", "d", "t", "q", "quint", "sext", "sept", "m",
-                 "dd", "dt", "td", "dq", "tt", "ddd"}
+        valid = {
+            "s",
+            "d",
+            "t",
+            "q",
+            "quint",
+            "sext",
+            "sept",
+            "m",
+            "dd",
+            "dt",
+            "td",
+            "dq",
+            "tt",
+            "ddd",
+        }
         for smi in ["CCO", "CCC", "CCCC", "c1ccccc1"]:
             peaks = _predict(smi)
             for p in peaks:
-                assert p.multiplicity in valid or len(p.multiplicity) <= 3, \
+                assert p.multiplicity in valid or len(p.multiplicity) <= 3, (
                     f"Bad multiplicity: {p.multiplicity}"
+                )
