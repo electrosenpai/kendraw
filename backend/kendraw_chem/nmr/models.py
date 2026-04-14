@@ -17,6 +17,7 @@ class NmrPeak(BaseModel):
     confidence: int
     method: str
     proton_group_id: int = 0
+    dept_class: str | None = None
 
 
 class NmrMetadata(BaseModel):

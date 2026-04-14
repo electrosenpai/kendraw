@@ -36,13 +36,15 @@ class NmrService:
         input_str: str,
         format: str = "smiles",
         solvent: str = DEFAULT_SOLVENT,
+        nucleus: str = "1H",
     ) -> NmrPrediction:
-        """Predict 1H NMR chemical shifts.
+        """Predict NMR chemical shifts.
 
         Args:
             input_str: Molecular structure as SMILES or MOL block.
             format: Input format — "smiles" or "mol".
             solvent: Deuterated solvent ID (e.g. "CDCl3", "DMSO-d6").
+            nucleus: Nucleus to predict — "1H" or "13C".
 
         Returns:
             NmrPrediction with peaks and metadata.
@@ -54,15 +56,20 @@ class NmrService:
             msg = f"Unsupported solvent: {solvent!r}. Supported: {', '.join(SOLVENT_IDS)}"
             raise ValueError(msg)
 
+        if nucleus not in ("1H", "13C"):
+            msg = f"Unsupported nucleus: {nucleus!r}. Supported: '1H', '13C'"
+            raise ValueError(msg)
+
         if not self._rdkit_available:
-            return self._stub_prediction(solvent)
-        return self._predict_rdkit(input_str, format, solvent)
+            return self._stub_prediction(solvent, nucleus)
+        return self._predict_rdkit(input_str, format, solvent, nucleus)
 
     def _predict_rdkit(
         self,
         input_str: str,
         format: str,
         solvent: str,
+        nucleus: str = "1H",
     ) -> NmrPrediction:
         from kendraw_settings.config import get_settings
 
@@ -75,19 +82,25 @@ class NmrService:
             msg = f"Molecule has {num_atoms} atoms, exceeds limit of {settings.max_mol_atoms}"
             raise ValueError(msg)
 
-        # Run additive prediction
-        from kendraw_chem.nmr.additive import predict_additive
+        if nucleus == "13C":
+            from kendraw_chem.nmr.additive_13c import predict_additive_13c
 
-        peaks = predict_additive(mol, solvent=solvent)
+            peaks = predict_additive_13c(mol, solvent=solvent)
+            method = "additive-13C"
+        else:
+            from kendraw_chem.nmr.additive import predict_additive
+
+            peaks = predict_additive(mol, solvent=solvent)
+            method = "additive"
 
         return NmrPrediction(
-            nucleus="1H",
+            nucleus=nucleus,
             solvent=solvent,
             peaks=peaks,
             metadata=NmrMetadata(
                 engine_version=ENGINE_VERSION,
                 data_version=None,
-                method="additive",
+                method=method,
             ),
         )
 
@@ -113,9 +126,9 @@ class NmrService:
         raise ValueError(msg)
 
     @staticmethod
-    def _stub_prediction(solvent: str = DEFAULT_SOLVENT) -> NmrPrediction:
+    def _stub_prediction(solvent: str = DEFAULT_SOLVENT, nucleus: str = "1H") -> NmrPrediction:
         return NmrPrediction(
-            nucleus="1H",
+            nucleus=nucleus,
             solvent=solvent,
             peaks=[],
             metadata=NmrMetadata(

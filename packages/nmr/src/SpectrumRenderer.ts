@@ -59,13 +59,16 @@ function lorentzian(x: number, x0: number, gamma: number): number {
 }
 
 export function computeDefaultViewport(prediction: NmrPrediction): SpectrumViewport {
-  if (prediction.peaks.length === 0) return { minPpm: -0.5, maxPpm: 12 };
+  const is13C = prediction.nucleus === '13C';
+  if (prediction.peaks.length === 0) {
+    return is13C ? { minPpm: -5, maxPpm: 220 } : { minPpm: -0.5, maxPpm: 12 };
+  }
   const shifts = prediction.peaks.map((p) => p.shift_ppm);
   const lo = Math.min(...shifts);
   const hi = Math.max(...shifts);
-  const pad = Math.max((hi - lo) * 0.15, 0.5);
+  const pad = Math.max((hi - lo) * 0.15, is13C ? 5 : 0.5);
   return {
-    minPpm: Math.max(-0.5, lo - pad),
+    minPpm: Math.max(is13C ? -5 : -0.5, lo - pad),
     maxPpm: hi + pad,
   };
 }

@@ -53,10 +53,23 @@ async def test_nmr_endpoint_unsupported_nucleus_returns_400() -> None:
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         r = await client.post(
             "/compute/nmr",
-            json={"input": "CCO", "format": "smiles", "nucleus": "13C"},
+            json={"input": "CCO", "format": "smiles", "nucleus": "31P"},
         )
     assert r.status_code == 400
     assert "Unsupported nucleus" in r.json()["detail"]
+
+
+async def test_nmr_endpoint_13c_returns_200() -> None:
+    """POST /compute/nmr with 13C nucleus returns 200."""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        r = await client.post(
+            "/compute/nmr",
+            json={"input": "CCO", "format": "smiles", "nucleus": "13C"},
+        )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["nucleus"] == "13C"
+    assert len(data["peaks"]) >= 1
 
 
 async def test_nmr_endpoint_response_structure() -> None:

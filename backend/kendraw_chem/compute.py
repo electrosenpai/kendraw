@@ -70,7 +70,8 @@ class ComputeService:
             inchi=inchi.MolToInchi(mol) or "",  # type: ignore[no-untyped-call]
             inchi_key=inchi.InchiToInchiKey(  # type: ignore[no-untyped-call]
                 inchi.MolToInchi(mol) or ""  # type: ignore[no-untyped-call]
-            ) or "",
+            )
+            or "",
         )
 
     def _compute_rdkit_mol(self, mol_block: str) -> MolecularProperties:

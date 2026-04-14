@@ -565,22 +565,90 @@ def _compute_multiplicity_and_coupling(
     if env_key == "aromatic":
         return _aromatic_multiplicity(mol, parent_idx, peak_h_indices)
 
-    # General case: count vicinal H atoms (3-bond path)
-    vicinal_h_count = _count_vicinal_h(mol, parent_idx, peak_h_indices)
+    # General case: analyze coupling groups for advanced multiplicities
+    coupling_groups = _analyze_coupling_groups(mol, parent_idx, peak_h_indices, env_key)
 
-    if vicinal_h_count == 0:
+    if not coupling_groups:
         return "s", []
 
-    # Determine J value based on environment
-    if env_key in ("vinyl",):
-        j = J_COUPLING_CONSTANTS["vicinal_sp3_sp2"]
-    elif env_key in ("alpha_to_oxygen", "alpha_to_nitrogen"):
-        j = J_COUPLING_CONSTANTS["vicinal_alpha_hetero"]
-    else:
-        j = J_COUPLING_CONSTANTS["vicinal_sp3_sp3"]
+    if len(coupling_groups) == 1:
+        # Simple n+1 rule
+        count, j = coupling_groups[0]
+        return _multiplicity_from_count(count), [round(j, 1)]
 
-    mult = _multiplicity_from_count(vicinal_h_count)
-    return mult, [round(j, 1)]
+    # Multiple non-equivalent coupling groups → advanced pattern
+    # Sort by J value descending (convention: larger J first)
+    coupling_groups.sort(key=lambda g: -g[1])
+
+    if len(coupling_groups) == 2:
+        c1, j1 = coupling_groups[0]
+        c2, j2 = coupling_groups[1]
+        m1 = _multiplicity_from_count(c1)
+        m2 = _multiplicity_from_count(c2)
+        if abs(j1 - j2) < 0.5:
+            # Same J → treat as one group
+            total = c1 + c2
+            return _multiplicity_from_count(total), [round(j1, 1)]
+        mult = f"{m1}{m2}"
+        return mult, [round(j1, 1), round(j2, 1)]
+
+    # 3+ groups → just report "m" with all J values
+    j_values = [round(j, 1) for _, j in coupling_groups]
+    return "m", j_values
+
+
+def _analyze_coupling_groups(
+    mol: Mol,
+    parent_idx: int,
+    own_h_indices: list[int],
+    env_key: str,
+) -> list[tuple[int, float]]:
+    """Analyze vicinal coupling groups for a proton.
+
+    Returns a list of (h_count, J_hz) tuples, one per coupling group.
+    Groups are defined by the hybridization/type of the neighboring carbon.
+    """
+    parent = mol.GetAtomWithIdx(parent_idx)
+    own_h_set = set(own_h_indices)
+    groups: dict[str, tuple[int, float]] = {}
+
+    for nbr in parent.GetNeighbors():
+        if nbr.GetAtomicNum() == 1:
+            continue
+        # Skip heteroatom neighbors (exchangeable protons)
+        if nbr.GetAtomicNum() in (7, 8, 16):
+            continue
+
+        # Count H on this neighbor
+        neighbor_h = 0
+        for nbr2 in nbr.GetNeighbors():
+            if nbr2.GetIdx() == parent_idx:
+                continue
+            if nbr2.GetAtomicNum() == 1 and nbr2.GetIdx() not in own_h_set:
+                neighbor_h += 1
+
+        if neighbor_h == 0:
+            continue
+
+        # Determine J for this neighbor
+        if nbr.GetIsAromatic():
+            continue  # Handled separately for aromatic
+        elif nbr.GetHybridization().name == "SP2":
+            j = J_COUPLING_CONSTANTS["vicinal_sp3_sp2"]
+        elif env_key in ("alpha_to_oxygen", "alpha_to_nitrogen"):
+            j = J_COUPLING_CONSTANTS["vicinal_alpha_hetero"]
+        else:
+            j = J_COUPLING_CONSTANTS["vicinal_sp3_sp3"]
+
+        # Group by J value (round to 0.5 Hz)
+        j_key = f"{round(j * 2) / 2:.1f}"
+        if j_key in groups:
+            count, jval = groups[j_key]
+            groups[j_key] = (count + neighbor_h, jval)
+        else:
+            groups[j_key] = (neighbor_h, j)
+
+    return list(groups.values())
 
 
 def _count_vicinal_h(

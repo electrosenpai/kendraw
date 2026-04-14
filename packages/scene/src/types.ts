@@ -112,6 +112,7 @@ export type NmrPeak = {
   confidence: 1 | 2 | 3;
   method: string;
   proton_group_id: number;
+  dept_class: string | null;
 };
 
 export type NmrMetadata = {

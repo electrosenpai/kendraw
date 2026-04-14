@@ -47,10 +47,14 @@ function getMolBlock(page: Page): string | null {
 }
 
 function formatMultiplicity(mult: string, coupling: number[]): string {
-  const label = mult === 's' ? 'singlet' : mult === 'd' ? 'doublet'
-    : mult === 't' ? 'triplet' : mult === 'q' ? 'quartet'
-    : mult === 'quint' ? 'quintet' : mult === 'sext' ? 'sextet'
-    : mult === 'sept' ? 'septet' : 'multiplet';
+  const LABELS: Record<string, string> = {
+    s: 'singlet', d: 'doublet', t: 'triplet', q: 'quartet',
+    quint: 'quintet', sext: 'sextet', sept: 'septet', m: 'multiplet',
+    dd: 'doublet of doublets', dt: 'doublet of triplets',
+    td: 'triplet of doublets', dq: 'doublet of quartets',
+    tt: 'triplet of triplets', ddd: 'doublet of doublet of doublets',
+  };
+  const label = LABELS[mult] ?? mult;
   if (coupling.length > 0) {
     return `${label} (J = ${coupling.map(j => j.toFixed(1)).join(', ')} Hz)`;
   }
@@ -606,26 +610,24 @@ export default function NmrPanel({ store, onClose, height, onHeightChange, highl
             {(['1H', '13C'] as const).map((n) => (
               <button
                 key={n}
-                onClick={() => n === '1H' && setNucleus(n)}
-                disabled={n === '13C'}
+                onClick={() => setNucleus(n)}
+                disabled={false}
                 style={{
                   padding: '2px 6px',
                   fontSize: 10,
                   fontFamily: 'var(--kd-font-mono, monospace)',
                   border: 'none',
                   borderRadius: 'var(--kd-radius-sm, 4px)',
-                  cursor: n === '13C' ? 'not-allowed' : 'pointer',
+                  cursor: 'pointer',
                   background:
                     nucleus === n
                       ? 'var(--kd-color-accent-muted, rgba(77, 171, 247, 0.15))'
                       : 'transparent',
                   color:
-                    n === '13C'
-                      ? 'var(--kd-color-text-muted, #666)'
-                      : nucleus === n
-                        ? 'var(--kd-color-accent, #4dabf7)'
-                        : 'var(--kd-color-text-secondary, #a0a0a0)',
-                  opacity: n === '13C' ? 0.5 : 1,
+                    nucleus === n
+                      ? 'var(--kd-color-accent, #4dabf7)'
+                      : 'var(--kd-color-text-secondary, #a0a0a0)',
+                  opacity: 1,
                 }}
               >
                 {n === '1H' ? '\u00B9H' : '\u00B9\u00B3C'}

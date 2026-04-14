@@ -254,7 +254,7 @@ describe('set-nmr-prediction command', () => {
     const prediction: NmrPrediction = {
       nucleus: '1H',
       solvent: 'CDCl3',
-      peaks: [{ atom_index: 0, atom_indices: [0], parent_indices: [0], shift_ppm: 7.3, integral: 1, multiplicity: 's', coupling_hz: [], environment: 'aromatic', confidence: 3, method: 'additive', proton_group_id: 1 }],
+      peaks: [{ atom_index: 0, atom_indices: [0], parent_indices: [0], shift_ppm: 7.3, integral: 1, multiplicity: 's', coupling_hz: [], environment: 'aromatic', confidence: 3, method: 'additive', proton_group_id: 1, dept_class: null }],
       metadata: { engine_version: '0.2.0', data_version: null, method: 'additive' },
     };
     store.dispatch({ type: 'set-nmr-prediction', prediction });
