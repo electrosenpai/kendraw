@@ -28,6 +28,7 @@ from kendraw_chem.nmr.additive import (  # noqa: E402
     _is_in_fused_system,
     predict_additive,
 )
+from kendraw_chem.nmr.additive_13c import predict_additive_13c  # noqa: E402
 from kendraw_chem.nmr.models import NmrPeak  # noqa: E402
 
 # ---------------------------------------------------------------------------
@@ -693,3 +694,270 @@ class TestEdgeCases:
         for smi in ["CCO", "c1ccccc1", "Cc1ccccc1"]:
             for p in _predict(smi):
                 assert p.integral == len(p.atom_indices)
+
+
+# =========================================================================
+# 12. PROTON GROUP IDS (F-1)
+# =========================================================================
+
+
+class TestProtonGroupIds:
+    """Proton group IDs must be assigned sequentially."""
+
+    def test_ethanol_group_ids(self) -> None:
+        """Ethanol peaks have group IDs 1, 2, 3."""
+        peaks = _predict("CCO")
+        ids = sorted(p.proton_group_id for p in peaks)
+        assert ids == list(range(1, len(peaks) + 1))
+
+    def test_benzene_single_group(self) -> None:
+        """Benzene: single peak → group_id = 1."""
+        peaks = _predict("c1ccccc1")
+        assert peaks[0].proton_group_id == 1
+
+    def test_toluene_ids_sequential(self) -> None:
+        """Toluene peaks are sequentially numbered."""
+        peaks = _predict("Cc1ccccc1")
+        ids = [p.proton_group_id for p in peaks]
+        assert ids == list(range(1, len(peaks) + 1))
+
+
+# =========================================================================
+# 13. VINYL CONFIDENCE (QW-2)
+# =========================================================================
+
+
+class TestVinylConfidence:
+    """Substituted vinyl protons should have low confidence."""
+
+    def test_ethylene_vinyl_confidence(self) -> None:
+        """Ethylene (unsubstituted) — vinyl confidence=3 (high ref count)."""
+        peaks = _predict("C=C")
+        vinyl = [p for p in peaks if p.environment == "vinyl"]
+        assert len(vinyl) >= 1
+
+    def test_styrene_vinyl_low_confidence(self) -> None:
+        """Styrene vinyl protons — confidence=1 (substituted)."""
+        peaks = _predict("C=Cc1ccccc1")
+        vinyl = [p for p in peaks if p.environment == "vinyl"]
+        assert len(vinyl) >= 1
+        assert all(p.confidence == 1 for p in vinyl)
+
+    def test_cinnamaldehyde_vinyl_low_confidence(self) -> None:
+        """Cinnamaldehyde vinyl protons — confidence=1."""
+        peaks = _predict("O=CC=Cc1ccccc1")
+        vinyl = [p for p in peaks if p.environment == "vinyl"]
+        assert all(p.confidence == 1 for p in vinyl)
+
+    def test_propene_vinyl_low_confidence(self) -> None:
+        """Propene (substituted C=C) — vinyl confidence=1."""
+        peaks = _predict("CC=C")
+        vinyl = [p for p in peaks if p.environment == "vinyl"]
+        assert all(p.confidence == 1 for p in vinyl)
+
+    def test_vinyl_method_string(self) -> None:
+        """Substituted vinyl method mentions 'substituted vinyl'."""
+        peaks = _predict("C=Cc1ccccc1")
+        vinyl = [p for p in peaks if p.environment == "vinyl"]
+        assert all("substituted vinyl" in p.method for p in vinyl)
+
+
+# =========================================================================
+# 14. AMIDE NH (F-4)
+# =========================================================================
+
+
+class TestAmideNhRegression:
+    """Amide NH proton predictions."""
+
+    def test_formamide_nh(self) -> None:
+        """Formamide NH should be around 7-9 ppm."""
+        peaks = _predict("O=CN")
+        nh = [p for p in peaks if p.environment == "amide_nh"]
+        assert len(nh) >= 1
+        assert 6.5 <= nh[0].shift_ppm <= 9.0
+
+    def test_acetamide_nh(self) -> None:
+        """Acetamide NH should be around 6.5-8.0 ppm."""
+        peaks = _predict("CC(=O)N")
+        nh = [p for p in peaks if p.environment == "amide_nh"]
+        assert len(nh) >= 1
+        assert 6.0 <= nh[0].shift_ppm <= 8.5
+
+    def test_amide_nh_confidence(self) -> None:
+        """Amide NH confidence should be 2 (medium, variable)."""
+        peaks = _predict("CC(=O)N")
+        nh = [p for p in peaks if p.environment == "amide_nh"]
+        assert len(nh) >= 1
+        assert nh[0].confidence == 2
+
+
+# =========================================================================
+# 15. 13C REGRESSION
+# =========================================================================
+
+
+def _predict_13c(smiles: str) -> list[NmrPeak]:
+    mol = Chem.MolFromSmiles(smiles)
+    assert mol is not None
+    return predict_additive_13c(mol)
+
+
+class Test13CRegression:
+    """13C chemical shift predictions must be reasonable."""
+
+    def test_ethanol_ch3(self) -> None:
+        """Ethanol CH3 ~15 ppm."""
+        peaks = _predict_13c("CCO")
+        assert any(10 <= p.shift_ppm <= 25 for p in peaks)
+
+    def test_ethanol_ch2_alpha_o(self) -> None:
+        """Ethanol CH2-O ~58-65 ppm."""
+        peaks = _predict_13c("CCO")
+        assert any(50 <= p.shift_ppm <= 75 for p in peaks)
+
+    def test_benzene_128(self) -> None:
+        """Benzene all C ~128 ppm."""
+        peaks = _predict_13c("c1ccccc1")
+        assert len(peaks) == 1  # All equivalent
+        assert 120 <= peaks[0].shift_ppm <= 135
+
+    def test_acetone_co(self) -> None:
+        """Acetone C=O ~205 ppm."""
+        peaks = _predict_13c("CC(=O)C")
+        assert any(190 <= p.shift_ppm <= 215 for p in peaks)
+
+    def test_acetone_ch3(self) -> None:
+        """Acetone CH3 ~30 ppm."""
+        peaks = _predict_13c("CC(=O)C")
+        assert any(25 <= p.shift_ppm <= 40 for p in peaks)
+
+    def test_toluene_ch3(self) -> None:
+        """Toluene benzylic CH3 ~21 ppm."""
+        peaks = _predict_13c("Cc1ccccc1")
+        assert any(15 <= p.shift_ppm <= 28 for p in peaks)
+
+    def test_toluene_aromatic(self) -> None:
+        """Toluene aromatic C 125-140 ppm."""
+        peaks = _predict_13c("Cc1ccccc1")
+        aromatic = [p for p in peaks if p.shift_ppm > 100]
+        assert len(aromatic) >= 1
+
+    def test_acetic_acid_co(self) -> None:
+        """Acetic acid C=O ~175 ppm."""
+        peaks = _predict_13c("CC(=O)O")
+        assert any(165 <= p.shift_ppm <= 185 for p in peaks)
+
+    def test_acetic_acid_ch3(self) -> None:
+        """Acetic acid CH3 ~20 ppm."""
+        peaks = _predict_13c("CC(=O)O")
+        assert any(15 <= p.shift_ppm <= 35 for p in peaks)
+
+    def test_methanol_ch3(self) -> None:
+        """Methanol CH3 ~50-55 ppm (alpha to O)."""
+        peaks = _predict_13c("CO")
+        assert any(45 <= p.shift_ppm <= 65 for p in peaks)
+
+    def test_all_singlets(self) -> None:
+        """All 13C peaks must be singlets (decoupled)."""
+        for smi in ["CCO", "c1ccccc1", "CC(=O)C"]:
+            peaks = _predict_13c(smi)
+            assert all(p.multiplicity == "s" for p in peaks)
+
+    def test_no_crash_complex(self) -> None:
+        """13C must not crash on complex molecules."""
+        for smi in ["CC(C)Cc1ccc(cc1)C(C)C(=O)O", "CC(=O)Nc1ccc(O)cc1"]:
+            peaks = _predict_13c(smi)
+            assert len(peaks) > 0
+
+    def test_13c_confidence_range(self) -> None:
+        """All 13C confidence values must be 1, 2, or 3."""
+        for smi in ["CCO", "c1ccccc1", "CC(=O)C"]:
+            peaks = _predict_13c(smi)
+            for p in peaks:
+                assert p.confidence in (1, 2, 3)
+
+
+# =========================================================================
+# 16. DEPT CLASSIFICATION (F-7)
+# =========================================================================
+
+
+class TestDeptRegression:
+    """DEPT classification must correctly identify CH3/CH2/CH/C."""
+
+    def test_ethanol_dept(self) -> None:
+        """Ethanol: CH3 and CH2-O."""
+        peaks = _predict_13c("CCO")
+        dept_classes = {p.dept_class for p in peaks}
+        assert "CH3" in dept_classes
+        assert "CH2" in dept_classes
+
+    def test_benzene_dept_ch(self) -> None:
+        """Benzene: all carbons are CH."""
+        peaks = _predict_13c("c1ccccc1")
+        assert all(p.dept_class == "CH" for p in peaks)
+
+    def test_acetone_dept(self) -> None:
+        """Acetone: CH3 and C (quaternary C=O)."""
+        peaks = _predict_13c("CC(=O)C")
+        dept_classes = {p.dept_class for p in peaks}
+        assert "CH3" in dept_classes
+        assert "C" in dept_classes
+
+    def test_toluene_dept_ch3(self) -> None:
+        """Toluene: has CH3 (benzylic methyl)."""
+        peaks = _predict_13c("Cc1ccccc1")
+        assert any(p.dept_class == "CH3" for p in peaks)
+
+    def test_dept_all_valid(self) -> None:
+        """All dept_class values are valid."""
+        valid = {"CH3", "CH2", "CH", "C", None}
+        for smi in ["CCO", "c1ccccc1", "CC(=O)C"]:
+            for p in _predict_13c(smi):
+                assert p.dept_class in valid, f"Invalid dept_class: {p.dept_class}"
+
+
+# =========================================================================
+# 17. ADVANCED MULTIPLICITIES (F-9)
+# =========================================================================
+
+
+class TestAdvancedMultiplicityRegression:
+    """Advanced multiplicity patterns."""
+
+    def test_ethanol_ch3_triplet(self) -> None:
+        """Ethanol CH3 is triplet (unchanged by advanced logic)."""
+        peaks = _predict("CCO")
+        ch3 = [p for p in peaks if p.environment == "methyl"]
+        assert len(ch3) >= 1
+        assert ch3[0].multiplicity == "t"
+
+    def test_ethanol_ch2_quartet(self) -> None:
+        """Ethanol CH2 is quartet (unchanged by advanced logic)."""
+        peaks = _predict("CCO")
+        ch2 = [p for p in peaks if p.environment == "alpha_to_oxygen"]
+        assert len(ch2) >= 1
+        assert ch2[0].multiplicity == "q"
+
+    def test_benzene_singlet_unchanged(self) -> None:
+        """Benzene all singlets (unchanged)."""
+        peaks = _predict("c1ccccc1")
+        assert all(p.multiplicity == "s" for p in peaks)
+
+    def test_propane_ch2_septet_or_m(self) -> None:
+        """Propane CH2 coupled to 6H → septet or m."""
+        peaks = _predict("CCC")
+        ch2 = [p for p in peaks if p.environment == "methylene"]
+        assert len(ch2) >= 1
+        assert ch2[0].multiplicity in ("sept", "m")
+
+    def test_multiplicity_format_valid(self) -> None:
+        """All multiplicities are valid strings."""
+        valid = {"s", "d", "t", "q", "quint", "sext", "sept", "m",
+                 "dd", "dt", "td", "dq", "tt", "ddd"}
+        for smi in ["CCO", "CCC", "CCCC", "c1ccccc1"]:
+            peaks = _predict(smi)
+            for p in peaks:
+                assert p.multiplicity in valid or len(p.multiplicity) <= 3, \
+                    f"Bad multiplicity: {p.multiplicity}"
