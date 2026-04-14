@@ -31,7 +31,7 @@ interface NmrPanelProps {
   onHighlightAtoms?: (ids: Set<AtomId>) => void;
 }
 
-const apiClient = new KendrawApiClient();
+const apiClient = new KendrawApiClient('/api');
 const MIN_HEIGHT = 120;
 const MAX_HEIGHT_RATIO = 0.6;
 
