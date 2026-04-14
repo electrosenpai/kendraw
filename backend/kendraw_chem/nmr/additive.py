@@ -284,22 +284,24 @@ def _collect_substituents(
 
 def _compute_aromatic_shift(
     mol: Mol, parent_idx: int,
-) -> tuple[float, bool]:
+) -> tuple[float, bool, bool]:
     """Compute aromatic proton shift with substituent and heterocycle effects.
 
     For carbocyclic aromatic rings, uses Hammett-type corrections.
     For heterocyclic aromatic rings (containing N, O, or S), uses
     position-specific absolute shifts from HETEROCYCLIC_SHIFTS table.
 
-    Returns (shift, is_heterocyclic). When is_heterocyclic is True,
-    the caller should skip substituent increments (already accounted for).
+    Returns ``(shift, is_heterocyclic, is_fused_heterocyclic)``.
+    When *is_heterocyclic* is True the caller should skip substituent
+    increments (already accounted for).
     """
     ring_info = mol.GetRingInfo()
 
     # First check if this atom is in a heterocyclic aromatic ring
-    hetero_shift = _heterocyclic_shift(mol, parent_idx, ring_info)
-    if hetero_shift is not None:
-        return hetero_shift, True
+    hetero_result = _heterocyclic_shift(mol, parent_idx, ring_info)
+    if hetero_result is not None:
+        shift, is_fused = hetero_result
+        return shift, True, is_fused
 
     # Fall back to benzene base + substituent corrections
     base = BASE_SHIFTS["aromatic"]
@@ -327,6 +329,15 @@ def _compute_aromatic_shift(
                 if nbr.GetAtomicNum() == 1:
                     continue
 
+                # Skip atoms that are part of a fused aromatic ring —
+                # their electronic influence is too complex for simple
+                # Hammett corrections and causes over-correction.
+                if (
+                    nbr.GetIsAromatic()
+                    and ring_info.NumAtomRings(nbr.GetIdx()) > 0
+                ):
+                    continue
+
                 dist = min(
                     abs(ring_pos - my_pos),
                     6 - abs(ring_pos - my_pos),
@@ -345,23 +356,45 @@ def _compute_aromatic_shift(
                     correction += effect
 
     if ring_count == 0:
-        return base, False
+        return base, False, False
 
-    return round(base + correction / max(ring_count, 1), 2), False
+    return round(base + correction / max(ring_count, 1), 2), False, False
 
 
 _HETEROATOM_SYMBOLS: dict[int, str] = {7: "N", 8: "O", 16: "S"}
+
+
+def _is_in_fused_system(
+    ring_info,  # noqa: ANN001
+    ring_atoms: tuple[int, ...],
+) -> bool:
+    """Check if a ring shares atoms with any other ring (fused system)."""
+    ring_set = set(ring_atoms)
+    for other_ring in ring_info.AtomRings():
+        other_set = set(other_ring)
+        if other_set != ring_set and ring_set & other_set:
+            return True
+    return False
 
 
 def _heterocyclic_shift(
     mol: Mol,
     parent_idx: int,
     ring_info,  # noqa: ANN001
-) -> float | None:
+) -> tuple[float, bool] | None:
     """Compute shift for a proton on a heterocyclic aromatic ring.
 
-    Returns None if the atom is not in a heterocyclic aromatic ring,
-    otherwise returns the appropriate position-specific shift.
+    Returns ``(shift, is_fused)`` when the atom sits on a heterocyclic
+    aromatic ring, or *None* otherwise.
+
+    For fused systems the raw heterocyclic shift is attenuated toward the
+    benzene base (7.26 ppm) because conjugation across the fused rings
+    alters the electronic environment relative to the isolated heterocycle.
+
+    Attenuation factors (fraction of correction retained):
+    * 5-membered ring with ≥ 2 heteroatoms (imidazole-like): 0.3
+    * 5-membered ring with 1 heteroatom (pyrrole-like):      0.7
+    * 6-membered fused ring (pyridine-like):                  1.0 (no change)
     """
     for ring in ring_info.AtomRings():
         if parent_idx not in ring:
@@ -411,8 +444,20 @@ def _heterocyclic_shift(
 
         key = (best_sym, ring_size, pos)
         shift = HETEROCYCLIC_SHIFTS.get(key)
-        if shift is not None:
-            return round(shift, 2)
+        if shift is None:
+            continue
+
+        # Detect fused ring system and attenuate if needed
+        is_fused = _is_in_fused_system(ring_info, tuple(ring_list))
+        if is_fused:
+            benzene_base = BASE_SHIFTS["aromatic"]
+            if ring_size == 5:
+                factor = 0.3 if len(heteroatoms) >= 2 else 0.7
+            else:
+                factor = 1.0
+            shift = benzene_base + factor * (shift - benzene_base)
+
+        return round(shift, 2), is_fused
 
     return None
 
@@ -643,10 +688,13 @@ def predict_additive(
 
         # Base shift — special handling for aromatic
         skip_increments = False
+        is_heterocyclic = False
+        is_fused_heterocyclic = False
         if env_key == "aromatic":
-            base_shift, skip_increments = _compute_aromatic_shift(
-                mol_h, parent_idx,
+            base_shift, is_heterocyclic, is_fused_heterocyclic = (
+                _compute_aromatic_shift(mol_h, parent_idx)
             )
+            skip_increments = is_heterocyclic
         else:
             base_shift = BASE_SHIFTS.get(env_key, BASE_SHIFTS["methyl"])
 
@@ -661,10 +709,24 @@ def predict_additive(
         # Apply solvent correction
         shift_ppm = _apply_solvent_correction(shift_ppm, env_key, solvent)
 
-        confidence = _confidence_from_counts(env_key)
+        # Confidence: fused heterocyclic=1, simple heterocyclic=2, else ref counts
+        if is_fused_heterocyclic:
+            confidence = 1
+        elif is_heterocyclic:
+            confidence = 2
+        else:
+            confidence = _confidence_from_counts(env_key)
+
+        # Method detail for tooltip
+        if is_fused_heterocyclic:
+            method = "additive — heterocyclic (fused, attenuated)"
+        elif is_heterocyclic:
+            method = "additive — heterocyclic correction"
+        else:
+            method = "additive"
 
         raw_predictions.append(
-            (h_idx, parent_idx, shift_ppm, env_key, confidence)
+            (h_idx, parent_idx, shift_ppm, env_key, confidence, method)
         )
 
     # Group equivalent protons (same shift and same environment)
@@ -672,13 +734,15 @@ def predict_additive(
     parent_map: dict[tuple[float, str], int] = {}
     parents_map: dict[tuple[float, str], list[int]] = {}
     confidence_map: dict[tuple[float, str], int] = {}
-    for h_idx, parent_idx, shift, env, conf in raw_predictions:
+    method_map: dict[tuple[float, str], str] = {}
+    for h_idx, parent_idx, shift, env, conf, meth in raw_predictions:
         key = (shift, env)
         if key not in groups:
             groups[key] = []
             parent_map[key] = parent_idx
             parents_map[key] = []
             confidence_map[key] = conf
+            method_map[key] = meth
         groups[key].append(h_idx)
         if parent_idx not in parents_map[key]:
             parents_map[key].append(parent_idx)
@@ -704,7 +768,7 @@ def predict_additive(
                 coupling_hz=coupling,
                 environment=env,
                 confidence=confidence_map[(shift, env)],
-                method="additive",
+                method=method_map[(shift, env)],
             )
         )
 
