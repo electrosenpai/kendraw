@@ -22,6 +22,7 @@ export interface RenderOptions {
   viewport: SpectrumViewport;
   hoveredPeakIdx: number | null;
   selectedPeakIdx: number | null;
+  exportMode?: boolean;
 }
 
 export interface PeakHitBox {
@@ -62,15 +63,29 @@ export function renderSpectrum(
   prediction: NmrPrediction | null,
   options: RenderOptions,
 ): PeakHitBox[] {
-  const { width, height, dpr, viewport, hoveredPeakIdx, selectedPeakIdx } = options;
+  const { width, height, dpr, viewport, hoveredPeakIdx, selectedPeakIdx, exportMode } = options;
   const hitBoxes: PeakHitBox[] = [];
+
+  // Color scheme: dark UI vs white-bg export
+  const bg = exportMode ? '#ffffff' : '#0a0a0a';
+  const gridColor = exportMode ? '#e0e0e0' : '#1a1a1a';
+  const axisColor = exportMode ? '#333333' : '#444444';
+  const labelColor = exportMode ? '#555555' : '#888888';
+  const titleColor = exportMode ? '#777777' : '#666666';
+  const emptyColor = exportMode ? '#aaaaaa' : '#555555';
+  const envelopeFill = exportMode ? 'rgba(30, 100, 200, 0.08)' : 'rgba(77, 171, 247, 0.06)';
+  const envelopeStroke = exportMode ? 'rgba(30, 100, 200, 0.4)' : 'rgba(77, 171, 247, 0.3)';
+  const peakLabelDefault = exportMode ? '#333333' : '#cccccc';
+  const peakLabelHover = exportMode ? '#111111' : '#eeeeee';
+  const peakLabelSelected = exportMode ? '#000000' : '#ffffff';
+  const nHColor = exportMode ? '#777777' : '#888888';
 
   // Setup canvas
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, width, height);
 
   // Background
-  ctx.fillStyle = '#0a0a0a';
+  ctx.fillStyle = bg;
   ctx.fillRect(0, 0, width, height);
 
   const plotW = width - MARGIN.left - MARGIN.right;
@@ -85,7 +100,7 @@ export function renderSpectrum(
   const ppmToX = (ppm: number) => MARGIN.left + ((maxPpm - ppm) / ppmRange) * plotW;
 
   // Draw grid lines
-  ctx.strokeStyle = '#1a1a1a';
+  ctx.strokeStyle = gridColor;
   ctx.lineWidth = 0.5;
   const gridStep = ppmRange > 10 ? 2 : ppmRange > 4 ? 1 : 0.5;
   for (let ppm = Math.ceil(minPpm / gridStep) * gridStep; ppm <= maxPpm; ppm += gridStep) {
@@ -97,7 +112,7 @@ export function renderSpectrum(
   }
 
   // Draw x-axis
-  ctx.strokeStyle = '#444444';
+  ctx.strokeStyle = axisColor;
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.moveTo(MARGIN.left, MARGIN.top + plotH);
@@ -105,7 +120,7 @@ export function renderSpectrum(
   ctx.stroke();
 
   // Axis tick labels
-  ctx.fillStyle = '#888888';
+  ctx.fillStyle = labelColor;
   ctx.font = '11px "IBM Plex Mono", "Fira Code", monospace';
   ctx.textAlign = 'center';
   const labelStep = ppmRange > 10 ? 2 : 1;
@@ -113,19 +128,19 @@ export function renderSpectrum(
     const x = ppmToX(ppm);
     ctx.fillText(String(ppm), x, MARGIN.top + plotH + 16);
     ctx.beginPath();
-    ctx.strokeStyle = '#444444';
+    ctx.strokeStyle = axisColor;
     ctx.moveTo(x, MARGIN.top + plotH);
     ctx.lineTo(x, MARGIN.top + plotH + 4);
     ctx.stroke();
   }
 
   // Axis title
-  ctx.fillStyle = '#666666';
+  ctx.fillStyle = titleColor;
   ctx.font = '10px Inter, system-ui, sans-serif';
   ctx.fillText('\u03B4 (ppm)', MARGIN.left + plotW / 2, MARGIN.top + plotH + 30);
 
   if (!prediction || prediction.peaks.length === 0) {
-    ctx.fillStyle = '#555555';
+    ctx.fillStyle = emptyColor;
     ctx.font = '13px Inter, system-ui, sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('No peaks to display', width / 2, height / 2);
@@ -162,9 +177,9 @@ export function renderSpectrum(
   }
   ctx.lineTo(MARGIN.left + plotW, MARGIN.top + plotH);
   ctx.closePath();
-  ctx.fillStyle = 'rgba(77, 171, 247, 0.06)';
+  ctx.fillStyle = envelopeFill;
   ctx.fill();
-  ctx.strokeStyle = 'rgba(77, 171, 247, 0.3)';
+  ctx.strokeStyle = envelopeStroke;
   ctx.lineWidth = 1;
   ctx.stroke();
 
@@ -191,10 +206,10 @@ export function renderSpectrum(
 
     // Confidence shape at peak top
     const r = isHovered || isSelected ? 6 : 4;
-    drawConfidenceMarker(ctx, cx, peakTopY - r - 2, r, peak.confidence, color, isSelected);
+    drawConfidenceMarker(ctx, cx, peakTopY - r - 2, r, peak.confidence, color, isSelected, bg);
 
     // Peak label — shift + multiplicity
-    ctx.fillStyle = isSelected ? '#ffffff' : isHovered ? '#eeeeee' : '#cccccc';
+    ctx.fillStyle = isSelected ? peakLabelSelected : isHovered ? peakLabelHover : peakLabelDefault;
     ctx.font = `${isHovered || isSelected ? 11 : 10}px "JetBrains Mono", "IBM Plex Mono", monospace`;
     ctx.textAlign = 'center';
     const mult = peak.multiplicity ?? 's';
@@ -203,7 +218,7 @@ export function renderSpectrum(
 
     // nH indicator
     ctx.font = '9px Inter, system-ui, sans-serif';
-    ctx.fillStyle = '#888888';
+    ctx.fillStyle = nHColor;
     ctx.fillText(`${nH}H`, cx, MARGIN.top + plotH + 4);
 
     hitBoxes.push({ peakIdx: pi, x: cx, y: peakTopY, radius: Math.max(r + 4, 10) });
@@ -220,6 +235,7 @@ function drawConfidenceMarker(
   confidence: number,
   color: string,
   selected: boolean,
+  bgColor = '#0a0a0a',
 ): void {
   ctx.beginPath();
   ctx.arc(x, y, r, 0, Math.PI * 2);
@@ -239,7 +255,7 @@ function drawConfidenceMarker(
     ctx.clip();
     ctx.beginPath();
     ctx.arc(x, y, r, 0, Math.PI * 2);
-    ctx.fillStyle = '#0a0a0a';
+    ctx.fillStyle = bgColor;
     ctx.fill();
     ctx.restore();
     // Outline
