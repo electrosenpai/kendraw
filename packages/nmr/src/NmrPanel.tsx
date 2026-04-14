@@ -111,6 +111,88 @@ function exportPng(
   a.click();
 }
 
+function exportSvg(
+  prediction: NmrPrediction,
+  viewport: SpectrumViewport,
+): void {
+  const W = 800;
+  const H = 400;
+  const M = { top: 24, right: 44, bottom: 34, left: 44 };
+  const plotW = W - M.left - M.right;
+  const plotH = H - M.top - M.bottom;
+  const { minPpm, maxPpm } = viewport;
+  const ppmRange = maxPpm - minPpm;
+  const ppmToX = (ppm: number) => M.left + ((maxPpm - ppm) / ppmRange) * plotW;
+  const gamma = 0.04;
+
+  const lines: string[] = [];
+  lines.push(`<?xml version="1.0" encoding="UTF-8"?>`);
+  lines.push(`<!-- Kendraw NMR ${prediction.nucleus} | Solvent: ${prediction.solvent} | ${prediction.peaks.length} peaks -->`);
+  lines.push(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" font-family="'Helvetica Neue', Helvetica, sans-serif">`);
+  lines.push(`<rect width="${W}" height="${H}" fill="white"/>`);
+
+  // X-axis
+  lines.push(`<line x1="${M.left}" y1="${M.top + plotH}" x2="${M.left + plotW}" y2="${M.top + plotH}" stroke="#333" stroke-width="1"/>`);
+  const labelStep = ppmRange > 10 ? 2 : 1;
+  for (let ppm = Math.ceil(minPpm); ppm <= Math.floor(maxPpm); ppm += labelStep) {
+    const x = ppmToX(ppm);
+    lines.push(`<line x1="${x}" y1="${M.top + plotH}" x2="${x}" y2="${M.top + plotH + 4}" stroke="#333" stroke-width="0.5"/>`);
+    lines.push(`<text x="${x}" y="${M.top + plotH + 16}" text-anchor="middle" font-size="10" fill="#555">${ppm}</text>`);
+  }
+  lines.push(`<text x="${M.left + plotW / 2}" y="${M.top + plotH + 30}" text-anchor="middle" font-size="9" fill="#777">\u03B4 (ppm)</text>`);
+
+  // Compute envelope
+  const nPts = 500;
+  const spectrum = new Float64Array(nPts);
+  let maxI = 0;
+  for (const pk of prediction.peaks) {
+    const nH = pk.atom_indices.length;
+    for (let i = 0; i < nPts; i++) {
+      const ppm = maxPpm - (i / (nPts - 1)) * ppmRange;
+      const dx = ppm - pk.shift_ppm;
+      const prev = spectrum[i] ?? 0;
+      spectrum[i] = prev + nH / (1 + (dx / gamma) ** 2);
+      const cur = spectrum[i] ?? 0;
+      if (cur > maxI) maxI = cur;
+    }
+  }
+
+  if (maxI > 0) {
+    // Envelope path
+    let d = '';
+    for (let i = 0; i < nPts; i++) {
+      const x = M.left + (i / (nPts - 1)) * plotW;
+      const y = M.top + plotH - ((spectrum[i] ?? 0) / maxI) * plotH * 0.85;
+      d += `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`;
+    }
+    d += `L${M.left + plotW},${M.top + plotH}L${M.left},${M.top + plotH}Z`;
+    lines.push(`<path d="${d}" fill="rgba(30,100,200,0.08)" stroke="rgba(30,100,200,0.4)" stroke-width="1"/>`);
+
+    // Peak stems + labels
+    for (const pk of prediction.peaks) {
+      const cx = ppmToX(pk.shift_ppm);
+      const nH = pk.atom_indices.length;
+      const peakY = M.top + plotH - (nH / (1 + 0) / maxI) * plotH * 0.85;
+      const color = pk.confidence === 3 ? '#2b8a3e' : pk.confidence === 2 ? '#e67700' : '#c92a2a';
+      lines.push(`<line x1="${cx}" y1="${M.top + plotH}" x2="${cx}" y2="${peakY}" stroke="${color}" stroke-width="1"/>`);
+      lines.push(`<text x="${cx}" y="${peakY - 8}" text-anchor="middle" font-size="9" fill="#333">${pk.shift_ppm.toFixed(2)} ${pk.multiplicity}</text>`);
+      lines.push(`<text x="${cx}" y="${M.top + plotH + 4}" text-anchor="middle" font-size="8" fill="#777">${nH}H</text>`);
+    }
+  }
+
+  // Metadata footer
+  lines.push(`<text x="20" y="${H - 8}" font-size="9" fill="#999">${prediction.nucleus} NMR | Solvent: ${prediction.solvent} | ${prediction.peaks.length} peaks | Kendraw</text>`);
+  lines.push(`</svg>`);
+
+  const blob = new Blob([lines.join('\n')], { type: 'image/svg+xml' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `nmr_${prediction.nucleus}_${prediction.solvent}.svg`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 function exportCsv(prediction: NmrPrediction): void {
   const header = 'delta_ppm,multiplicity,J_Hz,integral,environment,confidence,method\n';
   const rows = prediction.peaks.map(p =>
@@ -664,6 +746,25 @@ export default function NmrPanel({ store, onClose, height, onHeightChange, highl
             </button>
           )}
 
+          {/* F-2: SVG export */}
+          {prediction && prediction.peaks.length > 0 && (
+            <button
+              onClick={() => exportSvg(prediction, viewport)}
+              style={{
+                padding: '2px 6px',
+                fontSize: 10,
+                border: '1px solid var(--kd-color-border, #333)',
+                borderRadius: 'var(--kd-radius-sm, 4px)',
+                background: 'transparent',
+                color: 'var(--kd-color-text-secondary, #a0a0a0)',
+                cursor: 'pointer',
+              }}
+              title="Export spectrum as SVG for publication"
+            >
+              SVG
+            </button>
+          )}
+
           {/* QW-10: Noise toggle */}
           <button
             onClick={() => setShowNoise(n => !n)}
@@ -727,6 +828,7 @@ export default function NmrPanel({ store, onClose, height, onHeightChange, highl
             gap: 12,
           }}
         >
+          <span style={{ color: 'var(--kd-color-accent, #4dabf7)', fontWeight: 600 }}>H{selectedPeak.proton_group_id}</span>
           <span>{'\u03B4'} {selectedPeak.shift_ppm.toFixed(2)} ppm</span>
           <span>{selectedPeak.integral}H</span>
           <span>{formatMultiplicity(selectedPeak.multiplicity, selectedPeak.coupling_hz)}</span>
@@ -778,8 +880,9 @@ export default function NmrPanel({ store, onClose, height, onHeightChange, highl
                 fontFamily: 'var(--kd-font-mono, monospace)',
               }}
             >
-              {/* Tier 1: Headline — shift + assignment */}
+              {/* Tier 1: Headline — H# + shift + assignment */}
               <div style={{ fontSize: 13, fontWeight: 600, color: '#f0f0f0', marginBottom: 4 }}>
+                <span style={{ color: '#4dabf7', marginRight: 4 }}>H{peak.proton_group_id}</span>
                 {peak.shift_ppm.toFixed(2)} ppm
                 <span style={{ fontWeight: 400, color: '#a0a0a0', marginLeft: 6, fontSize: 11 }}>
                   {peak.integral}H {formatEnvironment(peak.environment)}
@@ -823,6 +926,61 @@ export default function NmrPanel({ store, onClose, height, onHeightChange, highl
           );
         })()}
       </div>
+
+      {/* F-5: Enhanced signal table */}
+      {prediction && prediction.peaks.length > 0 && (
+        <div style={{
+          maxHeight: Math.max(height * 0.3, 60),
+          overflowY: 'auto',
+          borderTop: '1px solid var(--kd-color-border-subtle, #2a2a2a)',
+          flexShrink: 0,
+        }}>
+          <table style={{
+            width: '100%',
+            fontSize: 9,
+            fontFamily: 'var(--kd-font-mono, monospace)',
+            borderCollapse: 'collapse',
+            color: 'var(--kd-color-text-secondary, #a0a0a0)',
+          }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid var(--kd-color-border-subtle, #2a2a2a)' }}>
+                <th style={{ padding: '2px 6px', textAlign: 'left', color: 'var(--kd-color-text-muted, #666)' }}>H#</th>
+                <th style={{ padding: '2px 6px', textAlign: 'right', color: 'var(--kd-color-text-muted, #666)' }}>{'\u03B4'} (ppm)</th>
+                <th style={{ padding: '2px 6px', textAlign: 'center', color: 'var(--kd-color-text-muted, #666)' }}>Mult.</th>
+                <th style={{ padding: '2px 6px', textAlign: 'right', color: 'var(--kd-color-text-muted, #666)' }}>J (Hz)</th>
+                <th style={{ padding: '2px 6px', textAlign: 'center', color: 'var(--kd-color-text-muted, #666)' }}>Int.</th>
+                <th style={{ padding: '2px 6px', textAlign: 'left', color: 'var(--kd-color-text-muted, #666)' }}>Assignment</th>
+                <th style={{ padding: '2px 6px', textAlign: 'center', color: 'var(--kd-color-text-muted, #666)' }}>Conf.</th>
+              </tr>
+            </thead>
+            <tbody>
+              {prediction.peaks.map((pk, idx) => {
+                const confInfo = CONF_LABELS[pk.confidence] ?? { label: '?', color: '#888' };
+                const isActive = selectedPeakIdx === idx;
+                return (
+                  <tr
+                    key={idx}
+                    onClick={() => handlePeakHighlight(idx)}
+                    style={{
+                      cursor: 'pointer',
+                      background: isActive ? 'rgba(77, 171, 247, 0.1)' : 'transparent',
+                      borderBottom: '1px solid var(--kd-color-border-subtle, #1a1a1a)',
+                    }}
+                  >
+                    <td style={{ padding: '2px 6px', color: 'var(--kd-color-accent, #4dabf7)', fontWeight: 600 }}>H{pk.proton_group_id}</td>
+                    <td style={{ padding: '2px 6px', textAlign: 'right' }}>{pk.shift_ppm.toFixed(2)}</td>
+                    <td style={{ padding: '2px 6px', textAlign: 'center' }}>{pk.multiplicity}</td>
+                    <td style={{ padding: '2px 6px', textAlign: 'right' }}>{pk.coupling_hz.length > 0 ? pk.coupling_hz.map(j => j.toFixed(1)).join(', ') : '\u2014'}</td>
+                    <td style={{ padding: '2px 6px', textAlign: 'center' }}>{pk.integral}H</td>
+                    <td style={{ padding: '2px 6px' }}>{formatEnvironment(pk.environment)}</td>
+                    <td style={{ padding: '2px 6px', textAlign: 'center', color: confInfo.color }}>{pk.confidence === 3 ? '\u25CF' : pk.confidence === 2 ? '\u25D1' : '\u25CB'}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* QW-6: Version footer */}
       <div style={{

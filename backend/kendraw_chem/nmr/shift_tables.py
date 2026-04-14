@@ -300,7 +300,7 @@ CONFIDENCE_REFERENCE_COUNTS: dict[str, int] = {
     "alkyne_terminal": 10,
     "aldehyde": 30,
     "carboxylic_acid": 12,
-    "amide_nh": 14,
+    "amide_nh": 8,  # Reduced: amide NH is highly variable (6.5-8.5 ppm)
     "amine_nh": 12,
     "hydroxyl_oh": 20,
     "thiol_sh": 8,

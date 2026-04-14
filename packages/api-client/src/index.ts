@@ -26,6 +26,7 @@ export interface NmrPeak {
   environment: string;
   confidence: 1 | 2 | 3;
   method: string;
+  proton_group_id: number;
 }
 
 export interface NmrMetadata {

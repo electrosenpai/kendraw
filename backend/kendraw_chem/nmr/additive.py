@@ -785,4 +785,8 @@ def predict_additive(
     # Sort: shift_ppm descending, then first atom_index ascending
     peaks.sort(key=lambda p: (-p.shift_ppm, p.atom_index))
 
+    # F-1: Assign proton group IDs (H1, H2, H3...) in descending shift order
+    for gid, peak in enumerate(peaks, start=1):
+        peak.proton_group_id = gid
+
     return peaks

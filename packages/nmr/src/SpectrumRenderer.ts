@@ -317,6 +317,24 @@ export function renderSpectrum(
     hitBoxes.push({ peakIdx: pi, x: cx, y: peakTopY, radius: Math.max(r + 4, 10) });
   }
 
+  // F-3: Integration bars below peaks
+  const totalH = prediction.peaks.reduce((s, p) => s + p.atom_indices.length, 0);
+  if (totalH > 0) {
+    const maxBarW = 40;
+    const barY = MARGIN.top + plotH + 18;
+    for (const peak of prediction.peaks) {
+      const nH = peak.atom_indices.length;
+      const cx = ppmToX(peak.shift_ppm);
+      const scaledW = Math.min(Math.max(nH * 8, 6), maxBarW);
+      ctx.fillStyle = exportMode ? 'rgba(30, 100, 200, 0.25)' : 'rgba(77, 171, 247, 0.2)';
+      ctx.fillRect(cx - scaledW / 2, barY, scaledW, 3);
+      ctx.fillStyle = exportMode ? '#888888' : '#666666';
+      ctx.font = '8px Inter, system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(`${nH}H`, cx, barY + 12);
+    }
+  }
+
   return hitBoxes;
 }
 
