@@ -86,7 +86,71 @@ export const SLIDE_POSTER: StylePreset = {
   labelFace: 96,
 };
 
-export const ALL_PRESETS: StylePreset[] = [ACS_1996, NEW_DOCUMENT, SLIDE_POSTER];
+/**
+ * RSC (Royal Society of Chemistry) — 1 and 2 column layouts.
+ * Source: PDF Section 7a, exact parameters from the style table.
+ */
+export const RSC: StylePreset = {
+  name: 'RSC',
+  bondLengthPt: 12.2, // 0.430 cm
+  lineWidthPt: 0.5,
+  boldWidthPt: 1.6,
+  marginWidthPt: 1.3,
+  hashSpacingPt: 1.8,
+  bondSpacing: 0.2, // 20%
+  chainAngle: 120,
+  captionSizePt: 7,
+  labelFont: 'Arial',
+  labelSizePt: 7,
+  labelFace: 96,
+};
+
+/**
+ * Wiley / Angewandte Chemie — dense style for narrow columns.
+ * Source: PDF Section 7a, exact parameters from the style table.
+ */
+export const WILEY: StylePreset = {
+  name: 'Wiley / Angewandte',
+  bondLengthPt: 11.5, // 0.406 cm
+  lineWidthPt: 0.5,
+  boldWidthPt: 1.6,
+  marginWidthPt: 1.3,
+  hashSpacingPt: 2.0,
+  bondSpacing: 0.18, // 18%
+  chainAngle: 120,
+  captionSizePt: 8,
+  labelFont: 'Arial',
+  labelSizePt: 8,
+  labelFace: 96,
+};
+
+/**
+ * Nature — same metrics as ACS 1996 but with Helvetica.
+ * Source: PDF Section 7a, exact parameters from the style table.
+ */
+export const NATURE: StylePreset = {
+  name: 'Nature',
+  bondLengthPt: 14.4, // 0.508 cm (same as ACS)
+  lineWidthPt: 0.6,
+  boldWidthPt: 2.0,
+  marginWidthPt: 1.6,
+  hashSpacingPt: 2.5,
+  bondSpacing: 0.18, // 18%
+  chainAngle: 120,
+  captionSizePt: 10,
+  labelFont: 'Helvetica',
+  labelSizePt: 10,
+  labelFace: 96,
+};
+
+export const ALL_PRESETS: StylePreset[] = [
+  ACS_1996,
+  RSC,
+  WILEY,
+  NATURE,
+  NEW_DOCUMENT,
+  SLIDE_POSTER,
+];
 
 /** Convert PostScript points to pixels at 96 DPI screen resolution. */
 export function ptToPx(pt: number): number {

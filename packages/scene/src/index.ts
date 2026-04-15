@@ -102,6 +102,9 @@ export {
 
 export {
   ACS_1996,
+  RSC,
+  WILEY,
+  NATURE,
   NEW_DOCUMENT,
   SLIDE_POSTER,
   ALL_PRESETS,
