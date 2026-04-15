@@ -25,6 +25,7 @@ export interface RenderOptions {
   exportMode?: boolean;
   solvent?: string;
   showNoise?: boolean;
+  deptMode?: boolean;
 }
 
 export interface PeakHitBox {
@@ -38,6 +39,14 @@ const CONF_COLORS: Record<number, string> = {
   3: '#51cf66',
   2: '#ffd43b',
   1: '#ff6b6b',
+};
+
+// DEPT carbon type colors
+const DEPT_COLORS: Record<string, string> = {
+  CH3: '#3b82f6', // blue
+  CH: '#22c55e', // green
+  CH2: '#ef4444', // red
+  C: '#888888', // gray (invisible in DEPT)
 };
 
 // Solvent residual proton peaks — dashed marker + label on spectrum
@@ -88,6 +97,7 @@ export function renderSpectrum(
     exportMode,
     solvent,
     showNoise,
+    deptMode,
   } = options;
   const hitBoxes: PeakHitBox[] = [];
 
@@ -179,34 +189,100 @@ export function renderSpectrum(
 
   for (const peak of prediction.peaks) {
     const nH = peak.atom_indices.length;
-    for (let i = 0; i < nPoints; i++) {
-      const ppm = maxPpm - (i / (nPoints - 1)) * ppmRange;
-      const val = nH * lorentzian(ppm, peak.shift_ppm, LORENTZIAN_HALF_WIDTH_PPM);
-      const prev = spectrum[i] ?? 0;
-      spectrum[i] = prev + val;
-      const cur = spectrum[i] ?? 0;
-      if (cur > maxIntensity) maxIntensity = cur;
+    // DEPT mode: signed intensities, skip quaternary C
+    if (deptMode) {
+      const dept = peak.dept_class;
+      if (!dept || dept === 'C') continue; // quaternary C invisible
+      const sign = dept === 'CH2' ? -1 : 1;
+      for (let i = 0; i < nPoints; i++) {
+        const ppm = maxPpm - (i / (nPoints - 1)) * ppmRange;
+        const val = sign * nH * lorentzian(ppm, peak.shift_ppm, LORENTZIAN_HALF_WIDTH_PPM);
+        const prev = spectrum[i] ?? 0;
+        spectrum[i] = prev + val;
+        const absVal = Math.abs(spectrum[i] ?? 0);
+        if (absVal > maxIntensity) maxIntensity = absVal;
+      }
+    } else {
+      for (let i = 0; i < nPoints; i++) {
+        const ppm = maxPpm - (i / (nPoints - 1)) * ppmRange;
+        const val = nH * lorentzian(ppm, peak.shift_ppm, LORENTZIAN_HALF_WIDTH_PPM);
+        const prev = spectrum[i] ?? 0;
+        spectrum[i] = prev + val;
+        const cur = spectrum[i] ?? 0;
+        if (cur > maxIntensity) maxIntensity = cur;
+      }
     }
   }
 
   if (maxIntensity === 0) return hitBoxes;
 
-  // Draw composite envelope
-  ctx.beginPath();
-  ctx.moveTo(MARGIN.left, MARGIN.top + plotH);
-  for (let i = 0; i < nPoints; i++) {
-    const x = MARGIN.left + (i / (nPoints - 1)) * plotW;
-    const y = MARGIN.top + plotH - ((spectrum[i] ?? 0) / maxIntensity) * plotH * 0.85;
-    if (i === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
+  if (deptMode) {
+    // DEPT mode: draw baseline at center, envelope above/below
+    const baselineY = MARGIN.top + plotH * 0.5;
+
+    // Draw horizontal baseline
+    ctx.strokeStyle = exportMode ? '#999999' : '#555555';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(MARGIN.left, baselineY);
+    ctx.lineTo(MARGIN.left + plotW, baselineY);
+    ctx.stroke();
+
+    // Draw positive envelope (above baseline)
+    ctx.beginPath();
+    ctx.moveTo(MARGIN.left, baselineY);
+    for (let i = 0; i < nPoints; i++) {
+      const x = MARGIN.left + (i / (nPoints - 1)) * plotW;
+      const val = spectrum[i] ?? 0;
+      const posVal = Math.max(val, 0);
+      const y = baselineY - (posVal / maxIntensity) * plotH * 0.42;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.lineTo(MARGIN.left + plotW, baselineY);
+    ctx.closePath();
+    ctx.fillStyle = exportMode ? 'rgba(59, 130, 246, 0.08)' : 'rgba(59, 130, 246, 0.06)';
+    ctx.fill();
+    ctx.strokeStyle = exportMode ? 'rgba(59, 130, 246, 0.4)' : 'rgba(59, 130, 246, 0.3)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Draw negative envelope (below baseline)
+    ctx.beginPath();
+    ctx.moveTo(MARGIN.left, baselineY);
+    for (let i = 0; i < nPoints; i++) {
+      const x = MARGIN.left + (i / (nPoints - 1)) * plotW;
+      const val = spectrum[i] ?? 0;
+      const negVal = Math.min(val, 0);
+      const y = baselineY - (negVal / maxIntensity) * plotH * 0.42;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.lineTo(MARGIN.left + plotW, baselineY);
+    ctx.closePath();
+    ctx.fillStyle = exportMode ? 'rgba(239, 68, 68, 0.08)' : 'rgba(239, 68, 68, 0.06)';
+    ctx.fill();
+    ctx.strokeStyle = exportMode ? 'rgba(239, 68, 68, 0.4)' : 'rgba(239, 68, 68, 0.3)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  } else {
+    // Normal mode: single envelope from bottom
+    ctx.beginPath();
+    ctx.moveTo(MARGIN.left, MARGIN.top + plotH);
+    for (let i = 0; i < nPoints; i++) {
+      const x = MARGIN.left + (i / (nPoints - 1)) * plotW;
+      const y = MARGIN.top + plotH - ((spectrum[i] ?? 0) / maxIntensity) * plotH * 0.85;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.lineTo(MARGIN.left + plotW, MARGIN.top + plotH);
+    ctx.closePath();
+    ctx.fillStyle = envelopeFill;
+    ctx.fill();
+    ctx.strokeStyle = envelopeStroke;
+    ctx.lineWidth = 1;
+    ctx.stroke();
   }
-  ctx.lineTo(MARGIN.left + plotW, MARGIN.top + plotH);
-  ctx.closePath();
-  ctx.fillStyle = envelopeFill;
-  ctx.fill();
-  ctx.strokeStyle = envelopeStroke;
-  ctx.lineWidth = 1;
-  ctx.stroke();
 
   // QW-1: Solvent label (top-right) + residual peak markers (dashed vertical lines)
   if (solvent) {
@@ -295,66 +371,111 @@ export function renderSpectrum(
   }
 
   // Draw individual peaks
+  const baselineY = deptMode ? MARGIN.top + plotH * 0.5 : MARGIN.top + plotH;
   for (let pi = 0; pi < prediction.peaks.length; pi++) {
     const peak = prediction.peaks[pi];
     if (!peak) continue;
+
+    // DEPT mode: skip quaternary C
+    if (deptMode && (!peak.dept_class || peak.dept_class === 'C')) continue;
+
     const cx = ppmToX(peak.shift_ppm);
-    const color = CONF_COLORS[peak.confidence] ?? '#888888';
     const nH = peak.atom_indices.length;
-    const peakTopY =
-      MARGIN.top +
-      plotH -
-      ((nH * lorentzian(peak.shift_ppm, peak.shift_ppm, LORENTZIAN_HALF_WIDTH_PPM)) /
-        maxIntensity) *
-        plotH *
-        0.85;
+
+    // DEPT mode uses dept_class colors; normal uses confidence colors
+    const deptClass = peak.dept_class ?? 'C';
+    const color = deptMode ? (DEPT_COLORS[deptClass] ?? '#888888') : (CONF_COLORS[peak.confidence] ?? '#888888');
+    const isDeptInverted = deptMode && deptClass === 'CH2';
+    const deptSign = isDeptInverted ? -1 : 1;
+
+    let peakTopY: number;
+    if (deptMode) {
+      const peakIntensity =
+        (nH * lorentzian(peak.shift_ppm, peak.shift_ppm, LORENTZIAN_HALF_WIDTH_PPM)) /
+        maxIntensity;
+      peakTopY = baselineY - deptSign * peakIntensity * plotH * 0.42;
+    } else {
+      peakTopY =
+        MARGIN.top +
+        plotH -
+        ((nH * lorentzian(peak.shift_ppm, peak.shift_ppm, LORENTZIAN_HALF_WIDTH_PPM)) /
+          maxIntensity) *
+          plotH *
+          0.85;
+    }
 
     const isHovered = hoveredPeakIdx === pi;
     const isSelected = selectedPeakIdx === pi;
 
     // Stem line
     ctx.beginPath();
-    ctx.moveTo(cx, MARGIN.top + plotH);
+    ctx.moveTo(cx, baselineY);
     ctx.lineTo(cx, peakTopY);
     ctx.strokeStyle = isSelected ? '#ffffff' : isHovered ? color : color + '88';
     ctx.lineWidth = isSelected ? 2 : isHovered ? 1.5 : 1;
     ctx.stroke();
 
-    // Confidence shape at peak top
+    // Confidence shape at peak top (above for normal/CH3/CH, below for CH2)
     const r = isHovered || isSelected ? 6 : 4;
-    drawConfidenceMarker(ctx, cx, peakTopY - r - 2, r, peak.confidence, color, isSelected, bg);
+    const markerY = isDeptInverted ? peakTopY + r + 2 : peakTopY - r - 2;
+    drawConfidenceMarker(ctx, cx, markerY, r, peak.confidence, color, isSelected, bg);
 
-    // Peak label — shift + multiplicity
+    // Peak label — shift + dept class (DEPT mode) or shift + multiplicity (normal)
     ctx.fillStyle = isSelected ? peakLabelSelected : isHovered ? peakLabelHover : peakLabelDefault;
     ctx.font = `${isHovered || isSelected ? 11 : 10}px "JetBrains Mono", "IBM Plex Mono", monospace`;
     ctx.textAlign = 'center';
-    const mult = peak.multiplicity ?? 's';
-    const label = `${peak.shift_ppm.toFixed(2)} ${mult}`;
-    ctx.fillText(label, cx, peakTopY - r - 8);
+    const labelText = deptMode
+      ? `${peak.shift_ppm.toFixed(1)} ${deptClass}`
+      : `${peak.shift_ppm.toFixed(2)} ${peak.multiplicity ?? 's'}`;
+    const labelY = isDeptInverted ? peakTopY + r + 16 : peakTopY - r - 8;
+    ctx.fillText(labelText, cx, labelY);
 
-    // nH indicator
-    ctx.font = '9px Inter, system-ui, sans-serif';
-    ctx.fillStyle = nHColor;
-    ctx.fillText(`${nH}H`, cx, MARGIN.top + plotH + 4);
+    // nH indicator (at axis for normal, at baseline for DEPT)
+    if (!deptMode) {
+      ctx.font = '9px Inter, system-ui, sans-serif';
+      ctx.fillStyle = nHColor;
+      ctx.fillText(`${nH}H`, cx, MARGIN.top + plotH + 4);
+    }
 
     hitBoxes.push({ peakIdx: pi, x: cx, y: peakTopY, radius: Math.max(r + 4, 10) });
   }
 
-  // F-3: Integration bars below peaks
-  const totalH = prediction.peaks.reduce((s, p) => s + p.atom_indices.length, 0);
-  if (totalH > 0) {
-    const maxBarW = 40;
-    const barY = MARGIN.top + plotH + 18;
-    for (const peak of prediction.peaks) {
-      const nH = peak.atom_indices.length;
-      const cx = ppmToX(peak.shift_ppm);
-      const scaledW = Math.min(Math.max(nH * 8, 6), maxBarW);
-      ctx.fillStyle = exportMode ? 'rgba(30, 100, 200, 0.25)' : 'rgba(77, 171, 247, 0.2)';
-      ctx.fillRect(cx - scaledW / 2, barY, scaledW, 3);
-      ctx.fillStyle = exportMode ? '#888888' : '#666666';
-      ctx.font = '8px Inter, system-ui, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(`${nH}H`, cx, barY + 12);
+  // DEPT legend (top-left area)
+  if (deptMode) {
+    const legendX = MARGIN.left + 8;
+    let legendY = MARGIN.top + 28;
+    ctx.font = '9px Inter, system-ui, sans-serif';
+    const legendItems: Array<{ label: string; color: string; symbol: string }> = [
+      { label: 'CH\u2083', color: DEPT_COLORS['CH3'] ?? '#3b82f6', symbol: '\u25CF' },
+      { label: 'CH', color: DEPT_COLORS['CH'] ?? '#22c55e', symbol: '\u25CF' },
+      { label: 'CH\u2082 (inv.)', color: DEPT_COLORS['CH2'] ?? '#ef4444', symbol: '\u25CF' },
+      { label: 'C (absent)', color: exportMode ? '#aaaaaa' : '#555555', symbol: '\u25CB' },
+    ];
+    for (const item of legendItems) {
+      ctx.fillStyle = item.color;
+      ctx.textAlign = 'left';
+      ctx.fillText(`${item.symbol} ${item.label}`, legendX, legendY);
+      legendY += 13;
+    }
+  }
+
+  // F-3: Integration bars below peaks (skip in DEPT mode)
+  if (!deptMode) {
+    const totalH = prediction.peaks.reduce((s, p) => s + p.atom_indices.length, 0);
+    if (totalH > 0) {
+      const maxBarW = 40;
+      const barY = MARGIN.top + plotH + 18;
+      for (const peak of prediction.peaks) {
+        const nH = peak.atom_indices.length;
+        const cx = ppmToX(peak.shift_ppm);
+        const scaledW = Math.min(Math.max(nH * 8, 6), maxBarW);
+        ctx.fillStyle = exportMode ? 'rgba(30, 100, 200, 0.25)' : 'rgba(77, 171, 247, 0.2)';
+        ctx.fillRect(cx - scaledW / 2, barY, scaledW, 3);
+        ctx.fillStyle = exportMode ? '#888888' : '#666666';
+        ctx.font = '8px Inter, system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(`${nH}H`, cx, barY + 12);
+      }
     }
   }
 

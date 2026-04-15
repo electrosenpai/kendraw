@@ -264,6 +264,7 @@ export default function NmrPanel({
   const [isPanning, setIsPanning] = useState(false);
   const [pinnedPeakIdx, setPinnedPeakIdx] = useState<number | null>(null);
   const [showNoise, setShowNoise] = useState(false);
+  const [deptMode, setDeptMode] = useState(false);
   const panRef = useRef<{ startX: number; startVp: SpectrumViewport } | null>(null);
 
   const dragRef = useRef<{ startY: number; startH: number } | null>(null);
@@ -435,6 +436,7 @@ export default function NmrPanel({
       selectedPeakIdx,
       solvent,
       showNoise,
+      deptMode: deptMode && nucleus === '13C',
     });
   }, [
     prediction,
@@ -445,6 +447,8 @@ export default function NmrPanel({
     solvent,
     showNoise,
     pinnedPeakIdx,
+    deptMode,
+    nucleus,
   ]);
 
   // Canvas mouse interactions
@@ -718,6 +722,30 @@ export default function NmrPanel({
             ))}
           </select>
 
+          {/* DEPT toggle (13C only) */}
+          {nucleus === '13C' && (
+            <button
+              onClick={() => setDeptMode((d) => !d)}
+              style={{
+                padding: '2px 6px',
+                fontSize: 10,
+                fontFamily: 'var(--kd-font-mono, monospace)',
+                border: '1px solid var(--kd-color-border, #333)',
+                borderRadius: 'var(--kd-radius-sm, 4px)',
+                background: deptMode
+                  ? 'var(--kd-color-accent-muted, rgba(77, 171, 247, 0.15))'
+                  : 'transparent',
+                color: deptMode
+                  ? 'var(--kd-color-accent, #4dabf7)'
+                  : 'var(--kd-color-text-secondary, #a0a0a0)',
+                cursor: 'pointer',
+              }}
+              title="Toggle DEPT mode — color-coded carbon types with CH₂ inversion"
+            >
+              DEPT
+            </button>
+          )}
+
           {/* Peak count */}
           {prediction && prediction.peaks.length > 0 && (
             <span style={{ fontSize: 10, color: 'var(--kd-color-text-muted, #666)' }}>
@@ -908,12 +936,29 @@ export default function NmrPanel({
           }}
         >
           <span style={{ color: 'var(--kd-color-accent, #4dabf7)', fontWeight: 600 }}>
-            H{selectedPeak.proton_group_id}
+            {nucleus === '13C' ? `C${selectedPeak.proton_group_id}` : `H${selectedPeak.proton_group_id}`}
           </span>
           <span>
             {'\u03B4'} {selectedPeak.shift_ppm.toFixed(2)} ppm
           </span>
-          <span>{selectedPeak.integral}H</span>
+          {nucleus === '13C' && selectedPeak.dept_class && (
+            <span
+              style={{
+                color:
+                  selectedPeak.dept_class === 'CH3'
+                    ? '#3b82f6'
+                    : selectedPeak.dept_class === 'CH'
+                      ? '#22c55e'
+                      : selectedPeak.dept_class === 'CH2'
+                        ? '#ef4444'
+                        : '#888888',
+                fontWeight: 600,
+              }}
+            >
+              {selectedPeak.dept_class}
+            </span>
+          )}
+          {nucleus === '1H' && <span>{selectedPeak.integral}H</span>}
           <span>{formatMultiplicity(selectedPeak.multiplicity, selectedPeak.coupling_hz)}</span>
           <span style={{ color: 'var(--kd-color-text-muted, #666)' }}>
             {selectedPeak.environment}
@@ -1052,7 +1097,7 @@ export default function NmrPanel({
                     color: 'var(--kd-color-text-muted, #666)',
                   }}
                 >
-                  H#
+                  {nucleus === '13C' ? 'C#' : 'H#'}
                 </th>
                 <th
                   style={{
@@ -1063,33 +1108,50 @@ export default function NmrPanel({
                 >
                   {'\u03B4'} (ppm)
                 </th>
-                <th
-                  style={{
-                    padding: '2px 6px',
-                    textAlign: 'center',
-                    color: 'var(--kd-color-text-muted, #666)',
-                  }}
-                >
-                  Mult.
-                </th>
-                <th
-                  style={{
-                    padding: '2px 6px',
-                    textAlign: 'right',
-                    color: 'var(--kd-color-text-muted, #666)',
-                  }}
-                >
-                  J (Hz)
-                </th>
-                <th
-                  style={{
-                    padding: '2px 6px',
-                    textAlign: 'center',
-                    color: 'var(--kd-color-text-muted, #666)',
-                  }}
-                >
-                  Int.
-                </th>
+                {nucleus === '13C' && (
+                  <th
+                    style={{
+                      padding: '2px 6px',
+                      textAlign: 'center',
+                      color: 'var(--kd-color-text-muted, #666)',
+                    }}
+                  >
+                    Type
+                  </th>
+                )}
+                {nucleus === '1H' && (
+                  <th
+                    style={{
+                      padding: '2px 6px',
+                      textAlign: 'center',
+                      color: 'var(--kd-color-text-muted, #666)',
+                    }}
+                  >
+                    Mult.
+                  </th>
+                )}
+                {nucleus === '1H' && (
+                  <th
+                    style={{
+                      padding: '2px 6px',
+                      textAlign: 'right',
+                      color: 'var(--kd-color-text-muted, #666)',
+                    }}
+                  >
+                    J (Hz)
+                  </th>
+                )}
+                {nucleus === '1H' && (
+                  <th
+                    style={{
+                      padding: '2px 6px',
+                      textAlign: 'center',
+                      color: 'var(--kd-color-text-muted, #666)',
+                    }}
+                  >
+                    Int.
+                  </th>
+                )}
                 <th
                   style={{
                     padding: '2px 6px',
@@ -1114,6 +1176,14 @@ export default function NmrPanel({
               {prediction.peaks.map((pk, idx) => {
                 const confInfo = CONF_LABELS[pk.confidence] ?? { label: '?', color: '#888' };
                 const isActive = selectedPeakIdx === idx;
+                const deptColor =
+                  pk.dept_class === 'CH3'
+                    ? '#3b82f6'
+                    : pk.dept_class === 'CH'
+                      ? '#22c55e'
+                      : pk.dept_class === 'CH2'
+                        ? '#ef4444'
+                        : '#888888';
                 return (
                   <tr
                     key={idx}
@@ -1131,18 +1201,40 @@ export default function NmrPanel({
                         fontWeight: 600,
                       }}
                     >
-                      H{pk.proton_group_id}
+                      {nucleus === '13C' ? `C${pk.proton_group_id}` : `H${pk.proton_group_id}`}
                     </td>
                     <td style={{ padding: '2px 6px', textAlign: 'right' }}>
                       {pk.shift_ppm.toFixed(2)}
                     </td>
-                    <td style={{ padding: '2px 6px', textAlign: 'center' }}>{pk.multiplicity}</td>
-                    <td style={{ padding: '2px 6px', textAlign: 'right' }}>
-                      {pk.coupling_hz.length > 0
-                        ? pk.coupling_hz.map((j) => j.toFixed(1)).join(', ')
-                        : '\u2014'}
-                    </td>
-                    <td style={{ padding: '2px 6px', textAlign: 'center' }}>{pk.integral}H</td>
+                    {nucleus === '13C' && (
+                      <td
+                        style={{
+                          padding: '2px 6px',
+                          textAlign: 'center',
+                          color: deptColor,
+                          fontWeight: 600,
+                        }}
+                      >
+                        {pk.dept_class ?? '\u2014'}
+                      </td>
+                    )}
+                    {nucleus === '1H' && (
+                      <td style={{ padding: '2px 6px', textAlign: 'center' }}>
+                        {pk.multiplicity}
+                      </td>
+                    )}
+                    {nucleus === '1H' && (
+                      <td style={{ padding: '2px 6px', textAlign: 'right' }}>
+                        {pk.coupling_hz.length > 0
+                          ? pk.coupling_hz.map((j) => j.toFixed(1)).join(', ')
+                          : '\u2014'}
+                      </td>
+                    )}
+                    {nucleus === '1H' && (
+                      <td style={{ padding: '2px 6px', textAlign: 'center' }}>
+                        {pk.integral}H
+                      </td>
+                    )}
                     <td style={{ padding: '2px 6px' }}>{formatEnvironment(pk.environment)}</td>
                     <td style={{ padding: '2px 6px', textAlign: 'center', color: confInfo.color }}>
                       {pk.confidence === 3 ? '\u25CF' : pk.confidence === 2 ? '\u25D1' : '\u25CB'}
@@ -1166,7 +1258,7 @@ export default function NmrPanel({
           borderTop: '1px solid var(--kd-color-border-subtle, #1a1a1a)',
         }}
       >
-        Kendraw NMR v0.2.0 — Additive prediction engine
+        Kendraw NMR v0.3.0 — Additive prediction engine + DEPT
       </div>
 
       <style>{`
