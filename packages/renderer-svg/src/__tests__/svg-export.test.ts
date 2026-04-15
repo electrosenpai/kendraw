@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { exportToSVG } from '../svg-export.js';
 import { createAtom, createBond } from '@kendraw/scene';
-import type { Page, ArrowId, AnnotationId, GroupId } from '@kendraw/scene';
+import type { Page, Arrow, ArrowId, Annotation, AnnotationId, GroupId } from '@kendraw/scene';
 
 function createPage(
   atoms: ReturnType<typeof createAtom>[],
@@ -59,5 +59,80 @@ describe('exportToSVG', () => {
     const page = createPage([a1, a2]);
     const svg = exportToSVG(page);
     expect(svg).toContain('viewBox=');
+  });
+
+  it('renders forward arrows with arrowhead polygon', () => {
+    const page = createPage([]);
+    const arrow: Arrow = {
+      id: 'arrow-1' as ArrowId,
+      type: 'forward',
+      geometry: {
+        start: { x: 0, y: 50 },
+        c1: { x: 50, y: 50 },
+        c2: { x: 100, y: 50 },
+        end: { x: 150, y: 50 },
+      },
+      startAnchor: { kind: 'free' },
+      endAnchor: { kind: 'free' },
+    };
+    page.arrows = { [arrow.id]: arrow } as Page['arrows'];
+    const svg = exportToSVG(page);
+    expect(svg).toContain('<polygon');
+    expect(svg).toContain('<line');
+  });
+
+  it('renders curly arrows with Bezier path', () => {
+    const page = createPage([]);
+    const arrow: Arrow = {
+      id: 'arrow-2' as ArrowId,
+      type: 'curly-pair',
+      geometry: {
+        start: { x: 10, y: 10 },
+        c1: { x: 30, y: -20 },
+        c2: { x: 70, y: -20 },
+        end: { x: 90, y: 10 },
+      },
+      startAnchor: { kind: 'free' },
+      endAnchor: { kind: 'free' },
+    };
+    page.arrows = { [arrow.id]: arrow } as Page['arrows'];
+    const svg = exportToSVG(page);
+    expect(svg).toContain('<path');
+    expect(svg).toContain('marker-end');
+  });
+
+  it('renders annotations with text', () => {
+    const page = createPage([]);
+    const ann: Annotation = {
+      id: 'ann-1' as AnnotationId,
+      x: 50,
+      y: 80,
+      richText: [{ text: 'THF, reflux, 2h' }],
+    };
+    page.annotations = { [ann.id]: ann } as Page['annotations'];
+    const svg = exportToSVG(page);
+    expect(svg).toContain('THF, reflux, 2h');
+    expect(svg).toContain('<text');
+  });
+
+  it('renders equilibrium arrows with two lines', () => {
+    const page = createPage([]);
+    const arrow: Arrow = {
+      id: 'arrow-3' as ArrowId,
+      type: 'equilibrium',
+      geometry: {
+        start: { x: 0, y: 50 },
+        c1: { x: 50, y: 50 },
+        c2: { x: 100, y: 50 },
+        end: { x: 150, y: 50 },
+      },
+      startAnchor: { kind: 'free' },
+      endAnchor: { kind: 'free' },
+    };
+    page.arrows = { [arrow.id]: arrow } as Page['arrows'];
+    const svg = exportToSVG(page);
+    // Equilibrium has 2 parallel lines + 2 arrowheads = at least 2 lines
+    const lineCount = (svg.match(/<line /g) || []).length;
+    expect(lineCount).toBeGreaterThanOrEqual(2);
   });
 });

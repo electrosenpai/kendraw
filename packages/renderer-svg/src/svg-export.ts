@@ -1,4 +1,4 @@
-import type { Page, Atom, Bond, Annotation } from '@kendraw/scene';
+import type { Page, Atom, Bond, Annotation, Arrow, BezierGeometry } from '@kendraw/scene';
 import { getColor, getSymbol } from '@kendraw/scene';
 
 const ATOM_RADIUS = 14;
@@ -12,6 +12,7 @@ function escapeXml(s: string): string {
 export function exportToSVG(page: Page, options?: { width?: number; height?: number }): string {
   const atoms = Object.values(page.atoms);
   const bonds = Object.values(page.bonds);
+  const arrows = Object.values(page.arrows);
   const annotations = Object.values(page.annotations);
 
   // Compute bounds
@@ -24,6 +25,15 @@ export function exportToSVG(page: Page, options?: { width?: number; height?: num
     minY = Math.min(minY, a.y - ATOM_RADIUS);
     maxX = Math.max(maxX, a.x + ATOM_RADIUS);
     maxY = Math.max(maxY, a.y + ATOM_RADIUS);
+  }
+  for (const arrow of arrows) {
+    const g = arrow.geometry;
+    for (const p of [g.start, g.c1, g.c2, g.end]) {
+      minX = Math.min(minX, p.x - 10);
+      minY = Math.min(minY, p.y - 10);
+      maxX = Math.max(maxX, p.x + 10);
+      maxY = Math.max(maxY, p.y + 10);
+    }
   }
   for (const ann of annotations) {
     const textWidth = ann.richText.reduce((w, s) => w + s.text.length * 8, 0);
@@ -64,6 +74,11 @@ export function exportToSVG(page: Page, options?: { width?: number; height?: num
   // Atoms
   for (const atom of atoms) {
     parts.push(renderAtomSVG(atom));
+  }
+
+  // Arrows (reaction, curly)
+  for (const arrow of arrows) {
+    parts.push(renderArrowSVG(arrow));
   }
 
   // Annotations
@@ -116,6 +131,90 @@ function renderBondSVG(bond: Bond, from: Atom, to: Atom): string {
     ].join('\n');
   }
   return `<line x1="${from.x}" y1="${from.y}" x2="${to.x}" y2="${to.y}" stroke="${stroke}" stroke-width="1.5"/>`;
+}
+
+function bezierPath(g: BezierGeometry): string {
+  return `M${g.start.x},${g.start.y} C${g.c1.x},${g.c1.y} ${g.c2.x},${g.c2.y} ${g.end.x},${g.end.y}`;
+}
+
+function arrowheadMarker(id: string, type: 'full' | 'half'): string {
+  if (type === 'half') {
+    return `<marker id="${id}" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,5 L10,5 L10,0" fill="none" stroke="#333" stroke-width="1.5"/></marker>`;
+  }
+  return `<marker id="${id}" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 Z" fill="#333"/></marker>`;
+}
+
+function renderArrowSVG(arrow: Arrow): string {
+  const g = arrow.geometry;
+  const stroke = '#333';
+  const sw = 1.5;
+
+  // Curly arrows (Bezier curves with arrowhead)
+  if (arrow.type === 'curly-pair' || arrow.type === 'curly-radical') {
+    const headType = arrow.type === 'curly-radical' ? 'half' : 'full';
+    const markerId = `ah-${arrow.id.slice(0, 8)}`;
+    return [
+      arrowheadMarker(markerId, headType),
+      `<path d="${bezierPath(g)}" fill="none" stroke="${stroke}" stroke-width="${sw}" marker-end="url(#${markerId})"/>`,
+    ].join('\n');
+  }
+
+  // Straight reaction arrows
+  const dx = g.end.x - g.start.x;
+  const dy = g.end.y - g.start.y;
+  const len = Math.sqrt(dx * dx + dy * dy) || 1;
+  const ux = dx / len;
+  const uy = dy / len;
+  const headSize = 8;
+
+  if (arrow.type === 'forward') {
+    const tipX = g.end.x;
+    const tipY = g.end.y;
+    const ax = tipX - headSize * ux + headSize * 0.4 * uy;
+    const ay = tipY - headSize * uy - headSize * 0.4 * ux;
+    const bx = tipX - headSize * ux - headSize * 0.4 * uy;
+    const by = tipY - headSize * uy + headSize * 0.4 * ux;
+    return [
+      `<line x1="${g.start.x}" y1="${g.start.y}" x2="${tipX - headSize * 0.5 * ux}" y2="${tipY - headSize * 0.5 * uy}" stroke="${stroke}" stroke-width="${sw}"/>`,
+      `<polygon points="${tipX},${tipY} ${ax},${ay} ${bx},${by}" fill="${stroke}"/>`,
+    ].join('\n');
+  }
+
+  if (arrow.type === 'equilibrium') {
+    const nx = -uy * 3;
+    const ny = ux * 3;
+    return [
+      `<line x1="${g.start.x + nx}" y1="${g.start.y + ny}" x2="${g.end.x + nx}" y2="${g.end.y + ny}" stroke="${stroke}" stroke-width="1"/>`,
+      `<line x1="${g.start.x - nx}" y1="${g.start.y - ny}" x2="${g.end.x - nx}" y2="${g.end.y - ny}" stroke="${stroke}" stroke-width="1"/>`,
+      // Right arrowhead on top line
+      `<polygon points="${g.end.x + nx},${g.end.y + ny} ${g.end.x + nx - 6 * ux + 3 * uy},${g.end.y + ny - 6 * uy - 3 * ux} ${g.end.x + nx - 6 * ux - 1 * uy},${g.end.y + ny - 6 * uy + 1 * ux}" fill="${stroke}"/>`,
+      // Left arrowhead on bottom line
+      `<polygon points="${g.start.x - nx},${g.start.y - ny} ${g.start.x - nx + 6 * ux + 3 * uy},${g.start.y - ny + 6 * uy - 3 * ux} ${g.start.x - nx + 6 * ux - 1 * uy},${g.start.y - ny + 6 * uy + 1 * ux}" fill="${stroke}"/>`,
+    ].join('\n');
+  }
+
+  if (arrow.type === 'reversible' || arrow.type === 'resonance') {
+    // Double-headed arrow
+    const tipX = g.end.x;
+    const tipY = g.end.y;
+    const tailX = g.start.x;
+    const tailY = g.start.y;
+    const makeHead = (tx: number, ty: number, dirX: number, dirY: number) => {
+      const ax = tx - headSize * dirX + headSize * 0.4 * dirY;
+      const ay = ty - headSize * dirY - headSize * 0.4 * dirX;
+      const bx = tx - headSize * dirX - headSize * 0.4 * dirY;
+      const by = ty - headSize * dirY + headSize * 0.4 * dirX;
+      return `<polygon points="${tx},${ty} ${ax},${ay} ${bx},${by}" fill="${stroke}"/>`;
+    };
+    return [
+      `<line x1="${tailX + headSize * 0.5 * ux}" y1="${tailY + headSize * 0.5 * uy}" x2="${tipX - headSize * 0.5 * ux}" y2="${tipY - headSize * 0.5 * uy}" stroke="${stroke}" stroke-width="${sw}"/>`,
+      makeHead(tipX, tipY, ux, uy),
+      makeHead(tailX, tailY, -ux, -uy),
+    ].join('\n');
+  }
+
+  // Fallback: simple line
+  return `<line x1="${g.start.x}" y1="${g.start.y}" x2="${g.end.x}" y2="${g.end.y}" stroke="${stroke}" stroke-width="${sw}"/>`;
 }
 
 function renderAnnotationSVG(ann: Annotation): string {
