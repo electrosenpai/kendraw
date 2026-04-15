@@ -44,9 +44,7 @@ const SHORTCUTS = [
   },
   {
     category: 'Rings (ring tool active)',
-    items: [
-      { key: '3-8', desc: 'Cycle size' },
-    ],
+    items: [{ key: '3-8', desc: 'Cycle size' }],
   },
   {
     category: 'Edit',

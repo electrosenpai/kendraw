@@ -107,8 +107,16 @@ function parseDocumentSettings(root: Element): CdxmlDocumentSettings {
     // BondSpacing is stored as percentage (18) in CDXML, convert to fraction (0.18)
     bondSpacing: bondSpacingRaw > 1 ? bondSpacingRaw / 100 : bondSpacingRaw,
     chainAngle: floatAttr(root, 'ChainAngle', DEFAULTS.chainAngle),
-    showTerminalCarbonLabels: boolAttr(root, 'ShowTerminalCarbonLabels', DEFAULTS.showTerminalCarbonLabels),
-    showNonTerminalCarbonLabels: boolAttr(root, 'ShowNonTerminalCarbonLabels', DEFAULTS.showNonTerminalCarbonLabels),
+    showTerminalCarbonLabels: boolAttr(
+      root,
+      'ShowTerminalCarbonLabels',
+      DEFAULTS.showTerminalCarbonLabels,
+    ),
+    showNonTerminalCarbonLabels: boolAttr(
+      root,
+      'ShowNonTerminalCarbonLabels',
+      DEFAULTS.showNonTerminalCarbonLabels,
+    ),
     labelFont: root.getAttribute('LabelFont') ? 'Arial' : DEFAULTS.labelFont,
   };
 }
@@ -395,7 +403,9 @@ function extractTextFromT(tEl: Element): string | undefined {
 }
 
 /** Extract structured rich text (with formula mode) from a <t> element. */
-function extractRichTextFromT(tEl: Element): Array<{ text: string; style?: 'normal' | 'subscript' | 'superscript' }> {
+function extractRichTextFromT(
+  tEl: Element,
+): Array<{ text: string; style?: 'normal' | 'subscript' | 'superscript' }> {
   const richText: Array<{ text: string; style?: 'normal' | 'subscript' | 'superscript' }> = [];
   const sElements = tEl.querySelectorAll('s');
 

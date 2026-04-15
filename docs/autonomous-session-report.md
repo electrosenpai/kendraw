@@ -9,6 +9,7 @@
 ## Stories Completed
 
 ### Phase 0: RDKit Installation & Test Fixes
+
 - Installed RDKit via `pip install rdkit` (v2026.3.1)
 - Fixed 7 test failures revealed by RDKit availability:
   - `additive.py`: H-count after AddHs (use neighbor count, not GetTotalNumHs)
@@ -22,6 +23,7 @@
 ### Phase 1: NMR Sprint Epic 1 (Stories 1-4, 1-5, 1-6)
 
 **Story 1-4: Scene State Extension & API Client** (commit f223c46)
+
 - Added NmrPeak, NmrMetadata, NmrPrediction types to @kendraw/scene
 - Extended Page type with optional `nmrPrediction` field
 - Added `set-nmr-prediction` command to scene store
@@ -30,6 +32,7 @@
 - 168 scene tests pass
 
 **Story 1-5: NMR Panel Shell & Toggle** (commit 1010933)
+
 - Created `@kendraw/nmr` package (lazy-loaded)
 - NmrPanel component with Glasswerk glass surface design
 - Resizable via drag handle (min 120px, max 60vh)
@@ -40,6 +43,7 @@
 - Height persisted in localStorage
 
 **Story 1-6: Spectrum Renderer** (commit 3667d1c)
+
 - Pure Canvas 2D SpectrumRenderer (no D3.js)
 - ppm axis inverted: high ppm left per chemistry convention
 - Lorentzian line shapes with composite envelope
@@ -52,12 +56,14 @@
 - 5 unit tests for pure functions
 
 ### Phase 2: Feature Gap Analysis (commit fd08631)
+
 - Analyzed 24 features from Draw-molecules reference codebase
 - Cross-referenced against Kendraw state and roadmap
 - Generated `docs/feature-gap-analysis-draw-molecules.md`
 - Key findings: 12 features already done, 6 planned, 4 new for V1, 2 deferred to V2+
 
 ### Phase 3: ChemDraw Keyboard Shortcuts (commit 611f84a)
+
 - Added missing atom hotkeys: P (phosphorus), B (boron), H (hydrogen), M (methyl)
 - Fixed bond hotkey: y now maps to wavy (was incorrectly aromatic)
 - Expanded ToolState bondStyle type with wavy, bold, hashed-wedge
@@ -65,6 +71,7 @@
 - Generated `docs/keyboard-shortcuts-compliance.md`
 
 ### Phase 4: Lint & Test Cleanup (commit 778874d)
+
 - Fixed lint errors in NmrPanel.tsx (unused import, unused param)
 - Replaced non-null assertions in SpectrumRenderer.ts with safe access
 - Added draw-molecules-ref to eslint ignores
@@ -74,19 +81,19 @@
 
 ## Test Suite Summary
 
-| Suite | Tests | Status |
-|-------|-------|--------|
-| Backend (Python) | 56 | All pass |
-| @kendraw/scene | 168 | All pass |
-| @kendraw/io | 66 | All pass |
-| @kendraw/constraints | 45 | All pass |
-| @kendraw/renderer-canvas | 13 | All pass |
-| @kendraw/persistence | 10 | All pass |
-| @kendraw/renderer-svg | 8 | All pass |
-| @kendraw/chem | 6 | All pass |
-| @kendraw/nmr | 5 | All pass |
-| @kendraw/ui | 3 | All pass |
-| **Total** | **380** | **All pass** |
+| Suite                    | Tests   | Status       |
+| ------------------------ | ------- | ------------ |
+| Backend (Python)         | 56      | All pass     |
+| @kendraw/scene           | 168     | All pass     |
+| @kendraw/io              | 66      | All pass     |
+| @kendraw/constraints     | 45      | All pass     |
+| @kendraw/renderer-canvas | 13      | All pass     |
+| @kendraw/persistence     | 10      | All pass     |
+| @kendraw/renderer-svg    | 8       | All pass     |
+| @kendraw/chem            | 6       | All pass     |
+| @kendraw/nmr             | 5       | All pass     |
+| @kendraw/ui              | 3       | All pass     |
+| **Total**                | **380** | **All pass** |
 
 ---
 
@@ -103,15 +110,15 @@
 
 ## Commits (chronological)
 
-| Hash | Message |
-|------|---------|
-| 99cbd6a | feat(nmr): complete backend NMR pipeline with RDKit fixes |
+| Hash    | Message                                                     |
+| ------- | ----------------------------------------------------------- |
+| 99cbd6a | feat(nmr): complete backend NMR pipeline with RDKit fixes   |
 | f223c46 | feat(nmr): story 1.4 — scene state extension and API client |
-| 1010933 | feat(nmr): story 1.5 — NMR panel shell and toggle |
-| 3667d1c | feat(nmr): story 1.6 — spectrum renderer with interactions |
-| fd08631 | docs: feature gap analysis Draw-molecules vs Kendraw |
-| 611f84a | feat(ui): chemdraw keyboard shortcuts compliance |
-| 778874d | fix: lint fixes for nmr package and eslint config |
+| 1010933 | feat(nmr): story 1.5 — NMR panel shell and toggle           |
+| 3667d1c | feat(nmr): story 1.6 — spectrum renderer with interactions  |
+| fd08631 | docs: feature gap analysis Draw-molecules vs Kendraw        |
+| 611f84a | feat(ui): chemdraw keyboard shortcuts compliance            |
+| 778874d | fix: lint fixes for nmr package and eslint config           |
 
 ---
 

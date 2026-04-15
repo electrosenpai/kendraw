@@ -198,7 +198,7 @@ describe('CDXML parser', () => {
     </fragment></page></CDXML>`;
     const result = parseCdxml(cdxml);
     expect(result.atoms).toHaveLength(2);
-    const oAtom = result.atoms.find(a => a.element === 8);
+    const oAtom = result.atoms.find((a) => a.element === 8);
     expect(oAtom?.label).toBe('OH');
     expect(oAtom?.hasExplicitLabel).toBe(true);
     expect(result.bonds).toHaveLength(1);

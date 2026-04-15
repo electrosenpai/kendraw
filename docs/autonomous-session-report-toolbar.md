@@ -8,13 +8,13 @@
 
 5 commits on `main`, all tests/lint/typecheck green:
 
-| Commit | Description |
-|--------|-------------|
+| Commit    | Description                                    |
+| --------- | ---------------------------------------------- |
 | `13aaa2c` | Wire NMR panel to toolbar with Ctrl+M shortcut |
-| `f2b4667` | ChemDraw-style toolbar with all tool groups |
-| `44dca31` | Complete keyboard shortcuts — ChemDraw parity |
-| `368338b` | Fix aromatic circle rendering and bond styles |
-| `b209012` | Remove unused mirror imports (lint fix) |
+| `f2b4667` | ChemDraw-style toolbar with all tool groups    |
+| `44dca31` | Complete keyboard shortcuts — ChemDraw parity  |
+| `368338b` | Fix aromatic circle rendering and bond styles  |
+| `b209012` | Remove unused mirror imports (lint fix)        |
 
 ## Phase 1: Wire NMR Panel
 
@@ -50,16 +50,19 @@ Actions at bottom: Undo, Redo, Fit
 ## Phase 4: Rendering Fixes
 
 **Yellow circles on aromatic rings (valence warnings)**:
+
 - Root cause: aromatic bonds have order 1.5, so benzene C gets 3x1.5=4.5 > max valence 4
 - Fix: floor fractional bond sums before valence check (4.5 → 4, valid)
 
 **Dashed aromatic bonds**:
+
 - Root cause: aromatic rendering used `ctx.setLineDash([3,3])` for second line
 - Fix: render aromatic bonds as solid double bonds (standard Kekulé style)
 
 ## Not Implemented (Deferred)
 
 These tools from the ChemDraw spec don't exist in the codebase and were not added:
+
 - Text tool, Brackets, Chain tool, Marquee selection
 - Ctrl+L (Fixed Length toggle), Ctrl+E (Fixed Angles toggle)
 - Ctrl+S (Save/export shortcut)

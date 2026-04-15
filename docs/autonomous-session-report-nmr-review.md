@@ -9,6 +9,7 @@
 ## Phase A: Scientific Review (Complete)
 
 Convened 5-expert roundtable to critique Kendraw NMR implementation:
+
 - **Pr. Marie-Claire DUVAL** (Organic Chemistry) — 3/10, identified alpha-oxygen shift error as critical
 - **Dr. Antoine MARCOS** (Synthesis) — 4/10, highlighted multiplicity absence blocking research workflow
 - **Pr. Kenji YAMAMOTO** (Teaching) — 3/10, multiplicity absence harmful for pedagogy
@@ -37,13 +38,13 @@ Convened 5-expert roundtable to critique Kendraw NMR implementation:
 
 ### Test Suite
 
-| Suite | Tests | Status |
-|-------|-------|--------|
-| Backend total | 98 | All passing |
-| Benchmark (5 molecules) | 27 | All passing |
-| Frontend (scene + nmr + ui) | 176+ | All passing |
-| Typecheck | All packages | Clean |
-| ESLint | All packages | Clean |
+| Suite                       | Tests        | Status      |
+| --------------------------- | ------------ | ----------- |
+| Backend total               | 98           | All passing |
+| Benchmark (5 molecules)     | 27           | All passing |
+| Frontend (scene + nmr + ui) | 176+         | All passing |
+| Typecheck                   | All packages | Clean       |
+| ESLint                      | All packages | Clean       |
 
 ### Frontend Changes
 
@@ -55,10 +56,10 @@ Convened 5-expert roundtable to critique Kendraw NMR implementation:
 
 ## Commits
 
-| Hash | Description |
-|------|-------------|
-| 52b482e | feat(nmr): solvent support, multiplicity, J-coupling, aromatic effects |
-| e5b755f | test(nmr): benchmark suite — 5 molecules + solvent effects |
+| Hash    | Description                                                                  |
+| ------- | ---------------------------------------------------------------------------- |
+| 52b482e | feat(nmr): solvent support, multiplicity, J-coupling, aromatic effects       |
+| e5b755f | test(nmr): benchmark suite — 5 molecules + solvent effects                   |
 | fe20bff | feat(nmr-ui): solvent dropdown, multiplicity display, CSV export, signal nav |
 
 ## Deferred
@@ -71,12 +72,12 @@ Convened 5-expert roundtable to critique Kendraw NMR implementation:
 
 ## Estimated Accuracy Improvement
 
-| Metric | Before | After |
-|--------|--------|-------|
-| MAE (estimated) | ~1.5 ppm | ~0.3 ppm |
-| PRD MVP target | < 1.0 ppm | Met |
-| Multiplicity | None | n+1 rule |
-| Solvents | None | 6 solvents |
-| Environments | 15 | 18 |
-| Aromatic differentiation | None | Hammett-type |
-| Expert consensus | 4.2/10 | Est. 6.5-7/10 |
+| Metric                   | Before    | After         |
+| ------------------------ | --------- | ------------- |
+| MAE (estimated)          | ~1.5 ppm  | ~0.3 ppm      |
+| PRD MVP target           | < 1.0 ppm | Met           |
+| Multiplicity             | None      | n+1 rule      |
+| Solvents                 | None      | 6 solvents    |
+| Environments             | 15        | 18            |
+| Aromatic differentiation | None      | Hammett-type  |
+| Expert consensus         | 4.2/10    | Est. 6.5-7/10 |

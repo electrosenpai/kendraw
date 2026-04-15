@@ -48,15 +48,24 @@ function getMolBlock(page: Page): string | null {
 
 function formatMultiplicity(mult: string, coupling: number[]): string {
   const LABELS: Record<string, string> = {
-    s: 'singlet', d: 'doublet', t: 'triplet', q: 'quartet',
-    quint: 'quintet', sext: 'sextet', sept: 'septet', m: 'multiplet',
-    dd: 'doublet of doublets', dt: 'doublet of triplets',
-    td: 'triplet of doublets', dq: 'doublet of quartets',
-    tt: 'triplet of triplets', ddd: 'doublet of doublet of doublets',
+    s: 'singlet',
+    d: 'doublet',
+    t: 'triplet',
+    q: 'quartet',
+    quint: 'quintet',
+    sext: 'sextet',
+    sept: 'septet',
+    m: 'multiplet',
+    dd: 'doublet of doublets',
+    dt: 'doublet of triplets',
+    td: 'triplet of doublets',
+    dq: 'doublet of quartets',
+    tt: 'triplet of triplets',
+    ddd: 'doublet of doublet of doublets',
   };
   const label = LABELS[mult] ?? mult;
   if (coupling.length > 0) {
-    return `${label} (J = ${coupling.map(j => j.toFixed(1)).join(', ')} Hz)`;
+    return `${label} (J = ${coupling.map((j) => j.toFixed(1)).join(', ')} Hz)`;
   }
   return label;
 }
@@ -68,13 +77,13 @@ const CONF_LABELS: Record<number, { label: string; color: string }> = {
 };
 
 function formatEnvironment(env: string): string {
-  return env.replace(/_/g, ' ').replace(/\balpha\b/, '\u03B1').replace(/\bbeta\b/, '\u03B2');
+  return env
+    .replace(/_/g, ' ')
+    .replace(/\balpha\b/, '\u03B1')
+    .replace(/\bbeta\b/, '\u03B2');
 }
 
-function exportPng(
-  prediction: NmrPrediction,
-  viewport: SpectrumViewport,
-): void {
+function exportPng(prediction: NmrPrediction, viewport: SpectrumViewport): void {
   const W = 1200;
   const H = 500;
   const canvas = document.createElement('canvas');
@@ -115,10 +124,7 @@ function exportPng(
   a.click();
 }
 
-function exportSvg(
-  prediction: NmrPrediction,
-  viewport: SpectrumViewport,
-): void {
+function exportSvg(prediction: NmrPrediction, viewport: SpectrumViewport): void {
   const W = 800;
   const H = 400;
   const M = { top: 24, right: 44, bottom: 34, left: 44 };
@@ -131,19 +137,31 @@ function exportSvg(
 
   const lines: string[] = [];
   lines.push(`<?xml version="1.0" encoding="UTF-8"?>`);
-  lines.push(`<!-- Kendraw NMR ${prediction.nucleus} | Solvent: ${prediction.solvent} | ${prediction.peaks.length} peaks -->`);
-  lines.push(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" font-family="'Helvetica Neue', Helvetica, sans-serif">`);
+  lines.push(
+    `<!-- Kendraw NMR ${prediction.nucleus} | Solvent: ${prediction.solvent} | ${prediction.peaks.length} peaks -->`,
+  );
+  lines.push(
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" font-family="'Helvetica Neue', Helvetica, sans-serif">`,
+  );
   lines.push(`<rect width="${W}" height="${H}" fill="white"/>`);
 
   // X-axis
-  lines.push(`<line x1="${M.left}" y1="${M.top + plotH}" x2="${M.left + plotW}" y2="${M.top + plotH}" stroke="#333" stroke-width="1"/>`);
+  lines.push(
+    `<line x1="${M.left}" y1="${M.top + plotH}" x2="${M.left + plotW}" y2="${M.top + plotH}" stroke="#333" stroke-width="1"/>`,
+  );
   const labelStep = ppmRange > 10 ? 2 : 1;
   for (let ppm = Math.ceil(minPpm); ppm <= Math.floor(maxPpm); ppm += labelStep) {
     const x = ppmToX(ppm);
-    lines.push(`<line x1="${x}" y1="${M.top + plotH}" x2="${x}" y2="${M.top + plotH + 4}" stroke="#333" stroke-width="0.5"/>`);
-    lines.push(`<text x="${x}" y="${M.top + plotH + 16}" text-anchor="middle" font-size="10" fill="#555">${ppm}</text>`);
+    lines.push(
+      `<line x1="${x}" y1="${M.top + plotH}" x2="${x}" y2="${M.top + plotH + 4}" stroke="#333" stroke-width="0.5"/>`,
+    );
+    lines.push(
+      `<text x="${x}" y="${M.top + plotH + 16}" text-anchor="middle" font-size="10" fill="#555">${ppm}</text>`,
+    );
   }
-  lines.push(`<text x="${M.left + plotW / 2}" y="${M.top + plotH + 30}" text-anchor="middle" font-size="9" fill="#777">\u03B4 (ppm)</text>`);
+  lines.push(
+    `<text x="${M.left + plotW / 2}" y="${M.top + plotH + 30}" text-anchor="middle" font-size="9" fill="#777">\u03B4 (ppm)</text>`,
+  );
 
   // Compute envelope
   const nPts = 500;
@@ -170,7 +188,9 @@ function exportSvg(
       d += `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`;
     }
     d += `L${M.left + plotW},${M.top + plotH}L${M.left},${M.top + plotH}Z`;
-    lines.push(`<path d="${d}" fill="rgba(30,100,200,0.08)" stroke="rgba(30,100,200,0.4)" stroke-width="1"/>`);
+    lines.push(
+      `<path d="${d}" fill="rgba(30,100,200,0.08)" stroke="rgba(30,100,200,0.4)" stroke-width="1"/>`,
+    );
 
     // Peak stems + labels
     for (const pk of prediction.peaks) {
@@ -178,14 +198,22 @@ function exportSvg(
       const nH = pk.atom_indices.length;
       const peakY = M.top + plotH - (nH / (1 + 0) / maxI) * plotH * 0.85;
       const color = pk.confidence === 3 ? '#2b8a3e' : pk.confidence === 2 ? '#e67700' : '#c92a2a';
-      lines.push(`<line x1="${cx}" y1="${M.top + plotH}" x2="${cx}" y2="${peakY}" stroke="${color}" stroke-width="1"/>`);
-      lines.push(`<text x="${cx}" y="${peakY - 8}" text-anchor="middle" font-size="9" fill="#333">${pk.shift_ppm.toFixed(2)} ${pk.multiplicity}</text>`);
-      lines.push(`<text x="${cx}" y="${M.top + plotH + 4}" text-anchor="middle" font-size="8" fill="#777">${nH}H</text>`);
+      lines.push(
+        `<line x1="${cx}" y1="${M.top + plotH}" x2="${cx}" y2="${peakY}" stroke="${color}" stroke-width="1"/>`,
+      );
+      lines.push(
+        `<text x="${cx}" y="${peakY - 8}" text-anchor="middle" font-size="9" fill="#333">${pk.shift_ppm.toFixed(2)} ${pk.multiplicity}</text>`,
+      );
+      lines.push(
+        `<text x="${cx}" y="${M.top + plotH + 4}" text-anchor="middle" font-size="8" fill="#777">${nH}H</text>`,
+      );
     }
   }
 
   // Metadata footer
-  lines.push(`<text x="20" y="${H - 8}" font-size="9" fill="#999">${prediction.nucleus} NMR | Solvent: ${prediction.solvent} | ${prediction.peaks.length} peaks | Kendraw</text>`);
+  lines.push(
+    `<text x="20" y="${H - 8}" font-size="9" fill="#999">${prediction.nucleus} NMR | Solvent: ${prediction.solvent} | ${prediction.peaks.length} peaks | Kendraw</text>`,
+  );
   lines.push(`</svg>`);
 
   const blob = new Blob([lines.join('\n')], { type: 'image/svg+xml' });
@@ -199,9 +227,12 @@ function exportSvg(
 
 function exportCsv(prediction: NmrPrediction): void {
   const header = 'delta_ppm,multiplicity,J_Hz,integral,environment,confidence,method\n';
-  const rows = prediction.peaks.map(p =>
-    `${p.shift_ppm.toFixed(2)},${p.multiplicity},"${p.coupling_hz.map(j => j.toFixed(1)).join(';')}",${p.integral},${p.environment},${p.confidence},${p.method}`
-  ).join('\n');
+  const rows = prediction.peaks
+    .map(
+      (p) =>
+        `${p.shift_ppm.toFixed(2)},${p.multiplicity},"${p.coupling_hz.map((j) => j.toFixed(1)).join(';')}",${p.integral},${p.environment},${p.confidence},${p.method}`,
+    )
+    .join('\n');
   const csv = header + rows;
   const blob = new Blob([csv], { type: 'text/csv' });
   const url = URL.createObjectURL(blob);
@@ -212,7 +243,14 @@ function exportCsv(prediction: NmrPrediction): void {
   URL.revokeObjectURL(url);
 }
 
-export default function NmrPanel({ store, onClose, height, onHeightChange, highlightedAtomIds, onHighlightAtoms }: NmrPanelProps) {
+export default function NmrPanel({
+  store,
+  onClose,
+  height,
+  onHeightChange,
+  highlightedAtomIds,
+  onHighlightAtoms,
+}: NmrPanelProps) {
   const [nucleus, setNucleus] = useState<Nucleus>('1H');
   const [solvent, setSolvent] = useState<SolventId>('CDCl3');
   const [prediction, setPrediction] = useState<NmrPrediction | null>(null);
@@ -243,26 +281,29 @@ export default function NmrPanel({ store, onClose, height, onHeightChange, highl
   }, [store]);
 
   // Peak click → highlight atoms on the molecule
-  const handlePeakHighlight = useCallback((peakIdx: number | null) => {
-    setSelectedPeakIdx(peakIdx);
-    if (!onHighlightAtoms || !prediction) return;
-    if (peakIdx === null) {
-      onHighlightAtoms(new Set());
-      return;
-    }
-    const peak = prediction.peaks[peakIdx];
-    if (!peak?.parent_indices) {
-      onHighlightAtoms(new Set());
-      return;
-    }
-    const atomIds = getAtomIds();
-    const highlighted = new Set<AtomId>();
-    for (const pi of peak.parent_indices) {
-      const id = atomIds[pi];
-      if (id) highlighted.add(id);
-    }
-    onHighlightAtoms(highlighted);
-  }, [onHighlightAtoms, prediction, getAtomIds]);
+  const handlePeakHighlight = useCallback(
+    (peakIdx: number | null) => {
+      setSelectedPeakIdx(peakIdx);
+      if (!onHighlightAtoms || !prediction) return;
+      if (peakIdx === null) {
+        onHighlightAtoms(new Set());
+        return;
+      }
+      const peak = prediction.peaks[peakIdx];
+      if (!peak?.parent_indices) {
+        onHighlightAtoms(new Set());
+        return;
+      }
+      const atomIds = getAtomIds();
+      const highlighted = new Set<AtomId>();
+      for (const pi of peak.parent_indices) {
+        const id = atomIds[pi];
+        if (id) highlighted.add(id);
+      }
+      onHighlightAtoms(highlighted);
+    },
+    [onHighlightAtoms, prediction, getAtomIds],
+  );
 
   // Reverse: when highlightedAtomIds changes from canvas → find matching peak
   useEffect(() => {
@@ -280,7 +321,7 @@ export default function NmrPanel({ store, onClose, height, onHeightChange, highl
     for (let pi = 0; pi < prediction.peaks.length; pi++) {
       const peak = prediction.peaks[pi];
       if (!peak?.parent_indices) continue;
-      if (peak.parent_indices.some(idx => highlightedIndices.has(idx))) {
+      if (peak.parent_indices.some((idx) => highlightedIndices.has(idx))) {
         setSelectedPeakIdx(pi);
         return;
       }
@@ -288,15 +329,18 @@ export default function NmrPanel({ store, onClose, height, onHeightChange, highl
   }, [highlightedAtomIds, prediction, getAtomIds]);
 
   // Signal navigation
-  const navigateSignal = useCallback((direction: 1 | -1) => {
-    if (!prediction || prediction.peaks.length === 0) return;
-    const count = prediction.peaks.length;
-    if (selectedPeakIdx === null) {
-      setSelectedPeakIdx(direction === 1 ? 0 : count - 1);
-    } else {
-      setSelectedPeakIdx((selectedPeakIdx + direction + count) % count);
-    }
-  }, [prediction, selectedPeakIdx]);
+  const navigateSignal = useCallback(
+    (direction: 1 | -1) => {
+      if (!prediction || prediction.peaks.length === 0) return;
+      const count = prediction.peaks.length;
+      if (selectedPeakIdx === null) {
+        setSelectedPeakIdx(direction === 1 ? 0 : count - 1);
+      } else {
+        setSelectedPeakIdx((selectedPeakIdx + direction + count) % count);
+      }
+    },
+    [prediction, selectedPeakIdx],
+  );
 
   // Predict NMR
   const predict = useCallback(async () => {
@@ -392,7 +436,16 @@ export default function NmrPanel({ store, onClose, height, onHeightChange, highl
       solvent,
       showNoise,
     });
-  }, [prediction, viewport, hoveredPeakIdx, selectedPeakIdx, height, solvent, showNoise, pinnedPeakIdx]);
+  }, [
+    prediction,
+    viewport,
+    hoveredPeakIdx,
+    selectedPeakIdx,
+    height,
+    solvent,
+    showNoise,
+    pinnedPeakIdx,
+  ]);
 
   // Canvas mouse interactions
   const handleCanvasMouseMove = useCallback(
@@ -406,8 +459,7 @@ export default function NmrPanel({ store, onClose, height, onHeightChange, highl
       if (isPanning && panRef.current) {
         const dx = x - panRef.current.startX;
         const ppmPerPx =
-          (panRef.current.startVp.maxPpm - panRef.current.startVp.minPpm) /
-          (rect.width - 88);
+          (panRef.current.startVp.maxPpm - panRef.current.startVp.minPpm) / (rect.width - 88);
         const ppmDelta = dx * ppmPerPx;
         setViewport({
           minPpm: panRef.current.startVp.minPpm + ppmDelta,
@@ -447,7 +499,7 @@ export default function NmrPanel({ store, onClose, height, onHeightChange, highl
       const hit = hitTestPeaks(hitBoxesRef.current, x, y);
       if (hit !== null) {
         // QW-5: Toggle pin on click
-        setPinnedPeakIdx(prev => prev === hit ? null : hit);
+        setPinnedPeakIdx((prev) => (prev === hit ? null : hit));
         handlePeakHighlight(hit);
       } else {
         setPinnedPeakIdx(null);
@@ -537,7 +589,8 @@ export default function NmrPanel({ store, onClose, height, onHeightChange, highl
     [height, onHeightChange],
   );
 
-  const selectedPeak = prediction && selectedPeakIdx !== null ? prediction.peaks[selectedPeakIdx] : null;
+  const selectedPeak =
+    prediction && selectedPeakIdx !== null ? prediction.peaks[selectedPeakIdx] : null;
 
   return (
     <div
@@ -567,7 +620,14 @@ export default function NmrPanel({ store, onClose, height, onHeightChange, highl
           flexShrink: 0,
         }}
       >
-        <div style={{ width: 32, height: 3, borderRadius: 2, background: 'var(--kd-color-border, #333)' }} />
+        <div
+          style={{
+            width: 32,
+            height: 3,
+            borderRadius: 2,
+            background: 'var(--kd-color-border, #333)',
+          }}
+        />
       </div>
 
       {/* Header */}
@@ -651,8 +711,10 @@ export default function NmrPanel({ store, onClose, height, onHeightChange, highl
               outline: 'none',
             }}
           >
-            {SOLVENTS.map(s => (
-              <option key={s.id} value={s.id}>{s.label}</option>
+            {SOLVENTS.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.label}
+              </option>
             ))}
           </select>
 
@@ -669,7 +731,8 @@ export default function NmrPanel({ store, onClose, height, onHeightChange, highl
               <button
                 onClick={() => navigateSignal(-1)}
                 style={{
-                  width: 20, height: 20,
+                  width: 20,
+                  height: 20,
                   border: '1px solid var(--kd-color-border, #333)',
                   borderRadius: 'var(--kd-radius-sm, 4px)',
                   background: 'transparent',
@@ -685,13 +748,23 @@ export default function NmrPanel({ store, onClose, height, onHeightChange, highl
               >
                 {'\u25C0'}
               </button>
-              <span style={{ fontSize: 9, color: 'var(--kd-color-text-muted, #666)', minWidth: 24, textAlign: 'center' }}>
-                {selectedPeakIdx !== null ? `${selectedPeakIdx + 1}/${prediction.peaks.length}` : '-'}
+              <span
+                style={{
+                  fontSize: 9,
+                  color: 'var(--kd-color-text-muted, #666)',
+                  minWidth: 24,
+                  textAlign: 'center',
+                }}
+              >
+                {selectedPeakIdx !== null
+                  ? `${selectedPeakIdx + 1}/${prediction.peaks.length}`
+                  : '-'}
               </span>
               <button
                 onClick={() => navigateSignal(1)}
                 style={{
-                  width: 20, height: 20,
+                  width: 20,
+                  height: 20,
                   border: '1px solid var(--kd-color-border, #333)',
                   borderRadius: 'var(--kd-radius-sm, 4px)',
                   background: 'transparent',
@@ -769,14 +842,18 @@ export default function NmrPanel({ store, onClose, height, onHeightChange, highl
 
           {/* QW-10: Noise toggle */}
           <button
-            onClick={() => setShowNoise(n => !n)}
+            onClick={() => setShowNoise((n) => !n)}
             style={{
               padding: '2px 6px',
               fontSize: 10,
               border: '1px solid var(--kd-color-border, #333)',
               borderRadius: 'var(--kd-radius-sm, 4px)',
-              background: showNoise ? 'var(--kd-color-accent-muted, rgba(77, 171, 247, 0.15))' : 'transparent',
-              color: showNoise ? 'var(--kd-color-accent, #4dabf7)' : 'var(--kd-color-text-secondary, #a0a0a0)',
+              background: showNoise
+                ? 'var(--kd-color-accent-muted, rgba(77, 171, 247, 0.15))'
+                : 'transparent',
+              color: showNoise
+                ? 'var(--kd-color-accent, #4dabf7)'
+                : 'var(--kd-color-text-secondary, #a0a0a0)',
               cursor: 'pointer',
             }}
             title="Toggle baseline noise simulation"
@@ -830,11 +907,17 @@ export default function NmrPanel({ store, onClose, height, onHeightChange, highl
             gap: 12,
           }}
         >
-          <span style={{ color: 'var(--kd-color-accent, #4dabf7)', fontWeight: 600 }}>H{selectedPeak.proton_group_id}</span>
-          <span>{'\u03B4'} {selectedPeak.shift_ppm.toFixed(2)} ppm</span>
+          <span style={{ color: 'var(--kd-color-accent, #4dabf7)', fontWeight: 600 }}>
+            H{selectedPeak.proton_group_id}
+          </span>
+          <span>
+            {'\u03B4'} {selectedPeak.shift_ppm.toFixed(2)} ppm
+          </span>
           <span>{selectedPeak.integral}H</span>
           <span>{formatMultiplicity(selectedPeak.multiplicity, selectedPeak.coupling_hz)}</span>
-          <span style={{ color: 'var(--kd-color-text-muted, #666)' }}>{selectedPeak.environment}</span>
+          <span style={{ color: 'var(--kd-color-text-muted, #666)' }}>
+            {selectedPeak.environment}
+          </span>
         </div>
       )}
 
@@ -847,112 +930,184 @@ export default function NmrPanel({ store, onClose, height, onHeightChange, highl
           onMouseUp={handleCanvasMouseUp}
           onDoubleClick={handleCanvasDoubleClick}
           onWheel={handleWheel}
-          onMouseLeave={() => { setHoveredPeakIdx(null); setTooltipPos(null); }}
+          onMouseLeave={() => {
+            setHoveredPeakIdx(null);
+            setTooltipPos(null);
+          }}
           style={{ width: '100%', height: '100%' }}
         />
 
         {/* Confidence tooltip — Sally's 3-tier design (with pin support QW-5) */}
-        {(pinnedPeakIdx ?? hoveredPeakIdx) !== null && tooltipPos && prediction && (() => {
-          const activeIdx = pinnedPeakIdx ?? hoveredPeakIdx;
-          if (activeIdx === null) return null;
-          const peak = prediction.peaks[activeIdx];
-          if (!peak) return null;
-          const conf = CONF_LABELS[peak.confidence] ?? { label: 'Unknown', color: '#888888' };
-          const panelRect = panelRef.current?.getBoundingClientRect();
-          if (!panelRect) return null;
-          const tx = tooltipPos.x - panelRect.left + 16;
-          const ty = tooltipPos.y - panelRect.top - 80;
-          return (
-            <div
-              style={{
-                position: 'absolute',
-                left: Math.min(tx, panelRect.width - 220),
-                top: Math.max(ty, 4),
-                width: 200,
-                padding: '8px 10px',
-                background: 'rgba(20, 20, 20, 0.88)',
-                backdropFilter: 'blur(16px)',
-                WebkitBackdropFilter: 'blur(16px)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                borderLeft: `3px solid ${conf.color}`,
-                borderRadius: 8,
-                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
-                pointerEvents: pinnedPeakIdx !== null ? 'auto' : 'none',
-                zIndex: 10,
-                fontFamily: 'var(--kd-font-mono, monospace)',
-              }}
-            >
-              {/* Tier 1: Headline — H# + shift + assignment */}
-              <div style={{ fontSize: 13, fontWeight: 600, color: '#f0f0f0', marginBottom: 4 }}>
-                <span style={{ color: '#4dabf7', marginRight: 4 }}>H{peak.proton_group_id}</span>
-                {peak.shift_ppm.toFixed(2)} ppm
-                <span style={{ fontWeight: 400, color: '#a0a0a0', marginLeft: 6, fontSize: 11 }}>
-                  {peak.integral}H {formatEnvironment(peak.environment)}
-                </span>
-              </div>
-
-              {/* Tier 2: Signal — multiplicity + J */}
-              <div style={{ fontSize: 10, color: '#999', marginBottom: 6 }}>
-                {formatMultiplicity(peak.multiplicity, peak.coupling_hz)}
-              </div>
-
-              {/* Tier 3: Trust layer — confidence bar + label + method */}
-              <div style={{ marginBottom: 4 }}>
-                <div style={{
-                  display: 'flex', alignItems: 'center', gap: 6,
-                }}>
-                  {/* Confidence bar */}
-                  <div style={{
-                    width: 48, height: 5, borderRadius: 3,
-                    background: 'rgba(255, 255, 255, 0.08)',
-                    overflow: 'hidden',
-                  }}>
-                    <div style={{
-                      width: `${(peak.confidence / 3) * 100}%`,
-                      height: '100%',
-                      borderRadius: 3,
-                      background: conf.color,
-                    }} />
-                  </div>
-                  <span style={{ fontSize: 9, color: conf.color }}>
-                    {conf.label}
+        {(pinnedPeakIdx ?? hoveredPeakIdx) !== null &&
+          tooltipPos &&
+          prediction &&
+          (() => {
+            const activeIdx = pinnedPeakIdx ?? hoveredPeakIdx;
+            if (activeIdx === null) return null;
+            const peak = prediction.peaks[activeIdx];
+            if (!peak) return null;
+            const conf = CONF_LABELS[peak.confidence] ?? { label: 'Unknown', color: '#888888' };
+            const panelRect = panelRef.current?.getBoundingClientRect();
+            if (!panelRect) return null;
+            const tx = tooltipPos.x - panelRect.left + 16;
+            const ty = tooltipPos.y - panelRect.top - 80;
+            return (
+              <div
+                style={{
+                  position: 'absolute',
+                  left: Math.min(tx, panelRect.width - 220),
+                  top: Math.max(ty, 4),
+                  width: 200,
+                  padding: '8px 10px',
+                  background: 'rgba(20, 20, 20, 0.88)',
+                  backdropFilter: 'blur(16px)',
+                  WebkitBackdropFilter: 'blur(16px)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  borderLeft: `3px solid ${conf.color}`,
+                  borderRadius: 8,
+                  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
+                  pointerEvents: pinnedPeakIdx !== null ? 'auto' : 'none',
+                  zIndex: 10,
+                  fontFamily: 'var(--kd-font-mono, monospace)',
+                }}
+              >
+                {/* Tier 1: Headline — H# + shift + assignment */}
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#f0f0f0', marginBottom: 4 }}>
+                  <span style={{ color: '#4dabf7', marginRight: 4 }}>H{peak.proton_group_id}</span>
+                  {peak.shift_ppm.toFixed(2)} ppm
+                  <span style={{ fontWeight: 400, color: '#a0a0a0', marginLeft: 6, fontSize: 11 }}>
+                    {peak.integral}H {formatEnvironment(peak.environment)}
                   </span>
                 </div>
-              </div>
 
-              {/* Method line */}
-              <div style={{ fontSize: 9, color: '#666' }}>
-                {peak.method}
+                {/* Tier 2: Signal — multiplicity + J */}
+                <div style={{ fontSize: 10, color: '#999', marginBottom: 6 }}>
+                  {formatMultiplicity(peak.multiplicity, peak.coupling_hz)}
+                </div>
+
+                {/* Tier 3: Trust layer — confidence bar + label + method */}
+                <div style={{ marginBottom: 4 }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                    }}
+                  >
+                    {/* Confidence bar */}
+                    <div
+                      style={{
+                        width: 48,
+                        height: 5,
+                        borderRadius: 3,
+                        background: 'rgba(255, 255, 255, 0.08)',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: `${(peak.confidence / 3) * 100}%`,
+                          height: '100%',
+                          borderRadius: 3,
+                          background: conf.color,
+                        }}
+                      />
+                    </div>
+                    <span style={{ fontSize: 9, color: conf.color }}>{conf.label}</span>
+                  </div>
+                </div>
+
+                {/* Method line */}
+                <div style={{ fontSize: 9, color: '#666' }}>{peak.method}</div>
               </div>
-            </div>
-          );
-        })()}
+            );
+          })()}
       </div>
 
       {/* F-5: Enhanced signal table */}
       {prediction && prediction.peaks.length > 0 && (
-        <div style={{
-          maxHeight: Math.max(height * 0.3, 60),
-          overflowY: 'auto',
-          borderTop: '1px solid var(--kd-color-border-subtle, #2a2a2a)',
-          flexShrink: 0,
-        }}>
-          <table style={{
-            width: '100%',
-            fontSize: 9,
-            fontFamily: 'var(--kd-font-mono, monospace)',
-            borderCollapse: 'collapse',
-            color: 'var(--kd-color-text-secondary, #a0a0a0)',
-          }}>
+        <div
+          style={{
+            maxHeight: Math.max(height * 0.3, 60),
+            overflowY: 'auto',
+            borderTop: '1px solid var(--kd-color-border-subtle, #2a2a2a)',
+            flexShrink: 0,
+          }}
+        >
+          <table
+            style={{
+              width: '100%',
+              fontSize: 9,
+              fontFamily: 'var(--kd-font-mono, monospace)',
+              borderCollapse: 'collapse',
+              color: 'var(--kd-color-text-secondary, #a0a0a0)',
+            }}
+          >
             <thead>
               <tr style={{ borderBottom: '1px solid var(--kd-color-border-subtle, #2a2a2a)' }}>
-                <th style={{ padding: '2px 6px', textAlign: 'left', color: 'var(--kd-color-text-muted, #666)' }}>H#</th>
-                <th style={{ padding: '2px 6px', textAlign: 'right', color: 'var(--kd-color-text-muted, #666)' }}>{'\u03B4'} (ppm)</th>
-                <th style={{ padding: '2px 6px', textAlign: 'center', color: 'var(--kd-color-text-muted, #666)' }}>Mult.</th>
-                <th style={{ padding: '2px 6px', textAlign: 'right', color: 'var(--kd-color-text-muted, #666)' }}>J (Hz)</th>
-                <th style={{ padding: '2px 6px', textAlign: 'center', color: 'var(--kd-color-text-muted, #666)' }}>Int.</th>
-                <th style={{ padding: '2px 6px', textAlign: 'left', color: 'var(--kd-color-text-muted, #666)' }}>Assignment</th>
-                <th style={{ padding: '2px 6px', textAlign: 'center', color: 'var(--kd-color-text-muted, #666)' }}>Conf.</th>
+                <th
+                  style={{
+                    padding: '2px 6px',
+                    textAlign: 'left',
+                    color: 'var(--kd-color-text-muted, #666)',
+                  }}
+                >
+                  H#
+                </th>
+                <th
+                  style={{
+                    padding: '2px 6px',
+                    textAlign: 'right',
+                    color: 'var(--kd-color-text-muted, #666)',
+                  }}
+                >
+                  {'\u03B4'} (ppm)
+                </th>
+                <th
+                  style={{
+                    padding: '2px 6px',
+                    textAlign: 'center',
+                    color: 'var(--kd-color-text-muted, #666)',
+                  }}
+                >
+                  Mult.
+                </th>
+                <th
+                  style={{
+                    padding: '2px 6px',
+                    textAlign: 'right',
+                    color: 'var(--kd-color-text-muted, #666)',
+                  }}
+                >
+                  J (Hz)
+                </th>
+                <th
+                  style={{
+                    padding: '2px 6px',
+                    textAlign: 'center',
+                    color: 'var(--kd-color-text-muted, #666)',
+                  }}
+                >
+                  Int.
+                </th>
+                <th
+                  style={{
+                    padding: '2px 6px',
+                    textAlign: 'left',
+                    color: 'var(--kd-color-text-muted, #666)',
+                  }}
+                >
+                  Assignment
+                </th>
+                <th
+                  style={{
+                    padding: '2px 6px',
+                    textAlign: 'center',
+                    color: 'var(--kd-color-text-muted, #666)',
+                  }}
+                >
+                  Conf.
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -969,13 +1124,29 @@ export default function NmrPanel({ store, onClose, height, onHeightChange, highl
                       borderBottom: '1px solid var(--kd-color-border-subtle, #1a1a1a)',
                     }}
                   >
-                    <td style={{ padding: '2px 6px', color: 'var(--kd-color-accent, #4dabf7)', fontWeight: 600 }}>H{pk.proton_group_id}</td>
-                    <td style={{ padding: '2px 6px', textAlign: 'right' }}>{pk.shift_ppm.toFixed(2)}</td>
+                    <td
+                      style={{
+                        padding: '2px 6px',
+                        color: 'var(--kd-color-accent, #4dabf7)',
+                        fontWeight: 600,
+                      }}
+                    >
+                      H{pk.proton_group_id}
+                    </td>
+                    <td style={{ padding: '2px 6px', textAlign: 'right' }}>
+                      {pk.shift_ppm.toFixed(2)}
+                    </td>
                     <td style={{ padding: '2px 6px', textAlign: 'center' }}>{pk.multiplicity}</td>
-                    <td style={{ padding: '2px 6px', textAlign: 'right' }}>{pk.coupling_hz.length > 0 ? pk.coupling_hz.map(j => j.toFixed(1)).join(', ') : '\u2014'}</td>
+                    <td style={{ padding: '2px 6px', textAlign: 'right' }}>
+                      {pk.coupling_hz.length > 0
+                        ? pk.coupling_hz.map((j) => j.toFixed(1)).join(', ')
+                        : '\u2014'}
+                    </td>
                     <td style={{ padding: '2px 6px', textAlign: 'center' }}>{pk.integral}H</td>
                     <td style={{ padding: '2px 6px' }}>{formatEnvironment(pk.environment)}</td>
-                    <td style={{ padding: '2px 6px', textAlign: 'center', color: confInfo.color }}>{pk.confidence === 3 ? '\u25CF' : pk.confidence === 2 ? '\u25D1' : '\u25CB'}</td>
+                    <td style={{ padding: '2px 6px', textAlign: 'center', color: confInfo.color }}>
+                      {pk.confidence === 3 ? '\u25CF' : pk.confidence === 2 ? '\u25D1' : '\u25CB'}
+                    </td>
                   </tr>
                 );
               })}
@@ -985,14 +1156,16 @@ export default function NmrPanel({ store, onClose, height, onHeightChange, highl
       )}
 
       {/* QW-6: Version footer */}
-      <div style={{
-        padding: '2px 12px',
-        fontSize: 8,
-        color: 'var(--kd-color-text-muted, #555)',
-        textAlign: 'right',
-        flexShrink: 0,
-        borderTop: '1px solid var(--kd-color-border-subtle, #1a1a1a)',
-      }}>
+      <div
+        style={{
+          padding: '2px 12px',
+          fontSize: 8,
+          color: 'var(--kd-color-text-muted, #555)',
+          textAlign: 'right',
+          flexShrink: 0,
+          borderTop: '1px solid var(--kd-color-border-subtle, #1a1a1a)',
+        }}
+      >
         Kendraw NMR v0.2.0 — Additive prediction engine
       </div>
 

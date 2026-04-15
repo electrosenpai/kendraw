@@ -7,14 +7,14 @@
 
 ## Summary
 
-| Metric | Value |
-|--------|-------|
-| Features implemented | 19 (10 QW + 5 F1.2 + 4 F2.0) |
-| Commits created | 5 |
-| Tests before session | 185 |
-| Tests after session | 221 (+36) |
-| Regressions detected | 0 |
-| Push status | Blocked (SSH key unavailable) |
+| Metric               | Value                         |
+| -------------------- | ----------------------------- |
+| Features implemented | 19 (10 QW + 5 F1.2 + 4 F2.0)  |
+| Commits created      | 5                             |
+| Tests before session | 185                           |
+| Tests after session  | 221 (+36)                     |
+| Regressions detected | 0                             |
+| Push status          | Blocked (SSH key unavailable) |
 
 ---
 
@@ -22,54 +22,54 @@
 
 All 10 quick wins implemented in one commit (`891d64a`):
 
-| ID | Feature | Status | Notes |
-|----|---------|--------|-------|
-| QW-1 | Solvent markers on spectrum | Done | Dashed lines + labels for residual peaks |
-| QW-2 | Cinnamaldehyde vinyl confidence | Done | `_is_substituted_vinyl()` → confidence=1 |
-| QW-3 | Health check NMR status | Done | `/health` returns engine_version, method, environments |
-| QW-4 | Accessibility patterns | Done | Already had filled/half/hollow circles |
-| QW-5 | Tooltip pin (click to keep) | Done | `pinnedPeakIdx` state + pointerEvents toggle |
-| QW-6 | Version in UI | Done | Footer: "Kendraw NMR v0.2.0 — Additive prediction engine" |
-| QW-7 | TMS reference at 0 ppm | Done | Dashed marker + "TMS" label |
-| QW-8 | Ctrl+Shift+E export shortcut | Done | Keyboard listener wired to exportPng |
-| QW-9 | NS = 1 (simulated) label | Done | Top-left of spectrum |
-| QW-10 | Baseline noise toggle | Done | PRNG-based noise with toggle button |
+| ID    | Feature                         | Status | Notes                                                     |
+| ----- | ------------------------------- | ------ | --------------------------------------------------------- |
+| QW-1  | Solvent markers on spectrum     | Done   | Dashed lines + labels for residual peaks                  |
+| QW-2  | Cinnamaldehyde vinyl confidence | Done   | `_is_substituted_vinyl()` → confidence=1                  |
+| QW-3  | Health check NMR status         | Done   | `/health` returns engine_version, method, environments    |
+| QW-4  | Accessibility patterns          | Done   | Already had filled/half/hollow circles                    |
+| QW-5  | Tooltip pin (click to keep)     | Done   | `pinnedPeakIdx` state + pointerEvents toggle              |
+| QW-6  | Version in UI                   | Done   | Footer: "Kendraw NMR v0.2.0 — Additive prediction engine" |
+| QW-7  | TMS reference at 0 ppm          | Done   | Dashed marker + "TMS" label                               |
+| QW-8  | Ctrl+Shift+E export shortcut    | Done   | Keyboard listener wired to exportPng                      |
+| QW-9  | NS = 1 (simulated) label        | Done   | Top-left of spectrum                                      |
+| QW-10 | Baseline noise toggle           | Done   | PRNG-based noise with toggle button                       |
 
 ## Phase 2: Features V1.2 (5 items)
 
 All 5 features implemented in one commit (`a1cf250`):
 
-| ID | Feature | Status | Notes |
-|----|---------|--------|-------|
-| F-1 | Proton numbering (H1, H2...) | Done | `proton_group_id` in NmrPeak, shown in tooltip + table |
-| F-2 | SVG export | Done | Publication-ready vector output with envelope + peaks |
-| F-3 | Integration bars | Done | Horizontal bars below peaks with nH labels |
-| F-4 | Amide NH fix | Done | Confidence reduced to 2 (variable shift) |
-| F-5 | Enhanced signal table | Done | Full table: H#, shift, mult, J, integral, assignment, confidence |
+| ID  | Feature                      | Status | Notes                                                            |
+| --- | ---------------------------- | ------ | ---------------------------------------------------------------- |
+| F-1 | Proton numbering (H1, H2...) | Done   | `proton_group_id` in NmrPeak, shown in tooltip + table           |
+| F-2 | SVG export                   | Done   | Publication-ready vector output with envelope + peaks            |
+| F-3 | Integration bars             | Done   | Horizontal bars below peaks with nH labels                       |
+| F-4 | Amide NH fix                 | Done   | Confidence reduced to 2 (variable shift)                         |
+| F-5 | Enhanced signal table        | Done   | Full table: H#, shift, mult, J, integral, assignment, confidence |
 
 ## Phase 3: Features V2.0 (4 items)
 
 All 4 features implemented in one commit (`0ef41fe`):
 
-| ID | Feature | Status | Notes |
-|----|---------|--------|-------|
-| F-6 | 13C prediction | Done | `additive_13c.py` — 30+ environment types, full API support |
-| F-7 | DEPT classification | Done | `dept_class` field (CH3/CH2/CH/C) in NmrPeak |
-| F-8 | Vinyl cis/trans handling | Done | Substitution detection for confidence scoring |
-| F-9 | Advanced multiplicities | Done | `_analyze_coupling_groups()` for dd, dt, ddd patterns |
+| ID  | Feature                  | Status | Notes                                                       |
+| --- | ------------------------ | ------ | ----------------------------------------------------------- |
+| F-6 | 13C prediction           | Done   | `additive_13c.py` — 30+ environment types, full API support |
+| F-7 | DEPT classification      | Done   | `dept_class` field (CH3/CH2/CH/C) in NmrPeak                |
+| F-8 | Vinyl cis/trans handling | Done   | Substitution detection for confidence scoring               |
+| F-9 | Advanced multiplicities  | Done   | `_analyze_coupling_groups()` for dd, dt, ddd patterns       |
 
 ## Phase 4: Regression Tests
 
 34 new tests in 6 categories (`4128f53`):
 
-| Category | Tests | Description |
-|----------|-------|-------------|
-| TestProtonGroupIds | 3 | Sequential H# assignment |
-| TestVinylConfidence | 5 | Substituted vinyl → confidence=1 |
-| TestAmideNhRegression | 3 | Amide NH shift and confidence |
-| Test13CRegression | 13 | 13C shifts for 10+ compounds |
-| TestDeptRegression | 5 | CH3/CH2/CH/C classification |
-| TestAdvancedMultiplicityRegression | 5 | dd/dt patterns, format validity |
+| Category                           | Tests | Description                      |
+| ---------------------------------- | ----- | -------------------------------- |
+| TestProtonGroupIds                 | 3     | Sequential H# assignment         |
+| TestVinylConfidence                | 5     | Substituted vinyl → confidence=1 |
+| TestAmideNhRegression              | 3     | Amide NH shift and confidence    |
+| Test13CRegression                  | 13    | 13C shifts for 10+ compounds     |
+| TestDeptRegression                 | 5     | CH3/CH2/CH/C classification      |
+| TestAdvancedMultiplicityRegression | 5     | dd/dt patterns, format validity  |
 
 ## CI Status
 
@@ -116,12 +116,14 @@ Based on the V4 scientific review (7.4/10), these additions should bring the sco
 ## Remaining for V2.5 and V3.0
 
 ### V2.5 (Score target: 9.5)
+
 - HOSE code prediction method (lookup-based, higher accuracy)
 - Machine learning ensemble (HOSE + additive with confidence weighting)
 - 2D NMR correlation (COSY, HSQC, HMBC) — display only
 - Coupling constant refinement (Karplus equation for dihedral angles)
 
 ### V3.0 (Score target: 10.0)
+
 - GIAO DFT calculation support (external Gaussian/ORCA integration)
 - Full 2D spectrum prediction (COSY cross-peaks)
 - Polymer/peptide NMR prediction

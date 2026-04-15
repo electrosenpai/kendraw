@@ -21,4 +21,9 @@ export {
 
 export { parseSmiles, type SmilesParseResult } from './smiles-parser.js';
 
-export { parseCdxml, type CdxmlParseResult, type CdxmlDocumentSettings, type CdxmlGraphic } from './cdxml-parser.js';
+export {
+  parseCdxml,
+  type CdxmlParseResult,
+  type CdxmlDocumentSettings,
+  type CdxmlGraphic,
+} from './cdxml-parser.js';

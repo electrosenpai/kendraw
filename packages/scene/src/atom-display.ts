@@ -228,9 +228,7 @@ export function buildAtomLabel(page: Page, atomId: AtomId): LabelSegment[] {
   if (atom.hasExplicitLabel && atom.label) {
     const justification = getLabelJustification(page, atomId);
     const labelText =
-      justification === 'right'
-        ? reverseFormulaLabel(atom.label, atom.element)
-        : atom.label;
+      justification === 'right' ? reverseFormulaLabel(atom.label, atom.element) : atom.label;
     const segments: LabelSegment[] = [];
     if (atom.isotope) {
       segments.push({ text: String(atom.isotope), style: 'superscript' });

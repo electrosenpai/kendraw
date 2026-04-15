@@ -16,6 +16,7 @@ Five domain experts were convened to evaluate Kendraw's NMR prediction module ac
 ## A1 — Current State of Kendraw NMR
 
 ### Backend Architecture
+
 - **Engine:** Additive increment method only (`additive.py`, 250 lines)
 - **Environments classified:** 15 proton types (methyl, methylene, methine, allylic, benzylic, alpha_to_carbonyl, alpha_to_halogen, vinyl, aromatic, alkyne_terminal, aldehyde, carboxylic_acid, amide_nh, amine_nh, hydroxyl_oh)
 - **Substituent increments:** 16 types (F, Cl, Br, I, OH, OR, NH2, NR2, NO2, CN, C=O_ketone, COOH, COOR, C=C, phenyl, alkyl)
@@ -25,11 +26,13 @@ Five domain experts were convened to evaluate Kendraw's NMR prediction module ac
 - **Tests:** 56 tests passing (models, additive, service, API, shift tables)
 
 ### Frontend Architecture
+
 - **NmrPanel.tsx** (451 lines): React component with Canvas 2D spectrum, pan/zoom/drag, peak hover/select, nucleus tabs, resize handle
 - **SpectrumRenderer.ts** (280 lines): Lorentzian peaks, confidence coloring (green/yellow/red), nH integral labels, hit-testing
 - **Integration:** Lazy-loaded via `React.lazy`, Ctrl+M toggle, localStorage persistence
 
 ### What Works
+
 - Additive prediction produces reasonable shifts for simple aliphatic and aromatic molecules
 - Equivalent proton grouping is correct (benzene -> 1 peak, 6H)
 - Confidence scoring from reference data counts is transparent
@@ -37,6 +40,7 @@ Five domain experts were convened to evaluate Kendraw's NMR prediction module ac
 - Deterministic output, sorted peaks, API error handling
 
 ### What Is Missing (Complete List)
+
 1. No multiplicity (s/d/t/q/m) — all peaks appear as singlets
 2. No J-coupling constants
 3. No solvent support (no CDCl3/DMSO-d6/etc.)
@@ -57,26 +61,31 @@ Five domain experts were convened to evaluate Kendraw's NMR prediction module ac
 ## A2 — Expert Critiques
 
 ### Expert 1: Pr. Marie-Claire DUVAL
-*Professeure de Chimie Organique, Universite de Strasbourg, specialiste RMN, utilisatrice ChemDraw quotidienne, 25 ans d'experience*
+
+_Professeure de Chimie Organique, Universite de Strasbourg, specialiste RMN, utilisatrice ChemDraw quotidienne, 25 ans d'experience_
 
 **Ce qui est BIEN :**
+
 - The additive table approach is scientifically valid for a first approximation. Textbooks (Silverstein, Pavia) use exactly this method to teach 1H NMR interpretation.
 - The base shift values are in the correct ballpark: methyl at 0.9 ppm, aromatic at 7.3 ppm, aldehyde at 9.7 ppm, carboxylic acid at 11.5 ppm. These are textbook-correct reference values.
 - Equivalent proton grouping works correctly — benzene gives one signal at 7.3 ppm with 6H integration. This is fundamental and it's right.
 - The confidence tier system (3=well-supported, 2=moderate, 1=limited) is intellectually honest and something ChemDraw does NOT do. Transparency about prediction quality is genuinely valuable.
 
 **Ce qui est INSUFFISANT :**
+
 - All aromatic protons appear at 7.3 ppm regardless of substituents. In reality, a nitrobenzene has ortho-H at ~8.2 ppm and meta-H at ~7.5 ppm. Toluene ring protons are at ~7.1-7.2 ppm. The aromatic region needs substituent effect corrections (Hammett-type) to be credible. Currently, aniline and nitrobenzene would show the same aromatic shift — scientifically unacceptable for a teaching tool.
 - The `alpha_to_halogen` base shift of 3.5 ppm is oversimplified. CHCl3 is at 7.27 ppm, CH2Cl2 at 5.30 ppm, CH3Cl at 3.05 ppm. The shift depends heavily on the number of halogens and which halogen. A single "alpha_to_halogen" category cannot capture this.
 - Hydroxyl OH at a fixed 3.5 ppm is problematic. Alcohol OH varies from 0.5 to 5.0 ppm depending on concentration, temperature, and solvent. In DMSO-d6 it appears sharp at ~4.5-5.0 ppm; in CDCl3 it's broad at ~1.5-3.5 ppm. Without solvent context, this value is misleading.
 
 **Ce qui MANQUE COMPLETEMENT :**
+
 - **Multiplicity is absent.** This is the most critical missing feature. A chemist interpreting NMR expects to see "triplet at 1.18 ppm" for ethanol's CH3, not just "peak at 0.9 ppm." Without multiplicity, the predicted spectrum looks nothing like a real spectrum. Even for educational purposes, showing singlet-only peaks teaches incorrect spectral interpretation.
 - **Aromatic substituent effects.** All substituted benzenes showing identical shifts renders the aromatic region completely uninformative. In real NMR, the aromatic region is where substituent effects are most diagnostic.
 - **Ring current anisotropy** for aromatic systems is not modeled.
 - **Hydrogen bonding effects** on exchangeable protons.
 
 **Ce qui est FAUX scientifiquement :**
+
 - Ethanol CH2 predicted at ~3.55 ppm (alpha_to_halogen environment misclassified — it's actually alpha to oxygen). Wait, looking at the code: the `alpha_to_halogen` check triggers for halogens (F, Cl, Br, I). For ethanol, the CH2-O bond would be classified via the oxygen substituent increment (+0.35 for OR). So CH2 in ethanol = methylene (1.3) + OR increment (0.35) = 1.65 ppm. The real value is ~3.69 ppm. This is a **2.0 ppm error** — unacceptable. The additive method underestimates the deshielding effect of directly-bonded oxygen.
 - Alpha-to-carbonyl combined with other substituents can produce cumulative errors exceeding 1.5 ppm.
 - Vinylic protons at a flat 5.3 ppm regardless of cis/trans/geminal substitution — real vinyl protons range from 4.5 to 6.5 ppm depending on substituent geometry.
@@ -88,25 +97,30 @@ Five domain experts were convened to evaluate Kendraw's NMR prediction module ac
 ---
 
 ### Expert 2: Dr. Antoine MARCOS
-*Post-doc en synthese totale, publications JACS/ACIEE, utilisateur ChemDraw + MestReNova quotidien*
+
+_Post-doc en synthese totale, publications JACS/ACIEE, utilisateur ChemDraw + MestReNova quotidien_
 
 **Ce qui est BIEN :**
+
 - The API design is clean — SMILES/MOL input, structured JSON output. I could integrate this into a Jupyter notebook for batch predictions.
 - The Canvas 2D renderer produces a visually clean spectrum with a professional dark theme. The Lorentzian peak shapes are appropriate for predicted spectra.
 - Peak confidence indicators are a genuinely novel feature. When I'm checking a proposed structure, knowing which peaks are less reliable would change how I interpret discrepancies.
 - Bidirectional peak-atom highlighting concept (even if partially wired) would be extremely useful for structure verification.
 
 **Ce qui est INSUFFISANT :**
+
 - Without multiplicity patterns, I cannot perform the "predict then compare" workflow that ChemDraw enables. In practice, I draw my proposed product, predict the spectrum, then overlay it with my experimental data. The splitting pattern is often more diagnostic than the chemical shift — a quartet at 4.12 ppm tells me "CH2 next to CH3" faster than just "peak at 4.12 ppm."
 - The predicted shifts for heteroatom-adjacent protons have significant errors (ethanol CH2 predicted ~1.65 vs real ~3.69 ppm). For a synthetic chemist, these errors would lead to incorrect assignments.
 - No J-coupling values means I can't evaluate through-bond connectivity, which is essential for complex structures.
 
 **Ce qui MANQUE COMPLETEMENT :**
+
 - **Solvent selection.** Every NMR experiment is run in a specific solvent. CDCl3 is the default, but I routinely use DMSO-d6 (for polar compounds), CD3OD (for natural products), and D2O (for sugars/peptides). Not having solvent selection is like a calculator without a decimal point — technically functional but practically useless.
 - **Publication-ready export.** I need SVG or high-resolution PNG with proper axis labels, peak annotations, and citation metadata for supporting information.
 - **Experimental overlay (JCAMP-DX).** The killer workflow is predict + overlay + compare. Without it, I still need MestReNova.
 
 **Ce qui est FAUX scientifiquement :**
+
 - The ethanol CH2 shift error (predicted ~1.65, real ~3.69) would cause me to doubt the entire tool. First impressions matter — if ethanol is wrong, why would I trust it for my trisubstituted pyridine?
 - Exchangeable protons (OH, NH) appearing with fixed shifts regardless of concentration/solvent is misleading. In practice, these are often the hardest peaks to assign and their position is highly condition-dependent.
 
@@ -117,24 +131,29 @@ Five domain experts were convened to evaluate Kendraw's NMR prediction module ac
 ---
 
 ### Expert 3: Pr. Kenji YAMAMOTO
-*Professeur de Spectroscopie, charge des examens RMN L3/M1/M2*
+
+_Professeur de Spectroscopie, charge des examens RMN L3/M1/M2_
 
 **Ce qui est BIEN :**
+
 - Free and open-source — this is enormously valuable for teaching. My department's ChemDraw license costs 30K EUR/year, and students can't afford personal licenses. A free tool with NMR prediction would be transformative.
 - The interactive spectrum viewer with zoom/pan is pedagogically excellent. Students can explore the spectrum at their own pace.
 - The confidence coloring teaches a meta-skill: not all predictions are equal. This is an important lesson for students who tend to treat computational output as ground truth.
 
 **Ce qui est INSUFFISANT :**
+
 - **Without multiplicity, I cannot use this for teaching.** My entire L3 course is built around the n+1 rule (Pascal's triangle). If I show students a predicted spectrum with only singlets, they will learn that NMR peaks are always singlets. This is actively harmful pedagogy.
 - The aromatic region is completely flat (all at 7.3 ppm). My M1 exam asks students to distinguish ortho/meta/para substitution patterns from the aromatic signal pattern. A tool that shows all aromatic protons at the same shift undermines this learning objective.
 - Chemical shift values need to be accurate within ~0.5 ppm for teaching purposes. Currently, heteroatom-adjacent protons can be off by 2+ ppm.
 
 **Ce qui MANQUE COMPLETEMENT :**
+
 - **Integration (relative nH counts)** displayed prominently. Students need to practice reading integration ratios — it's one of the three pillars (shift, multiplicity, integration).
 - **Peak labeling with environment.** Students should see "CH3 (methyl, t, J=7.2 Hz)" not just "0.9 ppm." The learning happens when they connect the label to the peak.
 - **Worked examples/tutorial mode.** For a teaching tool, having 5-10 curated molecules with annotated spectra would be invaluable.
 
 **Ce qui est FAUX scientifiquement :**
+
 - Same concerns as Pr. Duval about ethanol CH2 and aromatic substituent effects. For teaching, even small errors create confusion — students memorize values, and incorrect values become persistent misconceptions.
 
 **Verdict:** NON — En l'etat actuel, l'outil ne peut pas etre utilise pour un TD. L'absence de multiplicite est un defaut pedagogique majeur. Avec multiplicite + solvant + corrections de shift, ce serait un outil de reference pour l'enseignement.
@@ -144,15 +163,18 @@ Five domain experts were convened to evaluate Kendraw's NMR prediction module ac
 ---
 
 ### Expert 4: Dr. Sarah CHEN
-*Chercheuse en chimie computationnelle, developpeuse NMRShiftDB2, experte HOSE codes*
+
+_Chercheuse en chimie computationnelle, developpeuse NMRShiftDB2, experte HOSE codes_
 
 **Ce qui est BIEN :**
+
 - The additive increment approach is a solid foundation. It's the same method used by early versions of ChemDraw's ChemNMR (pre-HOSE era). The clean-room derivation from NMRShiftDB2/SDBS open data avoids IP issues.
 - The code architecture is excellent: pure functions, deterministic output, well-separated concerns (classification -> lookup -> sum -> group). This is exactly how a prediction pipeline should be structured for testability and extensibility.
 - The confidence scoring from reference data counts is scientifically principled. NMRShiftDB2 itself uses a similar approach internally.
 - The fallback chain design (additive -> HOSE short -> HOSE long) described in the PRD is the correct architecture. ChemDraw uses a similar cascade.
 
 **Ce qui est INSUFFISANT :**
+
 - **The additive table is too coarse.** 15 environments with 16 substituent types produces at most ~240 distinct predictions. NMRShiftDB2 has ~43,000 experimental entries. The table needs expansion:
   - Missing: thiol (R-SH), enol (vinyl-OH), imine (C=NH), phosphine, sulfoxide
   - Missing: beta-position effects (substituents two bonds away shift by ~30-50% of alpha effect)
@@ -161,17 +183,20 @@ Five domain experts were convened to evaluate Kendraw's NMR prediction module ac
 - **The confidence scoring maps reference counts to 3 tiers.** This is too coarse — NMRShiftDB2 provides standard deviations for HOSE code predictions, which give continuous confidence. But for the additive method, the tiered approach is reasonable.
 
 **Ce qui MANQUE COMPLETEMENT :**
+
 - **Beta-position effects.** The code only collects alpha substituents (directly bonded to the H-bearing carbon). In reality, beta effects account for ~30-50% of the observed shift. Ethanol's CH3 at 1.18 ppm (vs. methyl base 0.9) is due to the beta oxygen.
-- **Cumulative substituent corrections.** Multiple EWGs on the same carbon have diminishing returns (CH2Cl2 is not methylene + 2*Cl).
+- **Cumulative substituent corrections.** Multiple EWGs on the same carbon have diminishing returns (CH2Cl2 is not methylene + 2\*Cl).
 - **Steric effects on chemical shifts.** Steric compression shifts protons upfield (or downfield for van der Waals deshielding). Important for bridged systems.
 - **HOSE code integration.** The PRD describes this for V1, but the infrastructure isn't started. NMRShiftDB2's HOSE prediction (sphere 1-6) would improve accuracy from MAE ~1.5 ppm to ~0.3 ppm.
 
 **Comparaison avec nmrdb.org et ACD/Labs :**
+
 - nmrdb.org uses HOSE codes from NMRShiftDB2 + neural network refinement. Typical MAE: 0.2-0.4 ppm for 1H. Kendraw's additive method: estimated MAE ~1.5 ppm. That's 5-7x worse.
 - ACD/Labs uses proprietary fragment-based prediction with a database of >400K experimental shifts. Typical MAE: 0.1-0.2 ppm. Kendraw cannot compete here without a large database.
 - The additive method is competitive with 1980s-era prediction tools. For 2026, it's the minimum viable starting point.
 
 **Que manque-t-il pour la V1 HOSE code :**
+
 1. NMRShiftDB2 database loader (download + parse + index)
 2. HOSE code generator using RDKit (`Chem.RDKFingerprint` or custom)
 3. Sphere-based lookup (sphere 6 -> 5 -> 4 -> ... -> 1 fallback)
@@ -185,20 +210,24 @@ Five domain experts were convened to evaluate Kendraw's NMR prediction module ac
 ---
 
 ### Expert 5: Thomas WEBER
-*Administrateur IT labo, gere les licences logicielles pour 50 chercheurs*
+
+_Administrateur IT labo, gere les licences logicielles pour 50 chercheurs_
 
 **Ce qui est BIEN :**
+
 - Docker deployment (nginx + uvicorn) means I can install this on our lab server in minutes. No Wine, no X11 forwarding, no Windows VM for ChemDraw.
 - Zero license cost. At 30K EUR/year for ChemDraw site license, even a 70%-accurate NMR tool saves the department significant money if it reduces ChemDraw dependency for routine tasks.
 - API-first design means researchers can script batch predictions. Several PIs have asked for this capability.
 - SMILES/MOL input means compatibility with any chemical drawing tool — not locked to Kendraw's editor.
 
 **Ce qui est INSUFFISANT :**
+
 - No file format import/export for spectra (JCAMP-DX, Bruker format). Researchers need to bring their experimental data into the tool.
 - No offline mode documentation. If the backend goes down, the frontend should degrade gracefully (it does — stub mode returns empty peaks — but researchers need to know this).
 - No batch prediction API endpoint. Researchers want to predict spectra for 50 compounds from a CSV file.
 
 **Ce qui MANQUE COMPLETEMENT :**
+
 - **CDXML/CDX import.** If researchers have existing ChemDraw files, they need to open them in Kendraw to predict NMR. Without this, migration is blocked.
 - **User documentation.** No README for the NMR feature, no API docs beyond OpenAPI schema.
 - **NMRShiftDB2 installation workflow.** The PRD mentions `kendraw nmr-data install` but it's not implemented.
@@ -211,48 +240,48 @@ Five domain experts were convened to evaluate Kendraw's NMR prediction module ac
 
 ## A3 — Feature Comparison Table: ChemDraw vs. Kendraw vs. Draw-molecules
 
-| # | Feature | ChemDraw ChemNMR | Kendraw (current) | Draw-molecules | Gap | Criticality |
-|---|---------|------------------|--------------------|----------------|-----|-------------|
-| 1 | 1H chemical shift prediction | HOSE + database, MAE ~0.2 ppm | Additive tables, MAE ~1.5 ppm | 3-tier cascade (heuristic/fragment/Spinus), MAE ~0.4 ppm | Large | MUST-FIX |
-| 2 | 13C chemical shift prediction | HOSE + database | Not implemented | Heuristic + fragment DB | Missing | V1 scope |
-| 3 | Multiplicity (s/d/t/q/m) | Full splitting patterns | Not implemented | Full via nmr-simulation | Missing | MUST-FIX |
-| 4 | J-coupling constants (Hz) | Empirical Karplus | Not implemented | Topology-based estimation | Missing | MUST-FIX |
-| 5 | Solvent selection | CDCl3 default + others | Not implemented | 6 solvents with per-environment offsets | Missing | MUST-FIX |
-| 6 | Exchangeable proton handling | Solvent-dependent | Fixed shifts, no solvent | Solvent-dependent corrections | Missing | MUST-FIX |
-| 7 | Aromatic substituent effects | Hammett-type corrections | All at 7.3 ppm flat | Per-substituent ring position effects | Missing | MUST-FIX |
-| 8 | Alpha-oxygen/nitrogen shift | Accurate (~3.3-4.0 ppm) | Severely underestimated (~1.25 ppm) | Accurate heuristic | Broken | MUST-FIX |
-| 9 | Proton environment types | 20+ types | 15 types | 12 types + detailed sub-classification | Incomplete | SHOULD-FIX |
-| 10 | Carbon environment types | 15+ types | 0 (no 13C) | 7 types | Missing | V1 scope |
-| 11 | Proton numbering overlay | Yes (structure annotation) | Not implemented | Yes (diastereotopic grouping) | Missing | SHOULD-FIX |
-| 12 | Signal navigation (prev/next) | Yes | Not implemented | Yes (arrow buttons) | Missing | SHOULD-FIX |
-| 13 | Bidirectional peak-atom highlight | Click peak -> highlight atoms | Partially wired (TODO in code) | Click signal -> highlight atoms | Partial | SHOULD-FIX |
-| 14 | Spectrum zoom/pan | Yes | Yes (scroll, drag, double-click reset) | Yes | OK | - |
-| 15 | Lorentzian peak shapes | Yes | Yes | Yes | OK | - |
-| 16 | Confidence indicators per peak | No | Yes (green/yellow/red tiers) | Percentage-based | Kendraw ahead | - |
-| 17 | Spectrum export PNG | Yes | Not implemented | Not directly | Missing | SHOULD-FIX |
-| 18 | Spectrum export SVG/PDF | Yes | Not implemented | Not implemented | Missing | V1 scope |
-| 19 | CSV signal export | Yes | Not implemented | Yes (CSV + JSON) | Missing | SHOULD-FIX |
-| 20 | JCAMP-DX overlay | Yes | Not implemented | Not implemented | Missing | V1 scope |
-| 21 | HTML analytical report | No (PDF) | Not implemented | Yes (rich HTML report) | Missing | NICE-TO-HAVE |
-| 22 | Solvent residual peaks marked | Yes | Not implemented | Not implemented | Missing | NICE-TO-HAVE |
-| 23 | Integration display (nH) | Yes | Partial (nH label at base) | Yes (integral curves) | Partial | SHOULD-FIX |
-| 24 | DEPT classification (13C) | Yes | Not implemented | Yes (C/CH/CH2/CH3) | Missing | V1 scope |
-| 25 | 2D NMR (COSY/HSQC/HMBC) | Yes | Not implemented | Not implemented | Missing | V2 scope |
-| 26 | Frequency selection (MHz) | 300-800 MHz configurable | Not implemented | 400 MHz fixed | Missing | NICE-TO-HAVE |
-| 27 | HOSE code prediction | Yes (sphere 1-6) | Not implemented | Fragment DB equivalent | Missing | V1 scope |
-| 28 | NMRShiftDB2 integration | Proprietary equivalent | Not implemented | Not implemented | Missing | V1 scope |
-| 29 | Beta-position substituent effects | Yes | Not implemented | Not implemented | Missing | SHOULD-FIX |
-| 30 | Cumulative substituent scaling | Yes | Not implemented (linear sum) | Not implemented | Missing | SHOULD-FIX |
-| 31 | Vinylic cis/trans/geminal | Yes | Flat 5.3 ppm | Detailed substituent model | Missing | SHOULD-FIX |
-| 32 | Keyboard shortcut (toggle) | Ctrl+Shift+N | Ctrl+M | N/A (button only) | OK | - |
-| 33 | Lazy-loaded panel | N/A (desktop app) | Yes (React.lazy + Suspense) | No (always loaded) | Kendraw ahead | - |
-| 34 | Resizable panel | Yes | Yes (drag handle) | Not implemented | OK | - |
-| 35 | Dark theme spectrum | No (white background) | Yes (glassmorphism dark) | No (white background) | Kendraw ahead | - |
-| 36 | API/scripting access | COM automation (Windows) | REST API (POST /compute/nmr) | No API | Kendraw ahead | - |
-| 37 | Benchmark test suite | Internal QA | No validation suite | 5-molecule benchmark | Missing | SHOULD-FIX |
-| 38 | Deterministic output | Yes | Yes (sorted, pure functions) | Yes | OK | - |
-| 39 | Atom count limit | ~1000 (practical) | Configurable (default 5000) | No explicit limit | OK | - |
-| 40 | Thiol environment (R-SH) | Yes | Not classified | Yes (dedicated type) | Missing | SHOULD-FIX |
+| #   | Feature                           | ChemDraw ChemNMR              | Kendraw (current)                      | Draw-molecules                                           | Gap           | Criticality  |
+| --- | --------------------------------- | ----------------------------- | -------------------------------------- | -------------------------------------------------------- | ------------- | ------------ |
+| 1   | 1H chemical shift prediction      | HOSE + database, MAE ~0.2 ppm | Additive tables, MAE ~1.5 ppm          | 3-tier cascade (heuristic/fragment/Spinus), MAE ~0.4 ppm | Large         | MUST-FIX     |
+| 2   | 13C chemical shift prediction     | HOSE + database               | Not implemented                        | Heuristic + fragment DB                                  | Missing       | V1 scope     |
+| 3   | Multiplicity (s/d/t/q/m)          | Full splitting patterns       | Not implemented                        | Full via nmr-simulation                                  | Missing       | MUST-FIX     |
+| 4   | J-coupling constants (Hz)         | Empirical Karplus             | Not implemented                        | Topology-based estimation                                | Missing       | MUST-FIX     |
+| 5   | Solvent selection                 | CDCl3 default + others        | Not implemented                        | 6 solvents with per-environment offsets                  | Missing       | MUST-FIX     |
+| 6   | Exchangeable proton handling      | Solvent-dependent             | Fixed shifts, no solvent               | Solvent-dependent corrections                            | Missing       | MUST-FIX     |
+| 7   | Aromatic substituent effects      | Hammett-type corrections      | All at 7.3 ppm flat                    | Per-substituent ring position effects                    | Missing       | MUST-FIX     |
+| 8   | Alpha-oxygen/nitrogen shift       | Accurate (~3.3-4.0 ppm)       | Severely underestimated (~1.25 ppm)    | Accurate heuristic                                       | Broken        | MUST-FIX     |
+| 9   | Proton environment types          | 20+ types                     | 15 types                               | 12 types + detailed sub-classification                   | Incomplete    | SHOULD-FIX   |
+| 10  | Carbon environment types          | 15+ types                     | 0 (no 13C)                             | 7 types                                                  | Missing       | V1 scope     |
+| 11  | Proton numbering overlay          | Yes (structure annotation)    | Not implemented                        | Yes (diastereotopic grouping)                            | Missing       | SHOULD-FIX   |
+| 12  | Signal navigation (prev/next)     | Yes                           | Not implemented                        | Yes (arrow buttons)                                      | Missing       | SHOULD-FIX   |
+| 13  | Bidirectional peak-atom highlight | Click peak -> highlight atoms | Partially wired (TODO in code)         | Click signal -> highlight atoms                          | Partial       | SHOULD-FIX   |
+| 14  | Spectrum zoom/pan                 | Yes                           | Yes (scroll, drag, double-click reset) | Yes                                                      | OK            | -            |
+| 15  | Lorentzian peak shapes            | Yes                           | Yes                                    | Yes                                                      | OK            | -            |
+| 16  | Confidence indicators per peak    | No                            | Yes (green/yellow/red tiers)           | Percentage-based                                         | Kendraw ahead | -            |
+| 17  | Spectrum export PNG               | Yes                           | Not implemented                        | Not directly                                             | Missing       | SHOULD-FIX   |
+| 18  | Spectrum export SVG/PDF           | Yes                           | Not implemented                        | Not implemented                                          | Missing       | V1 scope     |
+| 19  | CSV signal export                 | Yes                           | Not implemented                        | Yes (CSV + JSON)                                         | Missing       | SHOULD-FIX   |
+| 20  | JCAMP-DX overlay                  | Yes                           | Not implemented                        | Not implemented                                          | Missing       | V1 scope     |
+| 21  | HTML analytical report            | No (PDF)                      | Not implemented                        | Yes (rich HTML report)                                   | Missing       | NICE-TO-HAVE |
+| 22  | Solvent residual peaks marked     | Yes                           | Not implemented                        | Not implemented                                          | Missing       | NICE-TO-HAVE |
+| 23  | Integration display (nH)          | Yes                           | Partial (nH label at base)             | Yes (integral curves)                                    | Partial       | SHOULD-FIX   |
+| 24  | DEPT classification (13C)         | Yes                           | Not implemented                        | Yes (C/CH/CH2/CH3)                                       | Missing       | V1 scope     |
+| 25  | 2D NMR (COSY/HSQC/HMBC)           | Yes                           | Not implemented                        | Not implemented                                          | Missing       | V2 scope     |
+| 26  | Frequency selection (MHz)         | 300-800 MHz configurable      | Not implemented                        | 400 MHz fixed                                            | Missing       | NICE-TO-HAVE |
+| 27  | HOSE code prediction              | Yes (sphere 1-6)              | Not implemented                        | Fragment DB equivalent                                   | Missing       | V1 scope     |
+| 28  | NMRShiftDB2 integration           | Proprietary equivalent        | Not implemented                        | Not implemented                                          | Missing       | V1 scope     |
+| 29  | Beta-position substituent effects | Yes                           | Not implemented                        | Not implemented                                          | Missing       | SHOULD-FIX   |
+| 30  | Cumulative substituent scaling    | Yes                           | Not implemented (linear sum)           | Not implemented                                          | Missing       | SHOULD-FIX   |
+| 31  | Vinylic cis/trans/geminal         | Yes                           | Flat 5.3 ppm                           | Detailed substituent model                               | Missing       | SHOULD-FIX   |
+| 32  | Keyboard shortcut (toggle)        | Ctrl+Shift+N                  | Ctrl+M                                 | N/A (button only)                                        | OK            | -            |
+| 33  | Lazy-loaded panel                 | N/A (desktop app)             | Yes (React.lazy + Suspense)            | No (always loaded)                                       | Kendraw ahead | -            |
+| 34  | Resizable panel                   | Yes                           | Yes (drag handle)                      | Not implemented                                          | OK            | -            |
+| 35  | Dark theme spectrum               | No (white background)         | Yes (glassmorphism dark)               | No (white background)                                    | Kendraw ahead | -            |
+| 36  | API/scripting access              | COM automation (Windows)      | REST API (POST /compute/nmr)           | No API                                                   | Kendraw ahead | -            |
+| 37  | Benchmark test suite              | Internal QA                   | No validation suite                    | 5-molecule benchmark                                     | Missing       | SHOULD-FIX   |
+| 38  | Deterministic output              | Yes                           | Yes (sorted, pure functions)           | Yes                                                      | OK            | -            |
+| 39  | Atom count limit                  | ~1000 (practical)             | Configurable (default 5000)            | No explicit limit                                        | OK            | -            |
+| 40  | Thiol environment (R-SH)          | Yes                           | Not classified                         | Yes (dedicated type)                                     | Missing       | SHOULD-FIX   |
 
 ---
 
@@ -318,13 +347,13 @@ Show "CH3", "ArH", "CHO" etc. labels on peaks for educational clarity.
 
 ## Summary Scores
 
-| Expert | Score | Verdict |
-|--------|-------|---------|
-| Pr. Duval (Organic Chemistry) | 3/10 | NON |
-| Dr. Marcos (Synthesis) | 4/10 | AVEC RESERVES |
-| Pr. Yamamoto (Teaching) | 3/10 | NON |
-| Dr. Chen (Computational) | 5/10 | AVEC RESERVES |
-| Thomas Weber (IT Admin) | 6/10 | OUI (infra) / RESERVES (usage) |
-| **Moyenne** | **4.2/10** | **AVEC RESERVES** |
+| Expert                        | Score      | Verdict                        |
+| ----------------------------- | ---------- | ------------------------------ |
+| Pr. Duval (Organic Chemistry) | 3/10       | NON                            |
+| Dr. Marcos (Synthesis)        | 4/10       | AVEC RESERVES                  |
+| Pr. Yamamoto (Teaching)       | 3/10       | NON                            |
+| Dr. Chen (Computational)      | 5/10       | AVEC RESERVES                  |
+| Thomas Weber (IT Admin)       | 6/10       | OUI (infra) / RESERVES (usage) |
+| **Moyenne**                   | **4.2/10** | **AVEC RESERVES**              |
 
 **Consensus:** The architecture and infrastructure are solid. The UI/UX is ahead of competitors in some areas (confidence indicators, dark theme, API access). But the prediction engine has critical accuracy problems (alpha-heteroatom shifts) and missing features (multiplicity, solvents) that prevent credible use in any context. Fixing MF-1 through MF-5 would raise the score to approximately 6.5-7/10 and make the tool genuinely useful for teaching and quick research checks.

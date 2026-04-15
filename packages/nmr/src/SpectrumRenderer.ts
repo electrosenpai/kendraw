@@ -43,7 +43,7 @@ const CONF_COLORS: Record<number, string> = {
 // Solvent residual proton peaks — dashed marker + label on spectrum
 const SOLVENT_RESIDUAL_PEAKS: Record<string, { shift: number; label: string }[]> = {
   CDCl3: [{ shift: 7.26, label: 'CHCl\u2083' }],
-  'DMSO-d6': [{ shift: 2.50, label: 'DMSO' }],
+  'DMSO-d6': [{ shift: 2.5, label: 'DMSO' }],
   CD3OD: [{ shift: 3.31, label: 'CHD\u2082OD' }],
   'acetone-d6': [{ shift: 2.05, label: 'acetone' }],
   C6D6: [{ shift: 7.16, label: 'C\u2086D\u2085H' }],
@@ -78,7 +78,17 @@ export function renderSpectrum(
   prediction: NmrPrediction | null,
   options: RenderOptions,
 ): PeakHitBox[] {
-  const { width, height, dpr, viewport, hoveredPeakIdx, selectedPeakIdx, exportMode, solvent, showNoise } = options;
+  const {
+    width,
+    height,
+    dpr,
+    viewport,
+    hoveredPeakIdx,
+    selectedPeakIdx,
+    exportMode,
+    solvent,
+    showNoise,
+  } = options;
   const hitBoxes: PeakHitBox[] = [];
 
   // Color scheme: dark UI vs white-bg export
@@ -201,11 +211,16 @@ export function renderSpectrum(
   // QW-1: Solvent label (top-right) + residual peak markers (dashed vertical lines)
   if (solvent) {
     // Solvent label top-right
-    const solventDisplay = solvent === 'C6D6' ? 'C\u2086D\u2086'
-      : solvent === 'D2O' ? 'D\u2082O'
-      : solvent === 'DMSO-d6' ? 'DMSO-d\u2086'
-      : solvent === 'acetone-d6' ? 'Acetone-d\u2086'
-      : solvent;
+    const solventDisplay =
+      solvent === 'C6D6'
+        ? 'C\u2086D\u2086'
+        : solvent === 'D2O'
+          ? 'D\u2082O'
+          : solvent === 'DMSO-d6'
+            ? 'DMSO-d\u2086'
+            : solvent === 'acetone-d6'
+              ? 'Acetone-d\u2086'
+              : solvent;
     ctx.fillStyle = exportMode ? '#999999' : '#555555';
     ctx.font = '9px Inter, system-ui, sans-serif';
     ctx.textAlign = 'right';
@@ -270,7 +285,7 @@ export function renderSpectrum(
     let seed = 42;
     for (let i = 0; i < nPoints; i++) {
       seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-      const noise = ((seed / 0x7fffffff) - 0.5) * plotH * 0.015;
+      const noise = (seed / 0x7fffffff - 0.5) * plotH * 0.015;
       const x = MARGIN.left + (i / (nPoints - 1)) * plotW;
       if (i === 0) ctx.moveTo(x, baseY + noise);
       else ctx.lineTo(x, baseY + noise);
@@ -287,7 +302,12 @@ export function renderSpectrum(
     const color = CONF_COLORS[peak.confidence] ?? '#888888';
     const nH = peak.atom_indices.length;
     const peakTopY =
-      MARGIN.top + plotH - (nH * lorentzian(peak.shift_ppm, peak.shift_ppm, LORENTZIAN_HALF_WIDTH_PPM) / maxIntensity) * plotH * 0.85;
+      MARGIN.top +
+      plotH -
+      ((nH * lorentzian(peak.shift_ppm, peak.shift_ppm, LORENTZIAN_HALF_WIDTH_PPM)) /
+        maxIntensity) *
+        plotH *
+        0.85;
 
     const isHovered = hoveredPeakIdx === pi;
     const isSelected = selectedPeakIdx === pi;
@@ -386,11 +406,7 @@ function drawConfidenceMarker(
   }
 }
 
-export function hitTestPeaks(
-  hitBoxes: PeakHitBox[],
-  x: number,
-  y: number,
-): number | null {
+export function hitTestPeaks(hitBoxes: PeakHitBox[], x: number, y: number): number | null {
   for (const box of hitBoxes) {
     const dx = x - box.x;
     const dy = y - box.y;

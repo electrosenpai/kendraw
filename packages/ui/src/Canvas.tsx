@@ -29,7 +29,12 @@ import { CanvasRenderer } from '@kendraw/renderer-canvas';
 import { ToolPalette, DEFAULT_TOOL_STATE, type ToolState } from './ToolPalette';
 import { PropertyPanel } from './PropertyPanel';
 import { StatusBar } from './StatusBar';
-import { getGraphicOverlays, getCdxmlDocumentSettings, toRenderSettings, onGraphicOverlaysChange } from './graphic-overlays';
+import {
+  getGraphicOverlays,
+  getCdxmlDocumentSettings,
+  toRenderSettings,
+  onGraphicOverlaysChange,
+} from './graphic-overlays';
 
 const ATOM_RADIUS = 14;
 

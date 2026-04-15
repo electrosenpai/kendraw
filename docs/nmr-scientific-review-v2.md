@@ -25,84 +25,84 @@ The tool is approaching viability for educational use but remains inadequate for
 
 ### 2.1 Backend (1,080 lines, 5 files)
 
-| File | Lines | Purpose |
-|------|-------|---------|
-| `shift_tables.py` | 281 | 18 base shifts + 18 substituent increments + 54 aromatic effects + 6 solvents + 13 J-couplings + 18 confidence refs |
-| `additive.py` | 625 | Additive prediction engine: 10 functions (classify, compute, correct) |
-| `nmr_service.py` | 129 | Service orchestrator: RDKit detection, fallback chain, input validation |
-| `models.py` | 34 | Pydantic models: NmrPeak (9 fields), NmrMetadata, NmrPrediction |
-| `__init__.py` | 11 | Package exports |
+| File              | Lines | Purpose                                                                                                             |
+| ----------------- | ----- | ------------------------------------------------------------------------------------------------------------------- |
+| `shift_tables.py` | 281   | 18 base shifts + 18 substituent increments + 54 aromatic effects + 6 solvents + 13 J-couplings + 18 confidence refs |
+| `additive.py`     | 625   | Additive prediction engine: 10 functions (classify, compute, correct)                                               |
+| `nmr_service.py`  | 129   | Service orchestrator: RDKit detection, fallback chain, input validation                                             |
+| `models.py`       | 34    | Pydantic models: NmrPeak (9 fields), NmrMetadata, NmrPrediction                                                     |
+| `__init__.py`     | 11    | Package exports                                                                                                     |
 
 **API:** `POST /compute/nmr` — 36-line router, status codes 200/400/413
 
 ### 2.2 Frontend (943 lines, 4 files)
 
-| File | Lines | Purpose |
-|------|-------|---------|
-| `NmrPanel.tsx` | 605 | Full panel: solvent dropdown, signal nav, CSV export, peak info bar, resize handle |
-| `SpectrumRenderer.ts` | 272 | Canvas 2D: Lorentzian peaks, confidence markers, grid, axis |
-| `index.ts` | 10 | Public API exports |
-| `SpectrumRenderer.test.ts` | 56 | 5 unit tests: viewport computation, hit-test |
+| File                       | Lines | Purpose                                                                            |
+| -------------------------- | ----- | ---------------------------------------------------------------------------------- |
+| `NmrPanel.tsx`             | 605   | Full panel: solvent dropdown, signal nav, CSV export, peak info bar, resize handle |
+| `SpectrumRenderer.ts`      | 272   | Canvas 2D: Lorentzian peaks, confidence markers, grid, axis                        |
+| `index.ts`                 | 10    | Public API exports                                                                 |
+| `SpectrumRenderer.test.ts` | 56    | 5 unit tests: viewport computation, hit-test                                       |
 
 **UI Integration:** NMR button in toolbar (wave icon), Ctrl+M toggle, lazy-loaded via React.lazy, CSS grid 4th row
 
 ### 2.3 Data Tables Summary
 
-| Table | Entries | Coverage |
-|-------|---------|----------|
-| BASE_SHIFTS | 18 | methyl through thiol_sh |
-| SUBSTITUENT_INCREMENTS | 18 | F, Cl, Br, I, OH, OR, NH2, NR2, NO2, CN, C=O, COOH, COOR, C=C, phenyl, SH, SR, alkyl |
-| AROMATIC_SUBSTITUENT_EFFECTS | 54 (18x3) | ortho/meta/para for 18 substituent types |
-| SOLVENT_PROTON_OFFSETS | 96 (6x16) | Per-environment offsets for 6 solvents |
-| J_COUPLING_CONSTANTS | 13 | geminal, vicinal (5 types), aromatic (3), long-range (3), aldehyde |
-| CONFIDENCE_REFERENCE_COUNTS | 18 | Maps to tiers 1-3 |
-| SOLVENT_RESIDUAL_PEAKS | 6 | Reference peaks per solvent |
-| **Total distinct data points** | **~223** | |
+| Table                          | Entries   | Coverage                                                                             |
+| ------------------------------ | --------- | ------------------------------------------------------------------------------------ |
+| BASE_SHIFTS                    | 18        | methyl through thiol_sh                                                              |
+| SUBSTITUENT_INCREMENTS         | 18        | F, Cl, Br, I, OH, OR, NH2, NR2, NO2, CN, C=O, COOH, COOR, C=C, phenyl, SH, SR, alkyl |
+| AROMATIC_SUBSTITUENT_EFFECTS   | 54 (18x3) | ortho/meta/para for 18 substituent types                                             |
+| SOLVENT_PROTON_OFFSETS         | 96 (6x16) | Per-environment offsets for 6 solvents                                               |
+| J_COUPLING_CONSTANTS           | 13        | geminal, vicinal (5 types), aromatic (3), long-range (3), aldehyde                   |
+| CONFIDENCE_REFERENCE_COUNTS    | 18        | Maps to tiers 1-3                                                                    |
+| SOLVENT_RESIDUAL_PEAKS         | 6         | Reference peaks per solvent                                                          |
+| **Total distinct data points** | **~223**  |                                                                                      |
 
 ### 2.4 Test Suite
 
-| Suite | Files | Tests | Lines |
-|-------|-------|-------|-------|
-| Backend NMR | 4 | 53 | 644 |
-| Frontend NMR (renderer) | 1 | 5 | 56 |
-| Frontend NMR (store) | 1 | 3 | ~30 |
-| **Total NMR-specific** | **6** | **61** | **~730** |
+| Suite                   | Files | Tests  | Lines    |
+| ----------------------- | ----- | ------ | -------- |
+| Backend NMR             | 4     | 53     | 644      |
+| Frontend NMR (renderer) | 1     | 5      | 56       |
+| Frontend NMR (store)    | 1     | 3      | ~30      |
+| **Total NMR-specific**  | **6** | **61** | **~730** |
 
 ### 2.5 Changes Since V1 Review
 
-| V1 Issue | Status | Commit | Impact |
-|----------|--------|--------|--------|
-| MF-1: Alpha-oxygen/nitrogen shifts | FIXED | 52b482e | Ethanol CH2 error: 2.04 ppm -> 0.29 ppm |
-| MF-2: Multiplicity computation | FIXED | 52b482e | n+1 rule with J-coupling selection |
-| MF-3: Solvent support (6 solvents) | FIXED | 52b482e | CDCl3, DMSO-d6, CD3OD, acetone-d6, C6D6, D2O |
-| MF-4: Aromatic substituent effects | FIXED | 52b482e | Hammett-type ortho/meta/para corrections |
-| MF-5: Exchangeable proton behavior | FIXED | 52b482e | Solvent-dependent OH/NH/SH shifts |
-| SF-3: Signal navigation | FIXED | fe20bff | Tab/Shift+Tab + prev/next buttons |
-| SF-4: CSV export | FIXED | fe20bff | 7-column CSV download |
-| SF-5: Benchmark suite | FIXED | e5b755f | 5 molecules, 27 tests |
-| Thiol environment | ADDED | 52b482e | New thiol_sh base environment |
-| J-coupling constants | ADDED | 52b482e | 13 coupling types |
-| Frontend solvent dropdown | ADDED | fe20bff | 6 solvents selectable |
-| Multiplicity labels on spectrum | ADDED | fe20bff | Peak labels show "7.30 d" |
-| Selected peak info bar | ADDED | fe20bff | Shows delta, nH, mult, J, env |
-| NMR toolbar button | ADDED | 7aa8696 | Wave icon in ToolPalette |
+| V1 Issue                           | Status | Commit  | Impact                                       |
+| ---------------------------------- | ------ | ------- | -------------------------------------------- |
+| MF-1: Alpha-oxygen/nitrogen shifts | FIXED  | 52b482e | Ethanol CH2 error: 2.04 ppm -> 0.29 ppm      |
+| MF-2: Multiplicity computation     | FIXED  | 52b482e | n+1 rule with J-coupling selection           |
+| MF-3: Solvent support (6 solvents) | FIXED  | 52b482e | CDCl3, DMSO-d6, CD3OD, acetone-d6, C6D6, D2O |
+| MF-4: Aromatic substituent effects | FIXED  | 52b482e | Hammett-type ortho/meta/para corrections     |
+| MF-5: Exchangeable proton behavior | FIXED  | 52b482e | Solvent-dependent OH/NH/SH shifts            |
+| SF-3: Signal navigation            | FIXED  | fe20bff | Tab/Shift+Tab + prev/next buttons            |
+| SF-4: CSV export                   | FIXED  | fe20bff | 7-column CSV download                        |
+| SF-5: Benchmark suite              | FIXED  | e5b755f | 5 molecules, 27 tests                        |
+| Thiol environment                  | ADDED  | 52b482e | New thiol_sh base environment                |
+| J-coupling constants               | ADDED  | 52b482e | 13 coupling types                            |
+| Frontend solvent dropdown          | ADDED  | fe20bff | 6 solvents selectable                        |
+| Multiplicity labels on spectrum    | ADDED  | fe20bff | Peak labels show "7.30 d"                    |
+| Selected peak info bar             | ADDED  | fe20bff | Shows delta, nH, mult, J, env                |
+| NMR toolbar button                 | ADDED  | 7aa8696 | Wave icon in ToolPalette                     |
 
 **NOT YET ADDRESSED from V1:**
 
-| V1 Recommendation | Status |
-|-------------------|--------|
-| SF-1: Beta-position effects | Deferred |
-| SF-2: Proton numbering overlay | Deferred |
-| SF-6: Integration curves | Deferred |
-| SF-7: Vinylic cis/trans differentiation | Deferred |
-| NH-1: Solvent residual peak markers | Deferred |
-| NH-2: Configurable frequency (MHz) | Deferred |
-| NH-3: HTML analytical report | Deferred |
-| NH-4: Peak assignment labels | Deferred |
-| Bidirectional highlighting (PRD) | Not implemented |
-| 13C prediction | Not implemented |
-| PNG/SVG/PDF export | Not implemented |
-| JCAMP-DX import/export | Not implemented |
+| V1 Recommendation                       | Status          |
+| --------------------------------------- | --------------- |
+| SF-1: Beta-position effects             | Deferred        |
+| SF-2: Proton numbering overlay          | Deferred        |
+| SF-6: Integration curves                | Deferred        |
+| SF-7: Vinylic cis/trans differentiation | Deferred        |
+| NH-1: Solvent residual peak markers     | Deferred        |
+| NH-2: Configurable frequency (MHz)      | Deferred        |
+| NH-3: HTML analytical report            | Deferred        |
+| NH-4: Peak assignment labels            | Deferred        |
+| Bidirectional highlighting (PRD)        | Not implemented |
+| 13C prediction                          | Not implemented |
+| PNG/SVG/PDF export                      | Not implemented |
+| JCAMP-DX import/export                  | Not implemented |
 
 ---
 
@@ -115,18 +115,21 @@ The tool is approaching viability for educational use but remains inadequate for
 **Findings:**
 
 **Caffeine (3 N-methyl groups + 1 aromatic H):**
+
 - N-methyl groups: classified as `alpha_to_nitrogen` (base 2.6 ppm). Experimental: 3.35-3.58 ppm (three distinct N-CH3). Predicted ~2.6 ppm + substituent correction. Error likely 0.5-0.8 ppm — acceptable for MVP but noticeable.
 - The single aromatic H (C8-H): predicted ~7.26 ppm (aromatic base) + Hammett corrections for flanking N atoms. Experimental: 7.55 ppm. The AROMATIC_SUBSTITUENT_EFFECTS table does not include nitrogen-on-ring as a substituent type — only exocyclic substituents. This is a **systematic gap for N-heterocycles**.
 - NH (caffeine has no NH — it's fully N-methylated) — correctly no exchangeable proton.
 - All three N-methyls are singlets (no vicinal H) — multiplicity CORRECT.
 
 **Aspirin (acetyl, aromatic ring with 2 substituents, COOH):**
+
 - Acetyl CH3 (~2.33 ppm exp): classified as `alpha_to_carbonyl` (base 2.1 ppm + correction). Predicted ~2.10 ppm. Error ~0.23 ppm — acceptable.
 - 4 aromatic H: di-substituted ring (OCOCH3 + COOH). The ortho/meta/para effects should produce a spread. COOH ortho: +0.85, meta: +0.18, para: +0.27. OCOR (ester O) ortho: -0.48, meta: -0.09, para: -0.44. This is **partially correct** but the code treats exocyclic oxygen as "OR" which is approximately right.
 - COOH proton (11.5 ppm base): present as singlet. In CDCl3 this is typically broad and may not be observed. The code does show it — **acceptable but idealized**.
 - Overall aspirin: predicted spectrum would be recognizable but not precise for di-substituted aromatic pattern.
 
 **Cholesterol (complex steroid, 46 H):**
+
 - The additive model will produce a massive overlap in the 0.5-2.5 ppm region — **realistic** for cholesterol's actual spectrum (broad aliphatic envelope).
 - Angular methyl groups (C18, C19): should be singlets at 0.68 and 1.01 ppm. Predicted as `methyl` (0.9 ppm base) — error ~0.1-0.3 ppm depending on corrections.
 - Vinyl H (C6-H, 5.35 ppm): classified as `vinyl` (5.3 ppm base) — excellent match.
@@ -138,18 +141,18 @@ The tool is approaching viability for educational use but remains inadequate for
 
 > "Le progrès depuis la V1 est indéniable — l'erreur calamiteuse de 2 ppm sur l'éthanol est corrigée. Mais le modèle additif à 18 environnements reste trop grossier pour un usage en recherche. Je ne peux pas montrer le spectre du cholestérol à mes étudiants de M2 sans expliquer toutes les approximations. Pour un L3, c'est utilisable. Pour un chercheur, non."
 
-| Dimension | Note | Justification |
-|-----------|------|---------------|
-| Exactitude scientifique | 5/10 | MAE ~0.3 ppm acceptable pour simples, mais N-hétérocycles et poly-substitués montrent des erreurs 0.5+ ppm |
-| Qualité du spectre | 5/10 | Lorentzien correct, enveloppe visible, mais pas de splitting réaliste (singlet/doublet/triplet only) |
-| Workflow / UX | 6/10 | Ctrl+M → spectre en <1s, mais pas de highlighting bidirectionnel — je ne sais pas QUEL pic correspond à QUEL proton |
-| Features vs ChemDraw | 2/10 | Pas de 13C, pas de HOSE, pas de protons diastéréotopiques, pas d'export image |
-| Pédagogie | 5/10 | Indicateurs de confiance utiles, solvant démontrable, mais multiplicité trop simplifiée pour enseigner le couplage |
-| Confiance / Crédibilité | 5/10 | Les couleurs de confiance sont honnêtes — c'est appréciable. Mais l'absence de méthode HOSE rend les prédictions non-citables |
-| Robustesse technique | 7/10 | Aucun crash, fallback propre, validation des entrées solide |
-| Facilité d'adoption | 5/10 | Gratuit + toolbar intuitive, mais manque de fonctionnalités essentielles pour remplacer quoi que ce soit |
-| Export / Publication | 2/10 | CSV uniquement — inutilisable pour une publication ou un rapport |
-| **Note GLOBALE** | **5/10** | "Progrès réel, mais encore un prototype. Utilisable en L3 pour la découverte, pas en M2 ni en recherche." |
+| Dimension               | Note     | Justification                                                                                                                 |
+| ----------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| Exactitude scientifique | 5/10     | MAE ~0.3 ppm acceptable pour simples, mais N-hétérocycles et poly-substitués montrent des erreurs 0.5+ ppm                    |
+| Qualité du spectre      | 5/10     | Lorentzien correct, enveloppe visible, mais pas de splitting réaliste (singlet/doublet/triplet only)                          |
+| Workflow / UX           | 6/10     | Ctrl+M → spectre en <1s, mais pas de highlighting bidirectionnel — je ne sais pas QUEL pic correspond à QUEL proton           |
+| Features vs ChemDraw    | 2/10     | Pas de 13C, pas de HOSE, pas de protons diastéréotopiques, pas d'export image                                                 |
+| Pédagogie               | 5/10     | Indicateurs de confiance utiles, solvant démontrable, mais multiplicité trop simplifiée pour enseigner le couplage            |
+| Confiance / Crédibilité | 5/10     | Les couleurs de confiance sont honnêtes — c'est appréciable. Mais l'absence de méthode HOSE rend les prédictions non-citables |
+| Robustesse technique    | 7/10     | Aucun crash, fallback propre, validation des entrées solide                                                                   |
+| Facilité d'adoption     | 5/10     | Gratuit + toolbar intuitive, mais manque de fonctionnalités essentielles pour remplacer quoi que ce soit                      |
+| Export / Publication    | 2/10     | CSV uniquement — inutilisable pour une publication ou un rapport                                                              |
+| **Note GLOBALE**        | **5/10** | "Progrès réel, mais encore un prototype. Utilisable en L3 pour la découverte, pas en M2 ni en recherche."                     |
 
 ---
 
@@ -160,6 +163,7 @@ The tool is approaching viability for educational use but remains inadequate for
 **Findings:**
 
 **Workflow Evaluation:**
+
 - Draw molecule: functional (standard drawing tools work)
 - Predict: 1 click (Ctrl+M if panel closed, then auto-predict on draw) — 2 actions max
 - Time to spectrum: <500ms for prediction + render — acceptable
@@ -167,12 +171,14 @@ The tool is approaching viability for educational use but remains inadequate for
 - Export: CSV only — **inadequate** for JACS supporting information
 
 **Bidirectional Highlighting:**
+
 - **NOT IMPLEMENTED.** This is the single biggest workflow gap.
 - When I hover a peak at 7.45 ppm, nothing lights up on the structure. I cannot tell which of my 8 aromatic protons this is.
 - `atom_index` exists in the data model but the renderer-canvas does NOT read it.
 - For a macrocycle with 30+ distinct protons, this makes the tool essentially unusable for structure confirmation.
 
 **Accuracy on Complex Molecule:**
+
 - Fused aromatics: Hammett corrections don't model ring fusion effects. Two fused rings (naphthalene-type) would need ring-current anisotropy corrections not present in the code.
 - Amide NH: correctly classified, solvent-dependent shift — OK.
 - Ester alpha-H: `alpha_to_oxygen` base (3.4 ppm) — close to expected (~3.6-4.2 ppm for ester alpha). Error ~0.2-0.8 ppm depending on environment.
@@ -180,10 +186,12 @@ The tool is approaching viability for educational use but remains inadequate for
 - **Stereocenters have no effect on prediction** — diastereotopic protons not differentiated.
 
 **J-Coupling Assessment:**
+
 - Vinyl H: predicted as generic vicinal 7.0 Hz. My trans-alkene should be ~15-16 Hz, cis ~10-11 Hz. **Fundamentally wrong J-values** for the structural element I care about most.
 - The n+1 rule gives me "doublet" or "triplet" but never "dd" or "dt" — losing the structural information I need.
 
 **CDXML Import:**
+
 - Tested with a ChemDraw file: atoms and bonds imported correctly.
 - Stereochemistry (wedge/dash bonds) imported.
 - Layout preserved reasonably.
@@ -193,18 +201,18 @@ The tool is approaching viability for educational use but remains inadequate for
 
 > "The architecture is clean and the speed is impressive. But for my daily work — confirming synthetic intermediates — I need three things this tool doesn't have: bidirectional highlighting, correct J-coupling values for vinyl protons, and a proper export for my SI. Right now I'd use nmrdb.org instead."
 
-| Dimension | Note | Justification |
-|-----------|------|---------------|
-| Exactitude scientifique | 4/10 | Simple molecules OK, but fused aromatics, vinyl stereo, and macrocycles show systematic errors |
-| Qualité du spectre | 5/10 | Envelope looks reasonable for simple molecules, but J-splitting is too simplified for publication-quality predictions |
-| Workflow / UX | 4/10 | Fast prediction but NO bidirectional highlighting kills the confirmation workflow |
-| Features vs ChemDraw | 2/10 | ChemDraw gives me 13C + correct J + export + HOSE — Kendraw gives me 1H with approximate shifts |
-| Pédagogie | 4/10 | Would mislead students about vinyl J-coupling values |
-| Confiance / Crédibilité | 4/10 | Confidence tiers are honest, but the additive model's limitations are severe for complex molecules |
-| Robustesse technique | 7/10 | No crashes even on my 45-atom macrocycle. Error handling is professional. |
-| Facilité d'adoption | 4/10 | Free is great, but I need features that justify switching my workflow |
-| Export / Publication | 2/10 | CSV only. No PNG for SI figures. No JCAMP-DX for overlay. No JSON for automated processing. |
-| **Note GLOBALE** | **4/10** | "Clean engineering, insufficient chemistry. I'll check back when HOSE codes and bidi-highlighting ship." |
+| Dimension               | Note     | Justification                                                                                                         |
+| ----------------------- | -------- | --------------------------------------------------------------------------------------------------------------------- |
+| Exactitude scientifique | 4/10     | Simple molecules OK, but fused aromatics, vinyl stereo, and macrocycles show systematic errors                        |
+| Qualité du spectre      | 5/10     | Envelope looks reasonable for simple molecules, but J-splitting is too simplified for publication-quality predictions |
+| Workflow / UX           | 4/10     | Fast prediction but NO bidirectional highlighting kills the confirmation workflow                                     |
+| Features vs ChemDraw    | 2/10     | ChemDraw gives me 13C + correct J + export + HOSE — Kendraw gives me 1H with approximate shifts                       |
+| Pédagogie               | 4/10     | Would mislead students about vinyl J-coupling values                                                                  |
+| Confiance / Crédibilité | 4/10     | Confidence tiers are honest, but the additive model's limitations are severe for complex molecules                    |
+| Robustesse technique    | 7/10     | No crashes even on my 45-atom macrocycle. Error handling is professional.                                             |
+| Facilité d'adoption     | 4/10     | Free is great, but I need features that justify switching my workflow                                                 |
+| Export / Publication    | 2/10     | CSV only. No PNG for SI figures. No JCAMP-DX for overlay. No JSON for automated processing.                           |
+| **Note GLOBALE**        | **4/10** | "Clean engineering, insufficient chemistry. I'll check back when HOSE codes and bidi-highlighting ship."              |
 
 ---
 
@@ -215,22 +223,26 @@ The tool is approaching viability for educational use but remains inadequate for
 **Findings:**
 
 **Simple Molecules (ethanol, acetone, acetic acid):**
+
 - Ethanol: 3 signals, correct multiplicities (t, q, s), shifts within 0.3 ppm — **pedagogically correct**.
 - Acetone: single peak (methyl singlet), correctly predicted ~2.1 ppm — **excellent** for teaching equivalence.
 - Acetic acid: CH3 singlet + COOH — correctly shows two distinct environments.
 
 **Medium Molecules (toluene, ethyl acetate, benzaldehyde):**
+
 - Toluene: benzylic CH3 (~2.3 ppm) + aromatic H (~7.2 ppm) — correct regions, multiplicity correct (singlet + "multiplet" for aromatic).
 - Ethyl acetate: 3 signals (CH3-t, O-CH2-q, COCH3-s) — textbook-perfect for demonstrating splitting patterns.
 - Benzaldehyde: aldehyde H (~9.7 ppm) + aromatic ring — regions correct. Aldehyde coupling to ring H not modeled (would be negligible anyway).
 
 **Complex Molecules (aspirin, caffeine, cholesterol, cinnamaldehyde, strychnine):**
+
 - Aspirin: see Pr. Duval's evaluation — di-substituted aromatic partially correct.
 - Caffeine: see Pr. Duval's evaluation — N-methyls workable.
 - Cinnamaldehyde: vinyl H (5.3 ppm predicted) vs. experimental ~6.7 ppm (conjugated) — **0.9 ppm error on a key teaching molecule**. Students would learn wrong shift for alpha,beta-unsaturated systems.
 - Strychnine: 22 unique H environments — additive model will fail on bridged polycyclic system. Not useful pedagogically at this complexity.
 
 **Spectral Regions:**
+
 - Alkyl (0-2 ppm): Correct placement for methyl, methylene, methine.
 - Alpha-heteroatom (2-4 ppm): Correct placement after V1 fix.
 - Aromatic (6-8 ppm): Correct placement, Hammett effects give some spread.
@@ -239,33 +251,33 @@ The tool is approaching viability for educational use but remains inadequate for
 
 **Pedagogical Assessment:**
 
-| Criterion | Verdict |
-|-----------|---------|
-| Regions correctes | 7/10 — correct for saturated and aromatic, weak for vinyl/conjugated |
-| Multiplicité aide l'apprentissage | 6/10 — s/d/t/q taught correctly, but no dd/dt (students miss complex splitting) |
-| Labels IUPAC | 5/10 — multiplicities use lowercase letters (correct), but "quint"/"sext" instead of standard IUPAC abbreviations |
-| Lien pic-atome pédagogique | 2/10 — NO bidirectional highlighting, NO proton numbering — students cannot self-discover assignments |
-| Spectre propre pour examen | 5/10 — visual quality OK for projection, but no PNG export means screenshot only |
-| Indicateurs de confiance | 8/10 — excellent pedagogical tool to discuss prediction reliability with students |
-| Effet solvant montrable | 9/10 — switching CDCl3 → DMSO-d6 and seeing OH shift is **exactly** what I want in a lecture |
-| Outil pédagogique vs ChemDraw | 4/10 — ChemDraw has proton assignment, 13C DEPT, copy-paste to slides |
+| Criterion                         | Verdict                                                                                                           |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Regions correctes                 | 7/10 — correct for saturated and aromatic, weak for vinyl/conjugated                                              |
+| Multiplicité aide l'apprentissage | 6/10 — s/d/t/q taught correctly, but no dd/dt (students miss complex splitting)                                   |
+| Labels IUPAC                      | 5/10 — multiplicities use lowercase letters (correct), but "quint"/"sext" instead of standard IUPAC abbreviations |
+| Lien pic-atome pédagogique        | 2/10 — NO bidirectional highlighting, NO proton numbering — students cannot self-discover assignments             |
+| Spectre propre pour examen        | 5/10 — visual quality OK for projection, but no PNG export means screenshot only                                  |
+| Indicateurs de confiance          | 8/10 — excellent pedagogical tool to discuss prediction reliability with students                                 |
+| Effet solvant montrable           | 9/10 — switching CDCl3 → DMSO-d6 and seeing OH shift is **exactly** what I want in a lecture                      |
+| Outil pédagogique vs ChemDraw     | 4/10 — ChemDraw has proton assignment, 13C DEPT, copy-paste to slides                                             |
 
 **Assessment:**
 
 > "For introductory NMR teaching (L3/M1), this tool has real pedagogical value — especially the solvent effect demonstration and confidence indicators. But I cannot use it beyond simple molecules because the vinyl predictions are wrong and the absence of proton numbering means students cannot make the mental link between structure and spectrum. Add proton numbering and fix vinyl shifts, and this becomes my go-to teaching tool."
 
-| Dimension | Note | Justification |
-|-----------|------|---------------|
-| Exactitude scientifique | 5/10 | Simple aliphatics excellent, vinyl/conjugated systems have systematic errors of 0.5-1.0 ppm |
-| Qualité du spectre | 6/10 | Clean rendering, Lorentzian shape, inverted axis (correct convention) — looks professional |
-| Workflow / UX | 6/10 | Draw → predict is immediate. Missing bidi-highlight is the main pedagogical gap. |
-| Features vs ChemDraw | 3/10 | No 13C (essential for teaching DEPT), no proton assignment, no image export |
-| Pédagogie | 6/10 | Solvent demo = 9/10. Confidence colors = 8/10. No proton numbering = 2/10. Average: 6. |
-| Confiance / Crédibilité | 6/10 | Confidence indicators are pedagogically excellent — honesty builds trust |
-| Robustesse technique | 7/10 | Tested 10 molecules without issues. Consistent behavior. |
-| Facilité d'adoption | 6/10 | Free, web-based, fast. My students could use it immediately for homework. |
-| Export / Publication | 3/10 | CSV only. Need PNG for exam papers and slides. |
-| **Note GLOBALE** | **5/10** | "Potentiel pédagogique réel, mais les lacunes en vinyl et l'absence de numérotation des protons limitent l'usage aux cas simples." |
+| Dimension               | Note     | Justification                                                                                                                      |
+| ----------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Exactitude scientifique | 5/10     | Simple aliphatics excellent, vinyl/conjugated systems have systematic errors of 0.5-1.0 ppm                                        |
+| Qualité du spectre      | 6/10     | Clean rendering, Lorentzian shape, inverted axis (correct convention) — looks professional                                         |
+| Workflow / UX           | 6/10     | Draw → predict is immediate. Missing bidi-highlight is the main pedagogical gap.                                                   |
+| Features vs ChemDraw    | 3/10     | No 13C (essential for teaching DEPT), no proton assignment, no image export                                                        |
+| Pédagogie               | 6/10     | Solvent demo = 9/10. Confidence colors = 8/10. No proton numbering = 2/10. Average: 6.                                             |
+| Confiance / Crédibilité | 6/10     | Confidence indicators are pedagogically excellent — honesty builds trust                                                           |
+| Robustesse technique    | 7/10     | Tested 10 molecules without issues. Consistent behavior.                                                                           |
+| Facilité d'adoption     | 6/10     | Free, web-based, fast. My students could use it immediately for homework.                                                          |
+| Export / Publication    | 3/10     | CSV only. Need PNG for exam papers and slides.                                                                                     |
+| **Note GLOBALE**        | **5/10** | "Potentiel pédagogique réel, mais les lacunes en vinyl et l'absence de numérotation des protons limitent l'usage aux cas simples." |
 
 ---
 
@@ -276,15 +288,18 @@ The tool is approaching viability for educational use but remains inadequate for
 **Findings:**
 
 **Table Coverage Assessment:**
+
 - 18 base environments vs. NMRShiftDB2's ~5,000+ HOSE-coded environments — **3 orders of magnitude less granular**.
 - 18 substituent increments — covers the most common functional groups but misses: phosphorus-containing groups, silicon (TMS derivatives), boron, metal complexes.
 - 54 aromatic effects (18x3 positions) — reasonable Hammett-type approximation for mono-substituted benzenes, but **cannot model poly-substituted or heteroaromatic rings** (pyridine, pyrrole, furan, thiophene are not in the table).
 
 **Fallback Chain Evaluation:**
+
 - RDKit available → additive prediction. RDKit absent → empty stub. No intermediate fallback (no fragment database, no HOSE lookup).
 - **Single-tier prediction is the biggest architectural limitation.** Draw-molecules uses a 3-tier cascade (heuristic → fragment DB → Spinus), achieving better accuracy through redundancy.
 
 **Confidence Scoring Assessment:**
+
 - Based on reference counts per environment type — **not on prediction uncertainty**.
 - A methyl group gets confidence=3 (green) regardless of whether it's in a simple alkane or adjacent to unusual functional groups.
 - Scientifically, confidence should reflect: (1) how many similar environments exist in reference databases, (2) the variance of shifts for that environment class, (3) the number of corrections applied.
@@ -292,17 +307,18 @@ The tool is approaching viability for educational use but remains inadequate for
 
 **Quantitative Comparison with nmrdb.org (estimated, 5-molecule benchmark):**
 
-| Molecule | Kendraw MAE | nmrdb.org MAE (est.) | Ratio |
-|----------|-------------|---------------------|-------|
-| Ethanol | 0.19 ppm | ~0.05 ppm | 3.8x worse |
-| Isopropanol | 0.34 ppm | ~0.08 ppm | 4.3x worse |
-| Acetaldehyde | 0.10 ppm | ~0.03 ppm | 3.3x worse |
-| Ethyl acetate | ~0.25 ppm | ~0.06 ppm | 4.2x worse |
-| Tert-butanol | ~0.15 ppm | ~0.04 ppm | 3.8x worse |
+| Molecule      | Kendraw MAE | nmrdb.org MAE (est.) | Ratio      |
+| ------------- | ----------- | -------------------- | ---------- |
+| Ethanol       | 0.19 ppm    | ~0.05 ppm            | 3.8x worse |
+| Isopropanol   | 0.34 ppm    | ~0.08 ppm            | 4.3x worse |
+| Acetaldehyde  | 0.10 ppm    | ~0.03 ppm            | 3.3x worse |
+| Ethyl acetate | ~0.25 ppm   | ~0.06 ppm            | 4.2x worse |
+| Tert-butanol  | ~0.15 ppm   | ~0.04 ppm            | 3.8x worse |
 
 **Note:** nmrdb.org estimates based on HOSE code + neural network approach. Kendraw is ~3-4x worse on simple molecules, expected to be ~5-10x worse on complex ones.
 
 **Solvent Implementation Review:**
+
 - 6 solvents with 16 environment-specific offsets each — **correct approach**.
 - C6D6 aromatic upfield shift (-0.34 ppm) is reasonable.
 - DMSO-d6 OH shift (+1.8 ppm) is in the right ballpark (experimental: +1.5-2.5 ppm).
@@ -310,12 +326,14 @@ The tool is approaching viability for educational use but remains inadequate for
 - **Missing:** temperature dependence (shifts vary ~0.005 ppm/K for most protons, much more for NH/OH hydrogen bonding).
 
 **HOSE Code Extensibility:**
+
 - Architecture supports it: `nmr_service.py` has a clear method dispatch structure.
 - Adding `_predict_hose()` method is straightforward.
 - **But** the shift_tables.py monolithic design would need refactoring — HOSE code needs a database (SQLite as per architecture doc), not inline Python dicts.
 - Estimated effort: Medium-Large (need NMRShiftDB2 data pipeline + sphere-depth matching).
 
 **Multiplicity Physics:**
+
 - n+1 rule is implemented correctly for first-order coupling.
 - **Missing:** second-order effects (AB quartets, roofing effect) that appear when chemical shift difference / J-coupling ratio < ~10.
 - **Missing:** complex splitting patterns (dd, dt, ddd) — the code returns only single-coupling multiplicity.
@@ -323,11 +341,13 @@ The tool is approaching viability for educational use but remains inadequate for
 - Long-range coupling correctly excluded (< 2 Hz, below typical linewidth).
 
 **Diastereotopic Protons:**
+
 - **Not handled at all.** The code groups all H on the same carbon as equivalent.
 - For cyclohexane-type rings, geminal protons are often non-equivalent (axial vs. equatorial: Δδ ~ 0.5 ppm).
 - Draw-molecules handles this via OpenChemLib's `getGroupedDiastereotopicAtomIDs()`.
 
 **Ring Current Effects:**
+
 - Aromatic ring current is modeled implicitly via Hammett corrections, not explicitly.
 - No anisotropy cone calculation (would require 3D coordinates from RDKit).
 - For porphyrins, annulenes, and other macrocyclic aromatics, this is completely wrong.
@@ -336,18 +356,18 @@ The tool is approaching viability for educational use but remains inadequate for
 
 > "The additive model is a reasonable MVP approach but has fundamental limitations that no amount of table expansion will fix. With 223 data points vs. NMRShiftDB2's 43,000+, the prediction is inherently coarse. The confidence scoring needs to become context-dependent — right now it's a lookup table, not a confidence estimate. The path forward is clear: HOSE code integration is essential for V1 credibility."
 
-| Dimension | Note | Justification |
-|-----------|------|---------------|
-| Exactitude scientifique | 4/10 | MAE ~0.3 ppm on simple molecules, but 223 data points vs 43K for HOSE — not competitive |
-| Qualite du spectre | 5/10 | Lorentzian shape is physically correct. No rooftop effect, no second-order patterns. |
-| Workflow / UX | 5/10 | Clean API, fast response. Missing bidi-highlight limits analytical utility. |
-| Features vs ChemDraw | 2/10 | Single-tier additive vs multi-tier HOSE+database+ML. No 13C, 19F, 31P. |
-| Pedagogie | 5/10 | Confidence colors teach uncertainty awareness, but incorrect confidence levels are worse than none |
-| Confiance / Credibilite | 3/10 | Static confidence scoring is scientifically indefensible. A methyl next to 3 fluorines gets same confidence as in ethane. |
-| Robustesse technique | 7/10 | Pure functions, deterministic, well-tested. Clean Python architecture. |
-| Facilite d'adoption | 5/10 | Easy to deploy, but accuracy gap with free alternatives (nmrdb.org) hurts adoption |
-| Export / Publication | 2/10 | No JCAMP-DX, no structured metadata beyond CSV columns |
-| **Note GLOBALE** | **4/10** | "Architecturally clean, scientifically coarse. Implement HOSE codes and context-dependent confidence before any credibility claim." |
+| Dimension               | Note     | Justification                                                                                                                       |
+| ----------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Exactitude scientifique | 4/10     | MAE ~0.3 ppm on simple molecules, but 223 data points vs 43K for HOSE — not competitive                                             |
+| Qualite du spectre      | 5/10     | Lorentzian shape is physically correct. No rooftop effect, no second-order patterns.                                                |
+| Workflow / UX           | 5/10     | Clean API, fast response. Missing bidi-highlight limits analytical utility.                                                         |
+| Features vs ChemDraw    | 2/10     | Single-tier additive vs multi-tier HOSE+database+ML. No 13C, 19F, 31P.                                                              |
+| Pedagogie               | 5/10     | Confidence colors teach uncertainty awareness, but incorrect confidence levels are worse than none                                  |
+| Confiance / Credibilite | 3/10     | Static confidence scoring is scientifically indefensible. A methyl next to 3 fluorines gets same confidence as in ethane.           |
+| Robustesse technique    | 7/10     | Pure functions, deterministic, well-tested. Clean Python architecture.                                                              |
+| Facilite d'adoption     | 5/10     | Easy to deploy, but accuracy gap with free alternatives (nmrdb.org) hurts adoption                                                  |
+| Export / Publication    | 2/10     | No JCAMP-DX, no structured metadata beyond CSV columns                                                                              |
+| **Note GLOBALE**        | **4/10** | "Architecturally clean, scientifically coarse. Implement HOSE codes and context-dependent confidence before any credibility claim." |
 
 ---
 
@@ -358,6 +378,7 @@ The tool is approaching viability for educational use but remains inadequate for
 **Findings:**
 
 **First Impression (first 30 seconds):**
+
 - Dark theme with glass morphism — **visually striking**, feels modern and premium.
 - Scientific tools are traditionally light-themed (ChemDraw: white, Ketcher: white, MarvinJS: white). This is a **bold differentiator** but may feel unfamiliar to chemists.
 - NMR button visible in toolbar — good discoverability.
@@ -365,6 +386,7 @@ The tool is approaching viability for educational use but remains inadequate for
 - The wave icon for NMR is immediately recognizable.
 
 **Onboarding Assessment:**
+
 - Time to first spectrum: ~15 seconds (draw benzene ring → Ctrl+M or click NMR button → spectrum appears).
 - **No tutorial or onboarding wizard** — power users will figure it out, casual users may not discover Tab navigation or zoom gestures.
 - Keyboard shortcut (Ctrl+M) is listed in cheatsheet — good.
@@ -372,22 +394,24 @@ The tool is approaching viability for educational use but remains inadequate for
 
 **UX Comparison:**
 
-| Criterion | ChemDraw | Ketcher | MarvinJS | Kendraw |
-|-----------|----------|---------|----------|---------|
-| Time to NMR | 3 clicks | N/A | N/A | 1 click |
-| Spectrum quality | Professional | N/A | N/A | Acceptable |
-| Interaction | Rich | N/A | N/A | Basic |
-| Export options | 5+ formats | N/A | N/A | CSV only |
-| Customization | Extensive | N/A | N/A | Minimal |
-| Price | $200-1700/yr | Free | Freemium | Free |
+| Criterion        | ChemDraw     | Ketcher | MarvinJS | Kendraw    |
+| ---------------- | ------------ | ------- | -------- | ---------- |
+| Time to NMR      | 3 clicks     | N/A     | N/A      | 1 click    |
+| Spectrum quality | Professional | N/A     | N/A      | Acceptable |
+| Interaction      | Rich         | N/A     | N/A      | Basic      |
+| Export options   | 5+ formats   | N/A     | N/A      | CSV only   |
+| Customization    | Extensive    | N/A     | N/A      | Minimal    |
+| Price            | $200-1700/yr | Free    | Freemium | Free       |
 
 **Competitive Positioning:**
+
 - **Strength:** Free, open-source, transparent, fast, modern UI.
 - **Weakness:** Feature gap is enormous vs. ChemDraw.
 - **Unique selling point:** Confidence indicators with shapes (colorblind-safe) — **no competitor does this**.
 - **Risk:** If nmrdb.org is free AND more accurate, what's Kendraw's value proposition beyond being integrated?
 
 **What Would Make a Lab Switch:**
+
 1. Accuracy comparable to ChemDraw (MAE < 0.2 ppm) — NOT YET
 2. 13C prediction — NOT YET
 3. Free (saves $200-1700/yr per seat) — YES
@@ -395,6 +419,7 @@ The tool is approaching viability for educational use but remains inadequate for
 5. Transparent confidence indicators — YES (unique)
 
 **What Would Make a Lab Refuse:**
+
 1. No 13C — deal-breaker for organic chemistry labs
 2. No export to image — deal-breaker for publications
 3. No experimental spectrum overlay — deal-breaker for research
@@ -405,18 +430,18 @@ The tool is approaching viability for educational use but remains inadequate for
 
 > "Kendraw has the bones of a competitive product. The free + transparent positioning is credible IF the accuracy improves. Right now, it's 'free but limited' — and nmrdb.org is also free with better accuracy. The killer feature would be bidirectional highlighting with an integrated drawing tool — that's what ChemDraw charges $1700/year for. But without 13C and proper export, no chemistry department will standardize on this."
 
-| Dimension | Note | Justification |
-|-----------|------|---------------|
-| Exactitude scientifique | 5/10 | Adequate for simple molecules, not competitive for complex ones |
-| Qualite du spectre | 6/10 | Dark theme + Lorentzian peaks look good. Confidence shapes are a UI innovation. |
-| Workflow / UX | 6/10 | Fast, integrated, modern. Bidi-highlight absence is the one big gap. |
-| Features vs ChemDraw | 3/10 | Single nucleus, single export format, no overlay — ChemDraw is 10x richer |
-| Pedagogie | 6/10 | Good for intro courses. Solvent switch is compelling demo. |
-| Confiance / Credibilite | 5/10 | Transparency is refreshing but confidence scoring needs to be actually informative |
-| Robustesse technique | 7/10 | No bugs in 5 minutes of testing. Responsive UI. |
-| Facilite d'adoption | 6/10 | Zero cost, web-based, no install for users (backend only for IT). Barrier is feature gap. |
-| Export / Publication | 2/10 | CSV only. Scientists live in Word/LaTeX with embedded figures — need PNG minimum. |
-| **Note GLOBALE** | **5/10** | "Promising product with genuine differentiators (free, transparent, fast), but feature gaps prevent adoption beyond casual/educational use." |
+| Dimension               | Note     | Justification                                                                                                                                |
+| ----------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Exactitude scientifique | 5/10     | Adequate for simple molecules, not competitive for complex ones                                                                              |
+| Qualite du spectre      | 6/10     | Dark theme + Lorentzian peaks look good. Confidence shapes are a UI innovation.                                                              |
+| Workflow / UX           | 6/10     | Fast, integrated, modern. Bidi-highlight absence is the one big gap.                                                                         |
+| Features vs ChemDraw    | 3/10     | Single nucleus, single export format, no overlay — ChemDraw is 10x richer                                                                    |
+| Pedagogie               | 6/10     | Good for intro courses. Solvent switch is compelling demo.                                                                                   |
+| Confiance / Credibilite | 5/10     | Transparency is refreshing but confidence scoring needs to be actually informative                                                           |
+| Robustesse technique    | 7/10     | No bugs in 5 minutes of testing. Responsive UI.                                                                                              |
+| Facilite d'adoption     | 6/10     | Zero cost, web-based, no install for users (backend only for IT). Barrier is feature gap.                                                    |
+| Export / Publication    | 2/10     | CSV only. Scientists live in Word/LaTeX with embedded figures — need PNG minimum.                                                            |
+| **Note GLOBALE**        | **5/10** | "Promising product with genuine differentiators (free, transparent, fast), but feature gaps prevent adoption beyond casual/educational use." |
 
 ---
 
@@ -427,6 +452,7 @@ The tool is approaching viability for educational use but remains inadequate for
 **Findings:**
 
 **Paracetamol (4-acetamidophenol):**
+
 - Aromatic H: 4 protons on di-substituted ring (NH-C(O)-CH3 + OH substituents). Experimental: 6.68 ppm (ortho to OH) and 7.43 ppm (ortho to NH). Kendraw's Hammett corrections for NH2 (ortho -0.75) and OH (ortho -0.56) should give reasonable spread.
 - NH: `amide_nh` base 7.5 ppm, singlet. Experimental: ~9.6 ppm in DMSO-d6, ~8.1 ppm in CDCl3. Error potentially 0.6+ ppm.
 - OH: solvent-dependent, correctly shifts with DMSO-d6.
@@ -434,6 +460,7 @@ The tool is approaching viability for educational use but remains inadequate for
 - **Verdict:** Spectrum recognizable but NH shift may be significantly off.
 
 **Ibuprofen (2-(4-isobutylphenyl)propionic acid):**
+
 - Two aromatic H groups (AA'BB' pattern): should be ~7.1 and 7.2 ppm. The additive model won't produce the AA'BB' second-order pattern — it will show two overlapping peaks.
 - Isobutyl group: complex aliphatic region with benzylic CH2, methine, two methyls.
 - COOH: extremely broad in CDCl3, often invisible. Predicted as singlet at 11.5 ppm.
@@ -441,6 +468,7 @@ The tool is approaching viability for educational use but remains inadequate for
 - **Verdict:** Aliphatic region approximately correct, but the key chiral center proton is significantly wrong.
 
 **Atorvastatin (complex pharmaceutical):**
+
 - 49 heavy atoms, multiple aromatic/heteroaromatic rings, amide, ester equivalent, fluorine, two stereocenters.
 - Fluorine: F substituent increment (+0.25 ppm) is in the table, but 19F prediction is not available. The F's effect on neighboring aromatic H is modeled (ortho: -0.26, meta: 0.00, para: -0.20) — directionally correct.
 - Pyrrole ring: NOT an environment recognized by the additive model. Pyrrole aromatic H typically at 6.0-6.7 ppm (vs. benzene 7.26). The code will misclassify pyrrole H as `aromatic` (7.26 base) — **~1 ppm error**.
@@ -449,6 +477,7 @@ The tool is approaching viability for educational use but remains inadequate for
 - **Verdict:** Too complex for the additive model. Multiple errors exceeding 0.5 ppm expected.
 
 **Regulatory Assessment:**
+
 - **No metadata for regulatory submission:** missing frequency (MHz), acquisition parameters, processing parameters, temperature.
 - **No JCAMP-DX export:** FDA/EMA electronic submissions require structured data formats.
 - **No experimental overlay:** cannot compare predicted vs. measured spectra in the tool.
@@ -459,18 +488,18 @@ The tool is approaching viability for educational use but remains inadequate for
 
 > "For pharmaceutical quality control and regulatory work, this tool is not viable. The accuracy on drug molecules with heteroaromatic rings (pyrrole, pyridine, indole) is inadequate. More critically, the absence of regulatory-compatible export formats and metadata makes it impossible to include in any submission dossier. For drug discovery screening — maybe useful for quick checks, but nmrdb.org is more accurate."
 
-| Dimension | Note | Justification |
-|-----------|------|---------------|
-| Exactitude scientifique | 3/10 | Heteroaromatic rings (pyrrole, pyridine) systematically wrong. Cumulative effects underestimated. |
-| Qualite du spectre | 5/10 | Visually acceptable but scientifically misleading for complex pharmaceuticals |
-| Workflow / UX | 5/10 | Fast but no bidi-highlight means I can't quickly assign peaks for QC |
-| Features vs ChemDraw | 2/10 | ChemDraw has 19F, DEPT, correct heteroaromatic shifts, JCAMP-DX |
-| Pedagogie | 4/10 | Would teach wrong shifts for N-heterocycles and cumulative effects |
-| Confiance / Credibilite | 3/10 | No regulatory metadata. Confidence scoring doesn't flag heteroaromatic uncertainty. |
-| Robustesse technique | 7/10 | Handles 49-atom atorvastatin without crash. Clean error messages. |
-| Facilite d'adoption | 3/10 | No pharma lab will adopt without 13C, proper export, and heteroaromatic accuracy |
-| Export / Publication | 1/10 | CSV only. No JCAMP-DX, no PDF, no metadata for regulatory submission. |
-| **Note GLOBALE** | **3/10** | "Inutilisable en contexte réglementaire. Les hétérocycles azotés — omniprésents en pharma — sont mal modélisés." |
+| Dimension               | Note     | Justification                                                                                                    |
+| ----------------------- | -------- | ---------------------------------------------------------------------------------------------------------------- |
+| Exactitude scientifique | 3/10     | Heteroaromatic rings (pyrrole, pyridine) systematically wrong. Cumulative effects underestimated.                |
+| Qualite du spectre      | 5/10     | Visually acceptable but scientifically misleading for complex pharmaceuticals                                    |
+| Workflow / UX           | 5/10     | Fast but no bidi-highlight means I can't quickly assign peaks for QC                                             |
+| Features vs ChemDraw    | 2/10     | ChemDraw has 19F, DEPT, correct heteroaromatic shifts, JCAMP-DX                                                  |
+| Pedagogie               | 4/10     | Would teach wrong shifts for N-heterocycles and cumulative effects                                               |
+| Confiance / Credibilite | 3/10     | No regulatory metadata. Confidence scoring doesn't flag heteroaromatic uncertainty.                              |
+| Robustesse technique    | 7/10     | Handles 49-atom atorvastatin without crash. Clean error messages.                                                |
+| Facilite d'adoption     | 3/10     | No pharma lab will adopt without 13C, proper export, and heteroaromatic accuracy                                 |
+| Export / Publication    | 1/10     | CSV only. No JCAMP-DX, no PDF, no metadata for regulatory submission.                                            |
+| **Note GLOBALE**        | **3/10** | "Inutilisable en contexte réglementaire. Les hétérocycles azotés — omniprésents en pharma — sont mal modélisés." |
 
 ---
 
@@ -481,12 +510,14 @@ The tool is approaching viability for educational use but remains inadequate for
 **Findings:**
 
 **First Impression (no guidance):**
+
 - "L'interface est belle, le thème sombre est cool. Je vois un bouton avec une ondulation — c'est le NMR ?"
 - Clicked the NMR button → panel opened → "Ah il me faut une molécule d'abord."
 - Drew benzene using ring tool → spectrum appeared automatically → "Oh c'est rapide !"
 - Time to first spectrum: ~20 seconds (including figuring out ring tool).
 
 **Discoverability:**
+
 - NMR button: found it by visual scanning (wave icon helped). Rating: 7/10.
 - Solvent dropdown: noticed it, tried switching to DMSO-d6 → "les pics bougent un peu, intéressant."
 - Signal navigation (prev/next): found the buttons in header. Tab shortcut not discovered without cheatsheet.
@@ -495,16 +526,19 @@ The tool is approaching viability for educational use but remains inadequate for
 - Peak info bar: clicked a peak → info appeared → "7.26 ppm, singlet, 6H, aromatic — OK je comprends."
 
 **Comprehension:**
+
 - Confidence colors (green circle): "Le vert ça veut dire que c'est fiable ? Cool."
 - Mixed confidence (yellow/red): "Celui-là est jaune... c'est moins sûr ? Pourquoi ?"
 - No tooltip explaining confidence → confusion. Had to guess.
 - Multiplicity labels: "1.18 t — c'est un triplet ! J'ai appris ça en cours."
 
 **Error Handling:**
+
 - Drew an incomplete structure (single carbon, no H) → prediction ran, showed empty spectrum → "Euh, rien ne s'affiche. Il y a un problème ?" No error message shown for empty valid molecules. **Minor UX gap.**
 - Drew invalid structure (bond to nothing) → handled gracefully, no crash.
 
 **What She Would Change:**
+
 1. "Un tooltip sur les couleurs de confiance — je ne sais pas ce que jaune et rouge veulent dire."
 2. "Quand je clique un pic, j'aimerais voir QUEL atome c'est sur la molécule." (= bidirectional highlighting)
 3. "Un bouton pour sauvegarder l'image du spectre — là je dois faire un screenshot."
@@ -512,23 +546,24 @@ The tool is approaching viability for educational use but remains inadequate for
 5. "Mettre les noms de solvants en français aussi." (CDCl3 is universal, but "chloroforme deutéré" helps students)
 
 **Would She Recommend It?**
+
 - "Oui, pour les TPs de chimie orga. C'est gratuit et c'est beaucoup mieux que rien. ChemDraw coûte trop cher pour notre labo."
 - "Mais pour mon mémoire de M2, je dois utiliser des vrais spectres expérimentaux de toute façon."
 
 **Assessment:**
 
-| Dimension | Note | Justification |
-|-----------|------|---------------|
-| Exactitude scientifique | 6/10 | "Je ne suis pas experte, mais pour le benzène et l'éthanol ça a l'air correct." |
-| Qualite du spectre | 7/10 | "C'est joli. J'aime bien les petits ronds de couleur." |
-| Workflow / UX | 7/10 | "Rapide et intuitif. Je n'ai pas eu besoin de tutoriel pour les bases." |
-| Features vs ChemDraw | 5/10 | "Je n'ai jamais utilisé ChemDraw, mais mes collègues disent qu'il fait plus." |
-| Pedagogie | 7/10 | "Le changement de solvant c'est exactement ce qu'on a vu en cours. Super." |
-| Confiance / Credibilite | 5/10 | "Les couleurs c'est bien mais il faut expliquer ce que ça veut dire." |
-| Robustesse technique | 8/10 | "Aucun bug. Ça marche à chaque fois." |
-| Facilite d'adoption | 8/10 | "Gratuit, dans le navigateur, pas d'installation — parfait pour les étudiants." |
-| Export / Publication | 3/10 | "Le CSV c'est bien pour Excel mais je veux aussi l'image." |
-| **Note GLOBALE** | **7/10** | "Pour une étudiante qui n'a pas ChemDraw, c'est très bien. Pas parfait mais très utile." |
+| Dimension               | Note     | Justification                                                                            |
+| ----------------------- | -------- | ---------------------------------------------------------------------------------------- |
+| Exactitude scientifique | 6/10     | "Je ne suis pas experte, mais pour le benzène et l'éthanol ça a l'air correct."          |
+| Qualite du spectre      | 7/10     | "C'est joli. J'aime bien les petits ronds de couleur."                                   |
+| Workflow / UX           | 7/10     | "Rapide et intuitif. Je n'ai pas eu besoin de tutoriel pour les bases."                  |
+| Features vs ChemDraw    | 5/10     | "Je n'ai jamais utilisé ChemDraw, mais mes collègues disent qu'il fait plus."            |
+| Pedagogie               | 7/10     | "Le changement de solvant c'est exactement ce qu'on a vu en cours. Super."               |
+| Confiance / Credibilite | 5/10     | "Les couleurs c'est bien mais il faut expliquer ce que ça veut dire."                    |
+| Robustesse technique    | 8/10     | "Aucun bug. Ça marche à chaque fois."                                                    |
+| Facilite d'adoption     | 8/10     | "Gratuit, dans le navigateur, pas d'installation — parfait pour les étudiants."          |
+| Export / Publication    | 3/10     | "Le CSV c'est bien pour Excel mais je veux aussi l'image."                               |
+| **Note GLOBALE**        | **7/10** | "Pour une étudiante qui n'a pas ChemDraw, c'est très bien. Pas parfait mais très utile." |
 
 ---
 
@@ -539,6 +574,7 @@ The tool is approaching viability for educational use but remains inadequate for
 **Findings:**
 
 **Docker Deployment:**
+
 - Dockerfile present with multi-stage build.
 - RDKit is included via `pip install rdkit` in the Docker image — adds ~200MB to image size.
 - Build time: ~3-5 minutes (RDKit compilation/install is the bottleneck).
@@ -546,17 +582,20 @@ The tool is approaching viability for educational use but remains inadequate for
 - **No separate NMR data install needed** — all shift tables are inline Python dicts (281 lines).
 
 **Backend Startup:**
+
 - FastAPI starts, registers `/compute/nmr` endpoint.
 - RDKit probe at init: `NmrService.__init__()` tries `from rdkit import Chem` — logged as info.
 - If RDKit missing: service still starts, returns stub predictions (empty peaks, method="unavailable").
 - **No `kendraw nmr-data install` command exists** — data is bundled in code. This simplifies deployment vs. architecture doc's plan for separate NMRShiftDB2 download.
 
 **Endpoint Testing:**
+
 ```bash
 curl -X POST http://localhost:8000/compute/nmr \
   -H 'Content-Type: application/json' \
   -d '{"input": "CCO"}'
 ```
+
 - Response: 200 OK, valid JSON with peaks, metadata, timing < 50ms.
 - Invalid SMILES: 400 with clear error message.
 - Unsupported nucleus (13C): 400 with "Only '1H' is supported."
@@ -564,17 +603,20 @@ curl -X POST http://localhost:8000/compute/nmr \
 - **All error codes correct and informative.**
 
 **Health Check:**
+
 - Standard FastAPI health endpoint exists.
 - **NMR-specific health status not exposed** — no way to know if RDKit loaded successfully without calling /compute/nmr.
 - Recommendation: add NMR readiness to health check response.
 
 **Memory Usage:**
+
 - Backend at rest: ~150MB (Python + RDKit loaded).
 - During prediction: peaks at ~170MB (temporary RDKit molecule objects).
 - No memory leak observed over 100 sequential predictions.
 - **Acceptable for a university server** (typical VM: 4-8GB RAM).
 
 **Logging:**
+
 - Standard uvicorn access logs.
 - NMR-specific logging: not present (no `logger.info()` calls in NMR module).
 - Error stack traces: properly captured by FastAPI exception handler.
@@ -582,18 +624,18 @@ curl -X POST http://localhost:8000/compute/nmr \
 
 **Assessment:**
 
-| Dimension | Note | Justification |
-|-----------|------|---------------|
-| Exactitude scientifique | N/A | Not my domain |
-| Qualite du spectre | N/A | Not my domain |
-| Workflow / UX | 6/10 | Endpoint is clean, responses are fast, errors are clear |
-| Features vs ChemDraw | N/A | Not my domain |
-| Pedagogie | N/A | Not my domain |
-| Confiance / Credibilite | 6/10 | Graceful fallback when RDKit absent. Clear versioning. |
-| Robustesse technique | 7/10 | No crashes, proper error handling, memory stable. Missing: structured logging, NMR health check. |
-| Facilite d'adoption | 7/10 | Docker deployment works. Data bundled (no separate install). RDKit adds image size. |
-| Export / Publication | N/A | Not my domain |
-| **Note GLOBALE** | **7/10** | "Deployment is clean and professional. Add NMR health check and structured logging for production readiness." |
+| Dimension               | Note     | Justification                                                                                                 |
+| ----------------------- | -------- | ------------------------------------------------------------------------------------------------------------- |
+| Exactitude scientifique | N/A      | Not my domain                                                                                                 |
+| Qualite du spectre      | N/A      | Not my domain                                                                                                 |
+| Workflow / UX           | 6/10     | Endpoint is clean, responses are fast, errors are clear                                                       |
+| Features vs ChemDraw    | N/A      | Not my domain                                                                                                 |
+| Pedagogie               | N/A      | Not my domain                                                                                                 |
+| Confiance / Credibilite | 6/10     | Graceful fallback when RDKit absent. Clear versioning.                                                        |
+| Robustesse technique    | 7/10     | No crashes, proper error handling, memory stable. Missing: structured logging, NMR health check.              |
+| Facilite d'adoption     | 7/10     | Docker deployment works. Data bundled (no separate install). RDKit adds image size.                           |
+| Export / Publication    | N/A      | Not my domain                                                                                                 |
+| **Note GLOBALE**        | **7/10** | "Deployment is clean and professional. Add NMR health check and structured logging for production readiness." |
 
 ---
 
@@ -601,35 +643,35 @@ curl -X POST http://localhost:8000/compute/nmr \
 
 ### 4.1 Raw Scores (per expert, /10)
 
-| Dimension | Pr. Duval | Dr. Marcos | Pr. Yamamoto | Dr. Chen | Dr. Park | Pr. Al-Rashid | Marina | Thomas |
-|-----------|-----------|-----------|-------------|---------|---------|--------------|--------|--------|
-| Exactitude scientifique | 5 | 4 | 5 | 4 | 5 | 3 | 6 | - |
-| Qualite du spectre | 5 | 5 | 6 | 5 | 6 | 5 | 7 | - |
-| Workflow / UX | 6 | 4 | 6 | 5 | 6 | 5 | 7 | 6 |
-| Features vs ChemDraw | 2 | 2 | 3 | 2 | 3 | 2 | 5 | - |
-| Pedagogie | 5 | 4 | 6 | 5 | 6 | 4 | 7 | - |
-| Confiance / Credibilite | 5 | 4 | 6 | 3 | 5 | 3 | 5 | 6 |
-| Robustesse technique | 7 | 7 | 7 | 7 | 7 | 7 | 8 | 7 |
-| Facilite d'adoption | 5 | 4 | 6 | 5 | 6 | 3 | 8 | 7 |
-| Export / Publication | 2 | 2 | 3 | 2 | 2 | 1 | 3 | - |
-| **Note GLOBALE** | **5** | **4** | **5** | **4** | **5** | **3** | **7** | **7** |
+| Dimension               | Pr. Duval | Dr. Marcos | Pr. Yamamoto | Dr. Chen | Dr. Park | Pr. Al-Rashid | Marina | Thomas |
+| ----------------------- | --------- | ---------- | ------------ | -------- | -------- | ------------- | ------ | ------ |
+| Exactitude scientifique | 5         | 4          | 5            | 4        | 5        | 3             | 6      | -      |
+| Qualite du spectre      | 5         | 5          | 6            | 5        | 6        | 5             | 7      | -      |
+| Workflow / UX           | 6         | 4          | 6            | 5        | 6        | 5             | 7      | 6      |
+| Features vs ChemDraw    | 2         | 2          | 3            | 2        | 3        | 2             | 5      | -      |
+| Pedagogie               | 5         | 4          | 6            | 5        | 6        | 4             | 7      | -      |
+| Confiance / Credibilite | 5         | 4          | 6            | 3        | 5        | 3             | 5      | 6      |
+| Robustesse technique    | 7         | 7          | 7            | 7        | 7        | 7             | 8      | 7      |
+| Facilite d'adoption     | 5         | 4          | 6            | 5        | 6        | 3             | 8      | 7      |
+| Export / Publication    | 2         | 2          | 3            | 2        | 2        | 1             | 3      | -      |
+| **Note GLOBALE**        | **5**     | **4**      | **5**        | **4**    | **5**    | **3**         | **7**  | **7**  |
 
 ### 4.2 Weighted Average
 
 Research experts (Duval, Marcos, Al-Rashid) count **double** as core target users:
 
-| Dimension | Weighted Average |
-|-----------|-----------------|
-| Exactitude scientifique | (5x2 + 4x2 + 5 + 4 + 5 + 3x2 + 6) / 11 = **4.4** |
-| Qualite du spectre | (5x2 + 5x2 + 6 + 5 + 6 + 5x2 + 7) / 11 = **5.4** |
-| Workflow / UX | (6x2 + 4x2 + 6 + 5 + 6 + 5x2 + 7 + 6) / 13 = **5.4** |
-| Features vs ChemDraw | (2x2 + 2x2 + 3 + 2 + 3 + 2x2 + 5) / 11 = **2.6** |
-| Pedagogie | (5x2 + 4x2 + 6 + 5 + 6 + 4x2 + 7) / 11 = **5.0** |
+| Dimension               | Weighted Average                                     |
+| ----------------------- | ---------------------------------------------------- |
+| Exactitude scientifique | (5x2 + 4x2 + 5 + 4 + 5 + 3x2 + 6) / 11 = **4.4**     |
+| Qualite du spectre      | (5x2 + 5x2 + 6 + 5 + 6 + 5x2 + 7) / 11 = **5.4**     |
+| Workflow / UX           | (6x2 + 4x2 + 6 + 5 + 6 + 5x2 + 7 + 6) / 13 = **5.4** |
+| Features vs ChemDraw    | (2x2 + 2x2 + 3 + 2 + 3 + 2x2 + 5) / 11 = **2.6**     |
+| Pedagogie               | (5x2 + 4x2 + 6 + 5 + 6 + 4x2 + 7) / 11 = **5.0**     |
 | Confiance / Credibilite | (5x2 + 4x2 + 6 + 3 + 5 + 3x2 + 5 + 6) / 13 = **4.3** |
-| Robustesse technique | (7x2 + 7x2 + 7 + 7 + 7 + 7x2 + 8 + 7) / 13 = **7.1** |
-| Facilite d'adoption | (5x2 + 4x2 + 6 + 5 + 6 + 3x2 + 8 + 7) / 13 = **5.1** |
-| Export / Publication | (2x2 + 2x2 + 3 + 2 + 2 + 1x2 + 3) / 11 = **2.0** |
-| **GLOBAL PONDÉRÉ** | (5x2 + 4x2 + 5 + 4 + 5 + 3x2 + 7 + 7) / 13 = **4.7** |
+| Robustesse technique    | (7x2 + 7x2 + 7 + 7 + 7 + 7x2 + 8 + 7) / 13 = **7.1** |
+| Facilite d'adoption     | (5x2 + 4x2 + 6 + 5 + 6 + 3x2 + 8 + 7) / 13 = **5.1** |
+| Export / Publication    | (2x2 + 2x2 + 3 + 2 + 2 + 1x2 + 3) / 11 = **2.0**     |
+| **GLOBAL PONDÉRÉ**      | (5x2 + 4x2 + 5 + 4 + 5 + 3x2 + 7 + 7) / 13 = **4.7** |
 
 ### 4.3 Score Distribution
 
@@ -638,18 +680,19 @@ Research experts (Duval, Marcos, Al-Rashid) count **double** as core target user
  9 |
  8 |                                              *
  7 | * * * * * * *                         * *    |
- 6 |   |     | |   | |   | | | |           |      
- 5 | * | * * * *   * *   | * * |   * *      |      
- 4 |   * |   |   *   | * *   | * *   | *    |      
- 3 |   |     |   |   |   *   *   | *        |      
- 2 | * *   * *   |   *   |       | *   *    |      
- 1 |             |               *          |      
+ 6 |   |     | |   | |   | | | |           |
+ 5 | * | * * * *   * *   | * * |   * *      |
+ 4 |   * |   |   *   | * *   | * *   | *    |
+ 3 |   |     |   |   |   *   *   | *        |
+ 2 | * *   * *   |   *   |       | *   *    |
+ 1 |             |               *          |
  0 |_____________________________________________
    Du Ma Ya Ch Pa Al Ma Th  Robustesse = meilleure dimension (7.1)
                              Export = pire dimension (2.0)
 ```
 
 **Observations:**
+
 - **Robustesse technique (7.1)** is the strongest dimension — unanimous agreement on code quality
 - **Export / Publication (2.0)** is the weakest — CSV-only is universally criticized
 - **Features vs ChemDraw (2.6)** confirms massive feature gap
@@ -661,84 +704,85 @@ Research experts (Duval, Marcos, Al-Rashid) count **double** as core target user
 
 ## 5. Feature Comparison Table
 
-| # | Feature | ChemDraw ChemNMR | Kendraw v0.2 | Draw-molecules | nmrdb.org | Status Kendraw |
-|---|---------|-----------------|-------------|---------------|-----------|----------------|
-| | **PREDICTION — Nuclei** | | | | | |
-| 1 | 1H chemical shifts | Yes (HOSE+DB, 43K entries) | Yes (additive, 223 data points) | Yes (3-tier cascade) | Yes (HOSE+NN) | MVP |
-| 2 | 13C chemical shifts | Yes | No (returns 400) | Yes (7 environments) | Yes | NOT IMPLEMENTED |
-| 3 | 19F prediction | Yes | No | No | No | NOT PLANNED |
-| 4 | 31P prediction | Yes | No | No | No | NOT PLANNED |
-| 5 | 15N prediction | Yes | No | No | No | NOT PLANNED |
-| | **PREDICTION — Multiplicity** | | | | | |
-| 6 | Simple multiplicity (s/d/t/q) | Yes | Yes (n+1 rule) | Yes (J simulation) | Yes | MVP |
-| 7 | Complex multiplicity (dd/dt/ddd) | Yes | No | Yes (resolveMultiplicityFromGroups) | Yes | NOT IMPLEMENTED |
-| 8 | Vicinal J-coupling (3J) | Yes (Karplus) | Yes (fixed values: 7.0-7.8 Hz) | Yes (environment-aware) | Yes | SIMPLIFIED |
-| 9 | Geminal J-coupling (2J) | Yes | Defined but unused (-12.0 Hz) | Yes (13.4 Hz sp3, 2.1 Hz sp2) | Yes | NOT USED |
-| 10 | Long-range J (4J, 5J) | Yes | Defined but unused (1.5-1.8 Hz) | Yes (aromatic meta 1.8 Hz) | Partial | NOT USED |
-| 11 | Aromatic J-coupling (ortho/meta/para) | Yes | Yes (7.8/1.8/0.7 Hz) | Yes (7.8/1.8 Hz) | Yes | MVP |
-| 12 | Vinyl J-coupling (cis/trans) | Yes (10/16 Hz) | Defined (10/16 Hz) but no stereo detection | Yes (stereo-aware) | Yes | DATA EXISTS, LOGIC MISSING |
-| | **PREDICTION — Proton Types** | | | | | |
-| 13 | Diastereotopic protons | Yes | No | Yes (CIP-based H-2a/H-2b) | Yes | NOT IMPLEMENTED |
-| 14 | Exchangeable protons (OH/NH/SH) | Yes (solvent-aware) | Yes (solvent-aware, 3 types) | Yes (3 types + solvent) | Partial | MVP |
-| 15 | Solvent effect on shifts | Yes | Yes (6 solvents, 96 corrections) | Yes (6 solvents) | CDCl3 only | MVP |
-| 16 | Temperature effect | Yes | No | No | No | NOT PLANNED |
-| 17 | Ring current (aromatic anisotropy) | Yes (3D) | Implicit (Hammett only) | Implicit (Hammett) | Yes (3D) | SIMPLIFIED |
-| 18 | Carbonyl anisotropy | Yes | Partial (alpha_to_carbonyl env) | Partial | Partial | SIMPLIFIED |
-| 19 | Heteroaromatic rings (pyridine, pyrrole, etc.) | Yes | No (all aromatic = 7.26 base) | Partial | Yes | NOT IMPLEMENTED |
-| | **PREDICTION — Accuracy** | | | | | |
-| 20 | MAE aliphatics | ~0.15 ppm | ~0.25 ppm | ~0.20 ppm | ~0.15 ppm | ADEQUATE |
-| 21 | MAE aromatics | ~0.10 ppm | ~0.30 ppm | ~0.20 ppm | ~0.10 ppm | NEEDS IMPROVEMENT |
-| 22 | MAE heterocycles | ~0.15 ppm | ~0.80+ ppm | ~0.40 ppm | ~0.20 ppm | POOR |
-| 23 | MAE exchangeable H | ~0.50 ppm | ~0.50 ppm | ~0.50 ppm | ~0.50 ppm | COMPARABLE |
-| 24 | Beta-position effects | Yes | No (linear additivity) | Partial | Yes | NOT IMPLEMENTED |
-| 25 | Cumulative substituent scaling | Yes (diminishing) | No (linear sum) | Partial | Yes | NOT IMPLEMENTED |
-| | **SPECTRUM DISPLAY** | | | | | |
-| 26 | Peak shape (Lorentzian) | Yes | Yes (gamma=0.04 ppm) | Yes (Lorentzian) | Yes | MVP |
-| 27 | Peak shape (Gaussian/Voigt) | Yes | No | No | Yes | NOT IMPLEMENTED |
-| 28 | Linewidth control | Yes | No (fixed HWHM) | No | Yes | NOT IMPLEMENTED |
-| 29 | Spin system simulation (rooftop) | Yes | No | Yes (Spinus) | Yes | NOT IMPLEMENTED |
-| 30 | Integration display (curve) | Yes | No (nH label only) | Partial | Yes | NOT IMPLEMENTED |
-| 31 | Integration numeric | Yes | Yes (nH per peak) | Yes | Yes | MVP |
-| 32 | PPM axis (inverted, convention) | Yes | Yes (downfield left) | Yes | Yes | MVP |
-| 33 | Relative intensity axis | Yes | Yes (normalized) | Yes | Yes | MVP |
-| 34 | TMS reference (0 ppm) | Yes | Yes (implicit) | Yes | Yes | MVP |
-| 35 | Frequency configurable (300-800 MHz) | Yes | No | Yes (per solvent) | Yes | NOT IMPLEMENTED |
-| 36 | Spectrum resolution control | Yes | No (fixed sampling) | Partial | Yes | NOT IMPLEMENTED |
-| 37 | Solvent residual peak marker | Yes | No | No | N/A | NOT IMPLEMENTED |
-| | **INTERACTION** | | | | | |
-| 38 | Bidirectional highlighting (peak↔atom) | Yes | No (data exists, UI not wired) | Partial | Yes | NOT IMPLEMENTED |
-| 39 | Zoom (scroll-to-zoom) | Yes | Yes (1.15x factor) | Yes | Yes | MVP |
-| 40 | Pan (drag/scroll) | Yes | Yes (Alt+click / middle mouse) | Yes | Yes | MVP |
-| 41 | Click peak → info | Yes | Yes (info bar with delta, nH, mult, J, env) | Yes | Yes | MVP |
-| 42 | Hover preview | Yes | Yes (cursor change, highlight) | Yes | Yes | MVP |
-| 43 | Signal navigation (prev/next) | Yes | Yes (Tab + buttons) | No | No | MVP (UNIQUE) |
-| 44 | Proton numbering on structure | Yes | No | Yes (H-1, H-2a/2b) | No | NOT IMPLEMENTED |
-| 45 | Drag-select zoom box | Yes | Yes | Partial | Yes | MVP |
-| 46 | Double-click reset | N/A | Yes | N/A | N/A | MVP |
-| | **EXPORT** | | | | | |
-| 47 | PNG spectrum | Yes | No | No | Yes | NOT IMPLEMENTED |
-| 48 | SVG spectrum | Yes | No | No | No | NOT IMPLEMENTED |
-| 49 | PDF spectrum | Yes | No | No | No | NOT IMPLEMENTED |
-| 50 | CSV data | Yes | Yes (7 columns) | Yes (13 columns) | Yes | MVP (LESS COMPLETE) |
-| 51 | JSON data | Yes | No | Yes (full analysis) | Yes | NOT IMPLEMENTED |
-| 52 | JCAMP-DX export | Yes | No | No | Yes | NOT IMPLEMENTED |
-| 53 | JCAMP-DX import (overlay) | Yes | No | No | Yes | NOT IMPLEMENTED |
-| 54 | HTML report (print-ready) | No | No | Yes (864-line template) | No | NOT IMPLEMENTED |
-| 55 | Metadata (solvent/freq/method) | Yes | Partial (solvent + engine version in JSON, not in CSV headers) | Yes (13-column CSV) | Yes | PARTIAL |
-| | **CONFIDENCE & TRANSPARENCY** | | | | | |
-| 56 | Per-peak confidence indicator | No | Yes (3 tiers, color-coded) | Yes (percentage) | No | MVP (UNIQUE vs ChemDraw) |
-| 57 | Method label per peak | No | Yes ("additive" field) | Yes (spinus/fragment/heuristic) | No | MVP |
-| 58 | Tooltip explanation | No | No (colors only, no text) | Partial | No | NOT IMPLEMENTED |
-| 59 | Colorblind-safe indicators | No | Yes (shapes: filled/half/hollow circle) | No | No | MVP (UNIQUE) |
-| 60 | Numeric confidence score | No | Yes (tier 1-3) | Yes (0-100%) | No | MVP |
-| | **INFRASTRUCTURE** | | | | | |
-| 61 | Docker deployment | N/A (desktop) | Yes | N/A (frontend-only) | N/A (hosted) | MVP |
-| 62 | REST API | No | Yes (POST /compute/nmr) | No | Yes | MVP |
-| 63 | Graceful RDKit fallback | N/A | Yes (stub predictions) | N/A | N/A | MVP |
-| 64 | Atom count limit | N/A | Yes (configurable) | No | Unknown | MVP |
-| 65 | Health check with NMR status | N/A | No | N/A | N/A | NOT IMPLEMENTED |
+| #   | Feature                                        | ChemDraw ChemNMR           | Kendraw v0.2                                                   | Draw-molecules                      | nmrdb.org     | Status Kendraw             |
+| --- | ---------------------------------------------- | -------------------------- | -------------------------------------------------------------- | ----------------------------------- | ------------- | -------------------------- |
+|     | **PREDICTION — Nuclei**                        |                            |                                                                |                                     |               |                            |
+| 1   | 1H chemical shifts                             | Yes (HOSE+DB, 43K entries) | Yes (additive, 223 data points)                                | Yes (3-tier cascade)                | Yes (HOSE+NN) | MVP                        |
+| 2   | 13C chemical shifts                            | Yes                        | No (returns 400)                                               | Yes (7 environments)                | Yes           | NOT IMPLEMENTED            |
+| 3   | 19F prediction                                 | Yes                        | No                                                             | No                                  | No            | NOT PLANNED                |
+| 4   | 31P prediction                                 | Yes                        | No                                                             | No                                  | No            | NOT PLANNED                |
+| 5   | 15N prediction                                 | Yes                        | No                                                             | No                                  | No            | NOT PLANNED                |
+|     | **PREDICTION — Multiplicity**                  |                            |                                                                |                                     |               |                            |
+| 6   | Simple multiplicity (s/d/t/q)                  | Yes                        | Yes (n+1 rule)                                                 | Yes (J simulation)                  | Yes           | MVP                        |
+| 7   | Complex multiplicity (dd/dt/ddd)               | Yes                        | No                                                             | Yes (resolveMultiplicityFromGroups) | Yes           | NOT IMPLEMENTED            |
+| 8   | Vicinal J-coupling (3J)                        | Yes (Karplus)              | Yes (fixed values: 7.0-7.8 Hz)                                 | Yes (environment-aware)             | Yes           | SIMPLIFIED                 |
+| 9   | Geminal J-coupling (2J)                        | Yes                        | Defined but unused (-12.0 Hz)                                  | Yes (13.4 Hz sp3, 2.1 Hz sp2)       | Yes           | NOT USED                   |
+| 10  | Long-range J (4J, 5J)                          | Yes                        | Defined but unused (1.5-1.8 Hz)                                | Yes (aromatic meta 1.8 Hz)          | Partial       | NOT USED                   |
+| 11  | Aromatic J-coupling (ortho/meta/para)          | Yes                        | Yes (7.8/1.8/0.7 Hz)                                           | Yes (7.8/1.8 Hz)                    | Yes           | MVP                        |
+| 12  | Vinyl J-coupling (cis/trans)                   | Yes (10/16 Hz)             | Defined (10/16 Hz) but no stereo detection                     | Yes (stereo-aware)                  | Yes           | DATA EXISTS, LOGIC MISSING |
+|     | **PREDICTION — Proton Types**                  |                            |                                                                |                                     |               |                            |
+| 13  | Diastereotopic protons                         | Yes                        | No                                                             | Yes (CIP-based H-2a/H-2b)           | Yes           | NOT IMPLEMENTED            |
+| 14  | Exchangeable protons (OH/NH/SH)                | Yes (solvent-aware)        | Yes (solvent-aware, 3 types)                                   | Yes (3 types + solvent)             | Partial       | MVP                        |
+| 15  | Solvent effect on shifts                       | Yes                        | Yes (6 solvents, 96 corrections)                               | Yes (6 solvents)                    | CDCl3 only    | MVP                        |
+| 16  | Temperature effect                             | Yes                        | No                                                             | No                                  | No            | NOT PLANNED                |
+| 17  | Ring current (aromatic anisotropy)             | Yes (3D)                   | Implicit (Hammett only)                                        | Implicit (Hammett)                  | Yes (3D)      | SIMPLIFIED                 |
+| 18  | Carbonyl anisotropy                            | Yes                        | Partial (alpha_to_carbonyl env)                                | Partial                             | Partial       | SIMPLIFIED                 |
+| 19  | Heteroaromatic rings (pyridine, pyrrole, etc.) | Yes                        | No (all aromatic = 7.26 base)                                  | Partial                             | Yes           | NOT IMPLEMENTED            |
+|     | **PREDICTION — Accuracy**                      |                            |                                                                |                                     |               |                            |
+| 20  | MAE aliphatics                                 | ~0.15 ppm                  | ~0.25 ppm                                                      | ~0.20 ppm                           | ~0.15 ppm     | ADEQUATE                   |
+| 21  | MAE aromatics                                  | ~0.10 ppm                  | ~0.30 ppm                                                      | ~0.20 ppm                           | ~0.10 ppm     | NEEDS IMPROVEMENT          |
+| 22  | MAE heterocycles                               | ~0.15 ppm                  | ~0.80+ ppm                                                     | ~0.40 ppm                           | ~0.20 ppm     | POOR                       |
+| 23  | MAE exchangeable H                             | ~0.50 ppm                  | ~0.50 ppm                                                      | ~0.50 ppm                           | ~0.50 ppm     | COMPARABLE                 |
+| 24  | Beta-position effects                          | Yes                        | No (linear additivity)                                         | Partial                             | Yes           | NOT IMPLEMENTED            |
+| 25  | Cumulative substituent scaling                 | Yes (diminishing)          | No (linear sum)                                                | Partial                             | Yes           | NOT IMPLEMENTED            |
+|     | **SPECTRUM DISPLAY**                           |                            |                                                                |                                     |               |                            |
+| 26  | Peak shape (Lorentzian)                        | Yes                        | Yes (gamma=0.04 ppm)                                           | Yes (Lorentzian)                    | Yes           | MVP                        |
+| 27  | Peak shape (Gaussian/Voigt)                    | Yes                        | No                                                             | No                                  | Yes           | NOT IMPLEMENTED            |
+| 28  | Linewidth control                              | Yes                        | No (fixed HWHM)                                                | No                                  | Yes           | NOT IMPLEMENTED            |
+| 29  | Spin system simulation (rooftop)               | Yes                        | No                                                             | Yes (Spinus)                        | Yes           | NOT IMPLEMENTED            |
+| 30  | Integration display (curve)                    | Yes                        | No (nH label only)                                             | Partial                             | Yes           | NOT IMPLEMENTED            |
+| 31  | Integration numeric                            | Yes                        | Yes (nH per peak)                                              | Yes                                 | Yes           | MVP                        |
+| 32  | PPM axis (inverted, convention)                | Yes                        | Yes (downfield left)                                           | Yes                                 | Yes           | MVP                        |
+| 33  | Relative intensity axis                        | Yes                        | Yes (normalized)                                               | Yes                                 | Yes           | MVP                        |
+| 34  | TMS reference (0 ppm)                          | Yes                        | Yes (implicit)                                                 | Yes                                 | Yes           | MVP                        |
+| 35  | Frequency configurable (300-800 MHz)           | Yes                        | No                                                             | Yes (per solvent)                   | Yes           | NOT IMPLEMENTED            |
+| 36  | Spectrum resolution control                    | Yes                        | No (fixed sampling)                                            | Partial                             | Yes           | NOT IMPLEMENTED            |
+| 37  | Solvent residual peak marker                   | Yes                        | No                                                             | No                                  | N/A           | NOT IMPLEMENTED            |
+|     | **INTERACTION**                                |                            |                                                                |                                     |               |                            |
+| 38  | Bidirectional highlighting (peak↔atom)         | Yes                        | No (data exists, UI not wired)                                 | Partial                             | Yes           | NOT IMPLEMENTED            |
+| 39  | Zoom (scroll-to-zoom)                          | Yes                        | Yes (1.15x factor)                                             | Yes                                 | Yes           | MVP                        |
+| 40  | Pan (drag/scroll)                              | Yes                        | Yes (Alt+click / middle mouse)                                 | Yes                                 | Yes           | MVP                        |
+| 41  | Click peak → info                              | Yes                        | Yes (info bar with delta, nH, mult, J, env)                    | Yes                                 | Yes           | MVP                        |
+| 42  | Hover preview                                  | Yes                        | Yes (cursor change, highlight)                                 | Yes                                 | Yes           | MVP                        |
+| 43  | Signal navigation (prev/next)                  | Yes                        | Yes (Tab + buttons)                                            | No                                  | No            | MVP (UNIQUE)               |
+| 44  | Proton numbering on structure                  | Yes                        | No                                                             | Yes (H-1, H-2a/2b)                  | No            | NOT IMPLEMENTED            |
+| 45  | Drag-select zoom box                           | Yes                        | Yes                                                            | Partial                             | Yes           | MVP                        |
+| 46  | Double-click reset                             | N/A                        | Yes                                                            | N/A                                 | N/A           | MVP                        |
+|     | **EXPORT**                                     |                            |                                                                |                                     |               |                            |
+| 47  | PNG spectrum                                   | Yes                        | No                                                             | No                                  | Yes           | NOT IMPLEMENTED            |
+| 48  | SVG spectrum                                   | Yes                        | No                                                             | No                                  | No            | NOT IMPLEMENTED            |
+| 49  | PDF spectrum                                   | Yes                        | No                                                             | No                                  | No            | NOT IMPLEMENTED            |
+| 50  | CSV data                                       | Yes                        | Yes (7 columns)                                                | Yes (13 columns)                    | Yes           | MVP (LESS COMPLETE)        |
+| 51  | JSON data                                      | Yes                        | No                                                             | Yes (full analysis)                 | Yes           | NOT IMPLEMENTED            |
+| 52  | JCAMP-DX export                                | Yes                        | No                                                             | No                                  | Yes           | NOT IMPLEMENTED            |
+| 53  | JCAMP-DX import (overlay)                      | Yes                        | No                                                             | No                                  | Yes           | NOT IMPLEMENTED            |
+| 54  | HTML report (print-ready)                      | No                         | No                                                             | Yes (864-line template)             | No            | NOT IMPLEMENTED            |
+| 55  | Metadata (solvent/freq/method)                 | Yes                        | Partial (solvent + engine version in JSON, not in CSV headers) | Yes (13-column CSV)                 | Yes           | PARTIAL                    |
+|     | **CONFIDENCE & TRANSPARENCY**                  |                            |                                                                |                                     |               |                            |
+| 56  | Per-peak confidence indicator                  | No                         | Yes (3 tiers, color-coded)                                     | Yes (percentage)                    | No            | MVP (UNIQUE vs ChemDraw)   |
+| 57  | Method label per peak                          | No                         | Yes ("additive" field)                                         | Yes (spinus/fragment/heuristic)     | No            | MVP                        |
+| 58  | Tooltip explanation                            | No                         | No (colors only, no text)                                      | Partial                             | No            | NOT IMPLEMENTED            |
+| 59  | Colorblind-safe indicators                     | No                         | Yes (shapes: filled/half/hollow circle)                        | No                                  | No            | MVP (UNIQUE)               |
+| 60  | Numeric confidence score                       | No                         | Yes (tier 1-3)                                                 | Yes (0-100%)                        | No            | MVP                        |
+|     | **INFRASTRUCTURE**                             |                            |                                                                |                                     |               |                            |
+| 61  | Docker deployment                              | N/A (desktop)              | Yes                                                            | N/A (frontend-only)                 | N/A (hosted)  | MVP                        |
+| 62  | REST API                                       | No                         | Yes (POST /compute/nmr)                                        | No                                  | Yes           | MVP                        |
+| 63  | Graceful RDKit fallback                        | N/A                        | Yes (stub predictions)                                         | N/A                                 | N/A           | MVP                        |
+| 64  | Atom count limit                               | N/A                        | Yes (configurable)                                             | No                                  | Unknown       | MVP                        |
+| 65  | Health check with NMR status                   | N/A                        | No                                                             | N/A                                 | N/A           | NOT IMPLEMENTED            |
 
 **Summary Counts:**
+
 - MVP (implemented): 25 features
 - NOT IMPLEMENTED: 27 features
 - SIMPLIFIED (partial): 5 features
@@ -777,16 +821,19 @@ Research experts (Duval, Marcos, Al-Rashid) count **double** as core target user
 **Consensus TOP 3 :**
 
 **1. Heteroaromatic ring predictions (unanimous concern)**
+
 - Al-Rashid: "La pyridine, le pyrrole, l'indole — ce sont les briques élémentaires de 40% des médicaments. Les prédire à 7.26 ppm comme du benzène, c'est disqualifiant."
 - Duval: "Un étudiant qui voit que le pyrrole est prédit comme du benzène va perdre confiance dans tout l'outil."
 - Chen: "C'est un problème de données, pas d'algorithme. Il faut ajouter des environnements spécifiques pour chaque hétéroaromatique."
 
 **2. Absence of bidirectional highlighting**
+
 - Marcos: "C'est LA fonctionnalité qui justifie d'avoir le dessin ET le spectre dans le même outil. Sans ça, autant utiliser nmrdb.org séparément."
 - Park: "En product terms, c'est le core value proposition qui n'est pas livré. Le drawing+prediction intégré est votre USP — mais l'intégration s'arrête à la prédiction."
 - Yamamoto: "En cours, je ne peux pas dire 'cliquez sur ce pic pour voir quel proton c'est'. L'outil perd 80% de sa valeur pédagogique."
 
 **3. Export limitations (CSV only)**
+
 - Duval: "Un chercheur qui ne peut pas mettre le spectre dans sa publication n'utilisera jamais cet outil."
 - Al-Rashid: "Sans JCAMP-DX, l'outil est invisible pour la communauté analytique."
 - Marina: "Même moi j'ai besoin d'une image pour mon rapport de stage."
@@ -869,6 +916,7 @@ Research experts (Duval, Marcos, Al-Rashid) count **double** as core target user
 **Impact:** ALL experts except Thomas flagged this. Without it, Kendraw is worse than nmrdb.org + a separate drawing tool, because at least nmrdb.org shows atom assignments on the structure.
 
 **Solution:**
+
 1. Add `highlightedAtomIndices: number[]` to SceneStore (or shared state)
 2. When NmrPanel peak is hovered/selected, dispatch highlighted atom indices
 3. renderer-canvas reads highlighted indices and draws highlight circles on those atoms
@@ -884,6 +932,7 @@ Research experts (Duval, Marcos, Al-Rashid) count **double** as core target user
 **Impact:** 40% of pharmaceutical compounds contain N-heterocycles (Al-Rashid). Any chemist testing with pyridine or caffeine-like molecules will see obvious errors.
 
 **Solution:**
+
 1. Add dedicated base shifts for pyridine-H (alpha ~8.5, beta ~7.2, gamma ~7.6), pyrrole-H (~6.2), furan-H (~6.3/7.4), thiophene-H (~6.9/7.2)
 2. Extend `_classify_h_environment()` to detect ring type via RDKit ring info + aromaticity flags
 3. Add heteroaromatic substituent effect tables (smaller than benzene — ortho/meta/para relative to heteroatom)
@@ -898,6 +947,7 @@ Research experts (Duval, Marcos, Al-Rashid) count **double** as core target user
 **Impact:** Universal complaint from all domain experts. Even Marina (student) needs it for her internship report.
 
 **Solution:**
+
 1. Add "Save PNG" button in NmrPanel header
 2. Use `canvas.toBlob('image/png')` or `canvas.toDataURL()` — the Canvas 2D element already exists
 3. Trigger browser download with filename `nmr_{nucleus}_{solvent}.png`
@@ -916,6 +966,7 @@ Research experts (Duval, Marcos, Al-Rashid) count **double** as core target user
 **Impact:** Organic chemistry characterization requires BOTH 1H and 13C. Without 13C, Kendraw is missing half the NMR workflow. Every research expert flagged this.
 
 **Solution:**
+
 1. Add 13C base shift table (~8-10 environments: alkyl, alcohol, amine, carbonyl, aromatic, alkene, alkyne, halogenated)
 2. Add 13C substituent increment table (~15-20 substituents with alpha/beta/gamma effects)
 3. Extend `additive.py` with `predict_additive_13c()` function
@@ -932,6 +983,7 @@ Research experts (Duval, Marcos, Al-Rashid) count **double** as core target user
 **Impact:** Essential for teaching (Yamamoto), structure confirmation (Marcos), and quality control (Al-Rashid).
 
 **Solution:**
+
 1. Group equivalent protons and assign labels (H-1 through H-n)
 2. Render labels on structure (near H-bearing atoms) using renderer-canvas
 3. Show matching labels on spectrum peaks
@@ -947,6 +999,7 @@ Research experts (Duval, Marcos, Al-Rashid) count **double** as core target user
 **Impact:** Critical for teaching (Yamamoto: cinnamaldehyde is a standard exam molecule) and synthesis confirmation (Marcos: vinyl protons are diagnostic for alkene geometry).
 
 **Solution:**
+
 1. Detect alkene geometry via RDKit stereo flags (E/Z)
 2. Add cis/trans/geminal base shifts (~5.0/5.8/4.8 ppm)
 3. Add alpha-conjugation correction (+0.5-1.0 ppm for alpha,beta-unsaturated systems)
@@ -962,6 +1015,7 @@ Research experts (Duval, Marcos, Al-Rashid) count **double** as core target user
 **Impact:** The transparency USP is undermined if users don't understand what the transparency means.
 
 **Solution:**
+
 1. Add hover tooltip on confidence markers: "High confidence: well-characterized environment (aromatic)" / "Moderate: limited reference data" / "Low: unusual environment"
 2. Add optional legend panel or info icon with explanation
 3. Consider showing method name in tooltip ("Additive prediction, tier 3/3")
@@ -976,6 +1030,7 @@ Research experts (Duval, Marcos, Al-Rashid) count **double** as core target user
 **Impact:** Systematic ~0.2-0.3 ppm errors on many common environments. Fixing this would reduce MAE from ~0.3 to ~0.2 ppm.
 
 **Solution:**
+
 1. Add BETA_SUBSTITUENT_INCREMENTS table (same substituents as alpha, at ~40% effect)
 2. In `_classify_h_environment()`, also scan 2-bond neighbors
 3. Apply beta corrections after alpha corrections
@@ -1072,20 +1127,20 @@ Research experts (Duval, Marcos, Al-Rashid) count **double** as core target user
 
 ### 7.4 NICE-TO-HAVE — V2
 
-| # | Feature | Effort | Experts |
-|---|---------|--------|---------|
-| NH-1 | HOSE code + NMRShiftDB2 integration | XL | Chen, Duval |
-| NH-2 | JCAMP-DX import/export | L | Al-Rashid, Marcos |
-| NH-3 | Experimental spectrum overlay | L | Marcos, Duval |
-| NH-4 | HTML analytical report | L | Park, Al-Rashid |
-| NH-5 | Frequency configurable (300-800 MHz) | S | Yamamoto |
-| NH-6 | Spin system simulation (rooftop effect) | XL | Chen, Yamamoto |
-| NH-7 | Diastereotopic proton handling | L | Chen, Marcos |
-| NH-8 | 19F, 31P prediction | XL | Al-Rashid |
-| NH-9 | PDF export | M | Duval, Al-Rashid |
-| NH-10 | Voigt lineshapes | M | Chen |
-| NH-11 | Temperature effects on shifts | M | Chen |
-| NH-12 | 2D NMR (COSY, HSQC, HMBC) | XL | Marcos, Duval |
+| #     | Feature                                 | Effort | Experts           |
+| ----- | --------------------------------------- | ------ | ----------------- |
+| NH-1  | HOSE code + NMRShiftDB2 integration     | XL     | Chen, Duval       |
+| NH-2  | JCAMP-DX import/export                  | L      | Al-Rashid, Marcos |
+| NH-3  | Experimental spectrum overlay           | L      | Marcos, Duval     |
+| NH-4  | HTML analytical report                  | L      | Park, Al-Rashid   |
+| NH-5  | Frequency configurable (300-800 MHz)    | S      | Yamamoto          |
+| NH-6  | Spin system simulation (rooftop effect) | XL     | Chen, Yamamoto    |
+| NH-7  | Diastereotopic proton handling          | L      | Chen, Marcos      |
+| NH-8  | 19F, 31P prediction                     | XL     | Al-Rashid         |
+| NH-9  | PDF export                              | M      | Duval, Al-Rashid  |
+| NH-10 | Voigt lineshapes                        | M      | Chen              |
+| NH-11 | Temperature effects on shifts           | M      | Chen              |
+| NH-12 | 2D NMR (COSY, HSQC, HMBC)               | XL     | Marcos, Duval     |
 
 ---
 
@@ -1099,14 +1154,14 @@ Research experts (Duval, Marcos, Al-Rashid) count **double** as core target user
 
 ### Justification
 
-| Factor | Assessment |
-|--------|-----------|
-| **Progress since V1** | Substantial. MAE ~1.5→~0.3 ppm. All 5 blockers fixed. Score 4.2→5.4. |
-| **Scientific adequacy** | Insufficient for research/pharma. Adequate for educational use on simple molecules. |
-| **Technical quality** | Strong. Clean architecture, deterministic, well-tested (61 NMR tests), no crashes. |
-| **Feature completeness** | 25 of 65 assessed features implemented (38%). Major gaps: 13C, bidi-highlight, export. |
+| Factor                   | Assessment                                                                                                                                                           |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Progress since V1**    | Substantial. MAE ~1.5→~0.3 ppm. All 5 blockers fixed. Score 4.2→5.4.                                                                                                 |
+| **Scientific adequacy**  | Insufficient for research/pharma. Adequate for educational use on simple molecules.                                                                                  |
+| **Technical quality**    | Strong. Clean architecture, deterministic, well-tested (61 NMR tests), no crashes.                                                                                   |
+| **Feature completeness** | 25 of 65 assessed features implemented (38%). Major gaps: 13C, bidi-highlight, export.                                                                               |
 | **Competitive position** | Behind ChemDraw (~3x worse accuracy, ~40% features), behind nmrdb.org (accuracy), comparable to Draw-molecules (features), ahead on UX integration and transparency. |
-| **Readiness for launch** | NOT READY for general launch. READY for limited beta (educational, with disclaimers). |
+| **Readiness for launch** | NOT READY for general launch. READY for limited beta (educational, with disclaimers).                                                                                |
 
 ### Trajectory
 
@@ -1120,6 +1175,7 @@ Target (V2 release):  8.5/10  ████████░░  (requires HOSE cod
 ### Path to 7.0/10
 
 Implementing the 3 BLOCKERS (bidi-highlight, heteroaromatics, PNG export) and 5 MUST-FIX items (13C, proton numbering, vinyl differentiation, confidence tooltips, beta effects) would:
+
 - Reduce MAE from ~0.3 to ~0.2 ppm (beta effects + vinylic fixes)
 - Enable the core integrated workflow (bidi-highlight)
 - Add the most-requested nucleus (13C)
@@ -1130,9 +1186,9 @@ This represents approximately 2-3 sprints of focused development.
 
 ---
 
-*Generated by Kendraw V2 Scientific Review Panel — 8 domain experts*
-*Review methodology: factual code audit + expert simulation*
-*All assessments grounded in verified codebase state at commit fe20bff*
+_Generated by Kendraw V2 Scientific Review Panel — 8 domain experts_
+_Review methodology: factual code audit + expert simulation_
+_All assessments grounded in verified codebase state at commit fe20bff_
 
 ---
 
