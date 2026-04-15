@@ -72,5 +72,8 @@
     "typescript": "^6.0.2",
     "typescript-eslint": "^8.58.1",
     "vitest": "^4.1.4"
+  },
+  "dependencies": {
+    "jspdf": "^4.2.1"
   }
 }
