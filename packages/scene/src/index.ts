@@ -71,7 +71,15 @@ export {
   isSelected,
 } from './selection.js';
 
-export { RING_TEMPLATES, generateRing, type RingTemplate, type GeneratedRing } from './rings.js';
+export {
+  RING_TEMPLATES,
+  FUSED_RING_TEMPLATES,
+  generateRing,
+  generateFusedRing,
+  type RingTemplate,
+  type FusedRingTemplate,
+  type GeneratedRing,
+} from './rings.js';
 
 export { validateValence, type ValenceIssue } from './valence.js';
 

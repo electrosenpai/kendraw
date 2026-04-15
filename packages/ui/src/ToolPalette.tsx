@@ -1,6 +1,12 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { COMMON_ELEMENTS, getSymbol, getColor, RING_TEMPLATES } from '@kendraw/scene';
-import type { RingTemplate } from '@kendraw/scene';
+import {
+  COMMON_ELEMENTS,
+  getSymbol,
+  getColor,
+  RING_TEMPLATES,
+  FUSED_RING_TEMPLATES,
+} from '@kendraw/scene';
+import type { RingTemplate, FusedRingTemplate } from '@kendraw/scene';
 
 // ── Types ───────────────────────────────────────────────────
 
@@ -515,26 +521,62 @@ export function ToolPalette({
             </Sub>
           )}
           {submenu === 'ring' && (
-            <Sub title="Ring Template">
-              {RING_TEMPLATES.map((rt: RingTemplate) => (
-                <button
-                  key={rt.id}
-                  onClick={() => {
-                    onToolStateChange({ ringTemplate: rt.id, tool: 'ring' });
-                    setSubmenu(null);
-                  }}
-                  style={{
-                    ...ROW,
-                    background:
-                      toolState.ringTemplate === rt.id
-                        ? 'var(--kd-color-accent-muted)'
-                        : 'transparent',
-                  }}
-                >
-                  {rt.name}
-                </button>
-              ))}
-            </Sub>
+            <div>
+              <Sub title="Simple Rings">
+                {RING_TEMPLATES.map((rt: RingTemplate) => (
+                  <button
+                    key={rt.id}
+                    onClick={() => {
+                      onToolStateChange({ ringTemplate: rt.id, tool: 'ring' });
+                      setSubmenu(null);
+                    }}
+                    style={{
+                      ...ROW,
+                      background:
+                        toolState.ringTemplate === rt.id
+                          ? 'var(--kd-color-accent-muted)'
+                          : 'transparent',
+                    }}
+                  >
+                    {rt.name}
+                  </button>
+                ))}
+              </Sub>
+              {(['aromatic', 'heterocyclic', 'biological'] as const).map((cat) => {
+                const templates = FUSED_RING_TEMPLATES.filter(
+                  (t: FusedRingTemplate) => t.category === cat,
+                );
+                if (templates.length === 0) return null;
+                const label =
+                  cat === 'aromatic'
+                    ? 'Fused Aromatic'
+                    : cat === 'heterocyclic'
+                      ? 'Fused Heterocyclic'
+                      : 'Biological';
+                return (
+                  <Sub key={cat} title={label}>
+                    {templates.map((ft: FusedRingTemplate) => (
+                      <button
+                        key={ft.id}
+                        onClick={() => {
+                          onToolStateChange({ ringTemplate: ft.id, tool: 'ring' });
+                          setSubmenu(null);
+                        }}
+                        style={{
+                          ...ROW,
+                          background:
+                            toolState.ringTemplate === ft.id
+                              ? 'var(--kd-color-accent-muted)'
+                              : 'transparent',
+                        }}
+                      >
+                        {ft.name}
+                      </button>
+                    ))}
+                  </Sub>
+                );
+              })}
+            </div>
           )}
         </div>
       )}

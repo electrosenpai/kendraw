@@ -12,7 +12,9 @@ import {
   prepareForPaste,
   validateValence,
   generateRing,
+  generateFusedRing,
   RING_TEMPLATES,
+  FUSED_RING_TEMPLATES,
   computeCenter,
   rotateAtoms,
   defaultCurlyGeometry,
@@ -614,7 +616,7 @@ export function Canvas({
           return;
         }
 
-        // Ring template shortcuts (3-8) when ring tool is active
+        // Ring template shortcuts (3-8, n, q, i) when ring tool is active
         if (toolState.tool === 'ring') {
           const ringMap: Record<string, string> = {
             '3': 'cyclopropane',
@@ -623,6 +625,12 @@ export function Canvas({
             '6': 'cyclohexane',
             '7': 'cycloheptane',
             '8': 'cyclooctane',
+            n: 'naphthalene',
+            N: 'naphthalene',
+            q: 'quinoline',
+            Q: 'quinoline',
+            i: 'indole',
+            I: 'indole',
           };
           const rt = ringMap[e.key];
           if (rt) {
@@ -971,6 +979,13 @@ export function Canvas({
             const ring = generateRing(template, x, y, 50);
             for (const a of ring.atoms) store.dispatch({ type: 'add-atom', atom: a });
             for (const b of ring.bonds) store.dispatch({ type: 'add-bond', bond: b });
+          } else {
+            const fused = FUSED_RING_TEMPLATES.find((t) => t.id === toolState.ringTemplate);
+            if (fused) {
+              const ring = generateFusedRing(fused, x, y);
+              for (const a of ring.atoms) store.dispatch({ type: 'add-atom', atom: a });
+              for (const b of ring.bonds) store.dispatch({ type: 'add-bond', bond: b });
+            }
           }
         }
         dragStartRef.current = null;
