@@ -23,6 +23,12 @@ export type UpdateAtomCommand = {
 export type AddBondCommand = { type: 'add-bond'; bond: Bond };
 export type RemoveBondCommand = { type: 'remove-bond'; id: BondId };
 export type CycleBondCommand = { type: 'cycle-bond'; id: BondId };
+export type SetBondStyleCommand = {
+  type: 'set-bond-style';
+  id: BondId;
+  style: Bond['style'];
+  order: Bond['order'];
+};
 
 export type AddArrowCommand = { type: 'add-arrow'; arrow: Arrow };
 export type RemoveArrowCommand = { type: 'remove-arrow'; id: ArrowId };
@@ -55,6 +61,7 @@ export type Command =
   | AddBondCommand
   | RemoveBondCommand
   | CycleBondCommand
+  | SetBondStyleCommand
   | AddArrowCommand
   | RemoveArrowCommand
   | AddAnnotationCommand
@@ -72,6 +79,7 @@ export type SceneDiff =
   | { type: 'bond-added'; id: BondId }
   | { type: 'bond-removed'; id: BondId }
   | { type: 'bond-cycled'; id: BondId }
+  | { type: 'bond-style-set'; id: BondId }
   | { type: 'arrow-added'; id: ArrowId }
   | { type: 'arrow-removed'; id: ArrowId }
   | { type: 'annotation-added'; id: AnnotationId }

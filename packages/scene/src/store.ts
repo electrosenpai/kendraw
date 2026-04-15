@@ -153,6 +153,19 @@ function applyCommand(state: Document, command: Command): { next: Document; diff
       });
       return { next, diff: { type: 'bond-cycled', id: command.id } };
     }
+    case 'set-bond-style': {
+      const next = produce(state, (draft) => {
+        const page = draft.pages[pageIndex];
+        if (page) {
+          const bond = page.bonds[command.id];
+          if (bond) {
+            bond.style = command.style;
+            bond.order = command.order;
+          }
+        }
+      });
+      return { next, diff: { type: 'bond-style-set', id: command.id } };
+    }
     case 'add-arrow': {
       const next = produce(state, (draft) => {
         const page = draft.pages[pageIndex];

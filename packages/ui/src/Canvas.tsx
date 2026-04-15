@@ -17,6 +17,8 @@ import {
   FUSED_RING_TEMPLATES,
   computeCenter,
   rotateAtoms,
+  mirrorAtomsH,
+  mirrorAtomsV,
   defaultCurlyGeometry,
   floodSelectMolecule,
   calculateBondTarget,
@@ -411,8 +413,8 @@ export function Canvas({
         return;
       }
 
-      // Paste
-      if (isMod && e.key === 'v') {
+      // Paste (Ctrl+V, not Shift+Ctrl+V which is flip vertical)
+      if (isMod && !e.shiftKey && e.key === 'v') {
         e.preventDefault();
         if (clipboardRef.current) {
           const { atoms, bonds } = prepareForPaste(clipboardRef.current, 20, 20);
@@ -453,6 +455,80 @@ export function Canvas({
                 id: ra.id,
                 dx: ra.x - orig.x,
                 dy: ra.y - orig.y,
+              });
+            }
+          }
+        }
+        return;
+      }
+
+      // Flip horizontal (Shift+Ctrl+H)
+      if (isMod && e.shiftKey && (e.key === 'h' || e.key === 'H')) {
+        e.preventDefault();
+        const page = store.getState().pages[store.getState().activePageIndex];
+        if (page && selection.atomIds.length > 0) {
+          const atoms = selection.atomIds
+            .map((id) => page.atoms[id])
+            .filter((a): a is NonNullable<typeof a> => !!a);
+          const center = computeCenter(atoms);
+          const flipped = mirrorAtomsH(atoms, center.x);
+          for (const fa of flipped) {
+            const orig = page.atoms[fa.id];
+            if (orig) {
+              store.dispatch({
+                type: 'move-atom',
+                id: fa.id,
+                dx: fa.x - orig.x,
+                dy: fa.y - orig.y,
+              });
+            }
+          }
+          // Recalculate stereochemistry: flip wedge ↔ dash on affected bonds
+          const selSet = new Set(selection.atomIds);
+          for (const bond of Object.values(page.bonds)) {
+            if (selSet.has(bond.fromAtomId) && selSet.has(bond.toAtomId)) {
+              const stereoFlip: Record<string, Bond['style']> = {
+                wedge: 'dash',
+                dash: 'wedge',
+                'wedge-end': 'dash',
+                'hashed-wedge': 'hollow-wedge',
+                'hashed-wedge-end': 'hollow-wedge-end',
+                'hollow-wedge': 'hashed-wedge',
+                'hollow-wedge-end': 'hashed-wedge-end',
+              };
+              const newStyle = stereoFlip[bond.style];
+              if (newStyle) {
+                store.dispatch({
+                  type: 'set-bond-style',
+                  id: bond.id,
+                  style: newStyle,
+                  order: bond.order,
+                });
+              }
+            }
+          }
+        }
+        return;
+      }
+
+      // Flip vertical (Shift+Ctrl+V — note: no conflict because Ctrl+V alone is paste)
+      if (isMod && e.shiftKey && (e.key === 'v' || e.key === 'V')) {
+        e.preventDefault();
+        const page = store.getState().pages[store.getState().activePageIndex];
+        if (page && selection.atomIds.length > 0) {
+          const atoms = selection.atomIds
+            .map((id) => page.atoms[id])
+            .filter((a): a is NonNullable<typeof a> => !!a);
+          const center = computeCenter(atoms);
+          const flipped = mirrorAtomsV(atoms, center.y);
+          for (const fa of flipped) {
+            const orig = page.atoms[fa.id];
+            if (orig) {
+              store.dispatch({
+                type: 'move-atom',
+                id: fa.id,
+                dx: fa.x - orig.x,
+                dy: fa.y - orig.y,
               });
             }
           }
@@ -529,7 +605,8 @@ export function Canvas({
         return;
       }
 
-      // ChemDraw atom hotkeys — change element of selected atoms (Section 5.4)
+      // ChemDraw atom hotkeys — change element of selected atoms (Section 9 PDF)
+      // Full ChemDraw set: a-z + Shift modifiers
       if (!isMod && selection.atomIds.length > 0) {
         const atomHotkeys: Record<string, number> = {
           c: 6,
@@ -545,26 +622,54 @@ export function Canvas({
           i: 53,
           I: 53, // Iodine
           l: 17,
-          L: 17, // Chlorine (ChemDraw convention: L=Cl)
+          L: 17, // Chlorine (ChemDraw: L=Cl)
           p: 15,
-          P: 15, // Phosphorus
-          b: 5,
-          B: 5, // Boron
+          P: 15, // Phosphorus (Shift+P → label "Ph" handled below)
+          b: 35, // Bromine (ChemDraw: b=Br)
+          B: 5, // Shift+B → Boron
           h: 1,
           H: 1, // Hydrogen
+          k: 19,
+          K: 19, // Potassium
+          r: 0, // R-group (generic label)
+          R: 0,
         };
         const newElement = atomHotkeys[e.key];
         if (newElement !== undefined) {
-          for (const id of selection.atomIds) {
-            store.dispatch({ type: 'update-atom', id, changes: { element: newElement } });
+          if (newElement === 0) {
+            // R-group: set label to "R" instead of element
+            for (const id of selection.atomIds) {
+              store.dispatch({
+                type: 'update-atom',
+                id,
+                changes: { element: 6, label: 'R' },
+              });
+            }
+          } else {
+            for (const id of selection.atomIds) {
+              store.dispatch({ type: 'update-atom', id, changes: { element: newElement } });
+            }
           }
           return;
         }
 
-        // M/m → Methyl (Carbon, ChemDraw convention)
-        if (e.key === 'm' || e.key === 'M') {
+        // Label-based hotkeys (set element + label text)
+        const labelHotkeys: Record<string, { element: number; label: string }> = {
+          a: { element: 6, label: 'Ac' }, // Acetyl
+          d: { element: 1, label: 'D' }, // Deuterium
+          e: { element: 6, label: 'Et' }, // Ethyl
+          m: { element: 6, label: 'Me' }, // Methyl
+          M: { element: 6, label: 'Me' },
+          t: { element: 6, label: 'tBu' }, // tert-Butyl
+        };
+        const lh = labelHotkeys[e.key];
+        if (lh) {
           for (const id of selection.atomIds) {
-            store.dispatch({ type: 'update-atom', id, changes: { element: 6 } });
+            store.dispatch({
+              type: 'update-atom',
+              id,
+              changes: { element: lh.element, label: lh.label },
+            });
           }
           return;
         }
