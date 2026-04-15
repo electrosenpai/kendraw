@@ -328,6 +328,48 @@ export class CanvasRenderer implements Renderer {
     // Render label segments (formula mode), anchored so the element symbol
     // sits at the atom coordinate (bond connection point).
     this.renderLabelSegments(ctx, atom.x, atom.y, segments, atom.element, justification);
+
+    // Lone pair dots: render as paired dots around the atom
+    if (atom.lonePairs > 0) {
+      const lpRadius = ATOM_RADIUS + 8;
+      const dotSize = 2;
+      ctx.fillStyle = '#888';
+      // Get bond angles to avoid placing dots where bonds exist
+      const bondAngles: number[] = [];
+      for (const bond of Object.values(page.bonds)) {
+        if (bond.fromAtomId === atom.id) {
+          const other = page.atoms[bond.toAtomId];
+          if (other) bondAngles.push(Math.atan2(other.y - atom.y, other.x - atom.x));
+        } else if (bond.toAtomId === atom.id) {
+          const other = page.atoms[bond.fromAtomId];
+          if (other) bondAngles.push(Math.atan2(other.y - atom.y, other.x - atom.x));
+        }
+      }
+      // Place lone pairs at angles avoiding bonds
+      const candidates = [0, Math.PI / 2, Math.PI, -Math.PI / 2];
+      const available = candidates.filter((angle) => {
+        return bondAngles.every((ba) => {
+          let diff = Math.abs(angle - ba);
+          if (diff > Math.PI) diff = 2 * Math.PI - diff;
+          return diff > Math.PI / 4;
+        });
+      });
+      const slots = available.length > 0 ? available : candidates;
+      for (let lp = 0; lp < Math.min(atom.lonePairs, slots.length); lp++) {
+        const angle = slots[lp] ?? 0;
+        const cx = atom.x + lpRadius * Math.cos(angle);
+        const cy = atom.y + lpRadius * Math.sin(angle);
+        const perpX = -Math.sin(angle) * 3;
+        const perpY = Math.cos(angle) * 3;
+        // Two dots side by side
+        ctx.beginPath();
+        ctx.arc(cx + perpX, cy + perpY, dotSize, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(cx - perpX, cy - perpY, dotSize, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
   }
 
   private measureLabelWidth(ctx: CanvasRenderingContext2D, segments: LabelSegment[]): number {

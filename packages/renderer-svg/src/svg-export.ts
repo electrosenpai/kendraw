@@ -71,9 +71,12 @@ export function exportToSVG(page: Page, options?: { width?: number; height?: num
     parts.push(renderBondSVG(bond, from, to));
   }
 
-  // Atoms
+  // Atoms (with lone pairs)
   for (const atom of atoms) {
     parts.push(renderAtomSVG(atom));
+    if (atom.lonePairs > 0) {
+      parts.push(renderLonePairsSVG(atom, page));
+    }
   }
 
   // Arrows (reaction, curly)
@@ -131,6 +134,41 @@ function renderBondSVG(bond: Bond, from: Atom, to: Atom): string {
     ].join('\n');
   }
   return `<line x1="${from.x}" y1="${from.y}" x2="${to.x}" y2="${to.y}" stroke="${stroke}" stroke-width="1.5"/>`;
+}
+
+function renderLonePairsSVG(atom: Atom, page: Page): string {
+  const lpRadius = ATOM_RADIUS + 8;
+  const dotSize = 2;
+  const bondAngles: number[] = [];
+  for (const bond of Object.values(page.bonds)) {
+    if (bond.fromAtomId === atom.id) {
+      const other = page.atoms[bond.toAtomId];
+      if (other) bondAngles.push(Math.atan2(other.y - atom.y, other.x - atom.x));
+    } else if (bond.toAtomId === atom.id) {
+      const other = page.atoms[bond.fromAtomId];
+      if (other) bondAngles.push(Math.atan2(other.y - atom.y, other.x - atom.x));
+    }
+  }
+  const candidates = [0, Math.PI / 2, Math.PI, -Math.PI / 2];
+  const available = candidates.filter((angle) =>
+    bondAngles.every((ba) => {
+      let diff = Math.abs(angle - ba);
+      if (diff > Math.PI) diff = 2 * Math.PI - diff;
+      return diff > Math.PI / 4;
+    }),
+  );
+  const slots = available.length > 0 ? available : candidates;
+  const dots: string[] = [];
+  for (let lp = 0; lp < Math.min(atom.lonePairs, slots.length); lp++) {
+    const angle = slots[lp] ?? 0;
+    const cx = atom.x + lpRadius * Math.cos(angle);
+    const cy = atom.y + lpRadius * Math.sin(angle);
+    const px = -Math.sin(angle) * 3;
+    const py = Math.cos(angle) * 3;
+    dots.push(`<circle cx="${cx + px}" cy="${cy + py}" r="${dotSize}" fill="#666"/>`);
+    dots.push(`<circle cx="${cx - px}" cy="${cy - py}" r="${dotSize}" fill="#666"/>`);
+  }
+  return dots.join('\n');
 }
 
 function bezierPath(g: BezierGeometry): string {
