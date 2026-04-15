@@ -36,6 +36,8 @@ export type {
   RemoveArrowCommand,
   AddAnnotationCommand,
   RemoveAnnotationCommand,
+  UpdateAnnotationCommand,
+  MoveAnnotationCommand,
   SetNmrPredictionCommand,
   SceneDiff,
 } from './commands.js';
@@ -43,7 +45,7 @@ export type {
 export type { SceneStore, Unsubscribe, SceneListener } from './store.js';
 export { createSceneStore, createEmptyDocument } from './store.js';
 
-export { createAtom, createBond } from './helpers.js';
+export { createAtom, createBond, createAnnotation } from './helpers.js';
 
 export {
   getElement,

@@ -9,6 +9,7 @@ export type ToolId =
   | 'add-atom'
   | 'add-bond'
   | 'ring'
+  | 'text'
   | 'eraser'
   | 'pan'
   | 'arrow'
@@ -111,6 +112,22 @@ const ICN = {
     <I>
       <line x1="3" y1="10" x2="15" y2="10" />
       <polyline points="12,6 16,10 12,14" />
+    </I>
+  ),
+  text: (
+    <I>
+      <text
+        x="10"
+        y="15"
+        textAnchor="middle"
+        fill="currentColor"
+        stroke="none"
+        fontSize="16"
+        fontWeight="bold"
+        fontFamily="serif"
+      >
+        T
+      </text>
     </I>
   ),
   curly: (
@@ -222,6 +239,13 @@ const GROUPS: { label: string; tools: ToolDef[] }[] = [
   {
     label: 'Annotations',
     tools: [
+      {
+        id: 'text',
+        icon: ICN.text,
+        label: 'Text',
+        shortcut: 'T',
+        description: 'Add text annotations',
+      },
       {
         id: 'arrow',
         icon: ICN.arrow,

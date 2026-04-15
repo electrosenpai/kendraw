@@ -752,21 +752,30 @@ export class CanvasRenderer implements Renderer {
 
   private drawAnnotation(
     ctx: CanvasRenderingContext2D,
-    ann: { x: number; y: number; richText: Array<{ text: string; style?: string }> },
+    ann: {
+      x: number;
+      y: number;
+      richText: Array<{ text: string; style?: string }>;
+      fontSize?: number;
+      bold?: boolean;
+      italic?: boolean;
+      color?: string;
+    },
   ): void {
-    const S = this.S;
+    const baseFontSize = ann.fontSize ?? this.S.labelSize;
+    const weight = ann.bold ? 'bold' : 'normal';
+    const style = ann.italic ? 'italic' : 'normal';
+    const fillColor = ann.color ?? '#e0e0e0';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
     let x = ann.x;
     let y = ann.y;
-    const lineHeight = S.labelSize * 1.4;
+    const lineHeight = baseFontSize * 1.4;
 
     for (const seg of ann.richText) {
-      // Handle newlines within text
       const parts = seg.text.split('\n');
       for (let pi = 0; pi < parts.length; pi++) {
         if (pi > 0) {
-          // Newline: reset x, advance y
           x = ann.x;
           y += lineHeight;
         }
@@ -775,12 +784,12 @@ export class CanvasRenderer implements Renderer {
 
         const isSubscript = seg.style === 'subscript';
         const isSuperscript = seg.style === 'superscript';
-        const size = isSubscript || isSuperscript ? S.labelSize * 0.75 : S.labelSize;
-        ctx.font = `${size}px Arial, system-ui, sans-serif`;
-        ctx.fillStyle = '#e0e0e0';
+        const size = isSubscript || isSuperscript ? baseFontSize * 0.75 : baseFontSize;
+        ctx.font = `${style} ${weight} ${size}px Arial, system-ui, sans-serif`;
+        ctx.fillStyle = fillColor;
         let drawY = y;
-        if (isSubscript) drawY += S.labelSize * 0.3;
-        if (isSuperscript) drawY -= S.labelSize * 0.3;
+        if (isSubscript) drawY += baseFontSize * 0.3;
+        if (isSuperscript) drawY -= baseFontSize * 0.3;
         ctx.fillText(text, x, drawY);
         x += ctx.measureText(text).width;
       }

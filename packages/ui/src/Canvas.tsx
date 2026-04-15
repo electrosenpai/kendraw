@@ -2,6 +2,7 @@ import { useRef, useEffect, useCallback, useState, useSyncExternalStore } from '
 import {
   createAtom,
   createBond,
+  createAnnotation,
   SpatialIndex,
   createSelection,
   addToSelection,
@@ -18,12 +19,15 @@ import {
   floodSelectMolecule,
   calculateBondTarget,
   getNextChainPosition,
+  formulaMode,
   type SceneStore,
   type Selection,
   type ClipboardData,
   type AtomId,
   type ArrowId,
+  type AnnotationId,
   type Bond,
+  type Annotation,
 } from '@kendraw/scene';
 import { CanvasRenderer } from '@kendraw/renderer-canvas';
 import { ToolPalette, DEFAULT_TOOL_STATE, type ToolState } from './ToolPalette';
@@ -99,6 +103,13 @@ export function Canvas({
   const bondStartAtomRef = useRef<AtomId | null>(null);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [textEditing, setTextEditing] = useState<{
+    x: number;
+    y: number;
+    text: string;
+    annotationId?: AnnotationId;
+  } | null>(null);
+  const textInputRef = useRef<HTMLTextAreaElement>(null);
 
   const fitToScreen = useCallback(() => {
     const page = store.getState().pages[store.getState().activePageIndex];
@@ -152,6 +163,49 @@ export function Canvas({
     if (partial.tool) bondStartAtomRef.current = null;
     setToolState((s) => ({ ...s, ...partial }));
   }, []);
+
+  const confirmText = useCallback(() => {
+    if (!textEditing) return;
+    const text = textEditing.text.trim();
+    if (text) {
+      const richText = formulaMode(text);
+      if (textEditing.annotationId) {
+        store.dispatch({
+          type: 'update-annotation',
+          id: textEditing.annotationId,
+          changes: { richText },
+        });
+      } else {
+        const ann = createAnnotation(textEditing.x, textEditing.y, richText);
+        store.dispatch({ type: 'add-annotation', annotation: ann });
+      }
+    } else if (textEditing.annotationId) {
+      store.dispatch({ type: 'remove-annotation', id: textEditing.annotationId });
+    }
+    setTextEditing(null);
+  }, [textEditing, store]);
+
+  const cancelText = useCallback(() => {
+    setTextEditing(null);
+  }, []);
+
+  const hitTestAnnotation = useCallback(
+    (x: number, y: number): Annotation | null => {
+      const page = store.getState().pages[store.getState().activePageIndex];
+      if (!page) return null;
+      for (const ann of Object.values(page.annotations)) {
+        const dx = x - ann.x;
+        const dy = y - ann.y;
+        const textWidth = ann.richText.reduce((w, s) => w + s.text.length * 8, 0);
+        const fontSize = ann.fontSize ?? 14;
+        if (dx >= -4 && dx <= Math.max(textWidth, 20) && dy >= -4 && dy <= fontSize + 4) {
+          return ann;
+        }
+      }
+      return null;
+    },
+    [store],
+  );
 
   const subscribe = useCallback(
     (onStoreChange: () => void) => store.subscribe(onStoreChange),
@@ -549,6 +603,8 @@ export function Canvas({
           H: { tool: 'pan' },
           w: { tool: 'arrow' },
           W: { tool: 'arrow' },
+          t: { tool: 'text' },
+          T: { tool: 'text' },
           u: { tool: 'curly-arrow' },
           U: { tool: 'curly-arrow' },
         };
@@ -682,6 +738,28 @@ export function Canvas({
               return;
             }
           }
+          // Try annotation hit-test
+          const hitAnn = hitTestAnnotation(x, y);
+          if (hitAnn) {
+            store.dispatch({ type: 'remove-annotation', id: hitAnn.id });
+            return;
+          }
+        }
+        return;
+      }
+
+      // Text tool: click to create text, or click on existing to edit
+      if (toolState.tool === 'text') {
+        if (textEditing) {
+          confirmText();
+          return;
+        }
+        const existingAnn = hitTestAnnotation(x, y);
+        if (existingAnn) {
+          const plainText = existingAnn.richText.map((s) => s.text).join('');
+          setTextEditing({ x: existingAnn.x, y: existingAnn.y, text: plainText, annotationId: existingAnn.id });
+        } else {
+          setTextEditing({ x, y, text: '' });
         }
         return;
       }
@@ -940,6 +1018,14 @@ export function Canvas({
               return;
             }
           }
+          // Try annotation hit-test
+          const hitAnn = hitTestAnnotation(x, y);
+          if (hitAnn) {
+            store.dispatch({ type: 'remove-annotation', id: hitAnn.id });
+            dragStartRef.current = null;
+            isDraggingRef.current = false;
+            return;
+          }
         }
         dragStartRef.current = null;
         isDraggingRef.current = false;
@@ -1052,6 +1138,8 @@ export function Canvas({
         return 'grab';
       case 'eraser':
         return 'crosshair';
+      case 'text':
+        return 'text';
       case 'add-atom':
       case 'add-bond':
       case 'ring':
@@ -1119,6 +1207,37 @@ export function Canvas({
             cursor: isMovingRef.current ? 'grabbing' : cursorStyle,
           }}
         />
+        {textEditing && (
+          <textarea
+            ref={textInputRef}
+            autoFocus
+            value={textEditing.text}
+            onChange={(e) => setTextEditing((s) => s ? { ...s, text: e.target.value } : null)}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') { cancelText(); e.stopPropagation(); }
+              if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); confirmText(); e.stopPropagation(); }
+            }}
+            onBlur={confirmText}
+            placeholder="Type text..."
+            style={{
+              position: 'absolute',
+              left: textEditing.x * zoom + pan.x,
+              top: textEditing.y * zoom + pan.y,
+              minWidth: 120,
+              minHeight: 24,
+              background: 'rgba(0,0,0,0.8)',
+              color: '#e0e0e0',
+              border: '1px solid var(--kd-color-accent)',
+              borderRadius: 3,
+              padding: '2px 4px',
+              fontSize: 14,
+              fontFamily: 'Arial, system-ui, sans-serif',
+              outline: 'none',
+              resize: 'both',
+              zIndex: 30,
+            }}
+          />
+        )}
       </div>
 
       {/* Properties panel */}

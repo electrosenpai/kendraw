@@ -1,4 +1,4 @@
-import type { Page, Atom, Bond } from '@kendraw/scene';
+import type { Page, Atom, Bond, Annotation } from '@kendraw/scene';
 import { getColor, getSymbol } from '@kendraw/scene';
 
 const ATOM_RADIUS = 14;
@@ -12,6 +12,7 @@ function escapeXml(s: string): string {
 export function exportToSVG(page: Page, options?: { width?: number; height?: number }): string {
   const atoms = Object.values(page.atoms);
   const bonds = Object.values(page.bonds);
+  const annotations = Object.values(page.annotations);
 
   // Compute bounds
   let minX = Infinity;
@@ -23,6 +24,14 @@ export function exportToSVG(page: Page, options?: { width?: number; height?: num
     minY = Math.min(minY, a.y - ATOM_RADIUS);
     maxX = Math.max(maxX, a.x + ATOM_RADIUS);
     maxY = Math.max(maxY, a.y + ATOM_RADIUS);
+  }
+  for (const ann of annotations) {
+    const textWidth = ann.richText.reduce((w, s) => w + s.text.length * 8, 0);
+    const fontSize = ann.fontSize ?? FONT_SIZE;
+    minX = Math.min(minX, ann.x);
+    minY = Math.min(minY, ann.y);
+    maxX = Math.max(maxX, ann.x + textWidth);
+    maxY = Math.max(maxY, ann.y + fontSize);
   }
   if (!isFinite(minX)) {
     minX = 0;
@@ -55,6 +64,11 @@ export function exportToSVG(page: Page, options?: { width?: number; height?: num
   // Atoms
   for (const atom of atoms) {
     parts.push(renderAtomSVG(atom));
+  }
+
+  // Annotations
+  for (const ann of annotations) {
+    parts.push(renderAnnotationSVG(ann));
   }
 
   parts.push('</svg>');
@@ -102,6 +116,33 @@ function renderBondSVG(bond: Bond, from: Atom, to: Atom): string {
     ].join('\n');
   }
   return `<line x1="${from.x}" y1="${from.y}" x2="${to.x}" y2="${to.y}" stroke="${stroke}" stroke-width="1.5"/>`;
+}
+
+function renderAnnotationSVG(ann: Annotation): string {
+  const fontSize = ann.fontSize ?? FONT_SIZE;
+  const weight = ann.bold ? 'bold' : 'normal';
+  const style = ann.italic ? 'italic' : 'normal';
+  const color = ann.color ?? '#333';
+  const parts: string[] = [];
+  const x = ann.x;
+  const y = ann.y + fontSize; // SVG text baseline is bottom by default
+
+  for (const seg of ann.richText) {
+    const isSubscript = seg.style === 'subscript';
+    const isSuperscript = seg.style === 'superscript';
+    const size = isSubscript || isSuperscript ? fontSize * 0.75 : fontSize;
+    let dy = '0';
+    if (isSubscript) dy = `${fontSize * 0.3}`;
+    if (isSuperscript) dy = `${-fontSize * 0.3}`;
+    parts.push(
+      `<tspan font-size="${size}" dy="${dy}">${escapeXml(seg.text)}</tspan>`,
+    );
+    if (isSubscript || isSuperscript) {
+      parts.push(`<tspan dy="${isSubscript ? -fontSize * 0.3 : fontSize * 0.3}"></tspan>`);
+    }
+  }
+
+  return `<text x="${x}" y="${y}" font-family="Arial, system-ui, sans-serif" font-weight="${weight}" font-style="${style}" fill="${color}">${parts.join('')}</text>`;
 }
 
 function isLightColor(hex: string): boolean {

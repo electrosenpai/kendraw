@@ -191,6 +191,27 @@ function applyCommand(state: Document, command: Command): { next: Document; diff
       });
       return { next, diff: { type: 'annotation-removed', id: command.id } };
     }
+    case 'update-annotation': {
+      const next = produce(state, (draft) => {
+        const page = draft.pages[pageIndex];
+        const ann = page?.annotations[command.id];
+        if (ann) {
+          Object.assign(ann, command.changes);
+        }
+      });
+      return { next, diff: { type: 'annotation-updated', id: command.id } };
+    }
+    case 'move-annotation': {
+      const next = produce(state, (draft) => {
+        const page = draft.pages[pageIndex];
+        const ann = page?.annotations[command.id];
+        if (ann) {
+          ann.x += command.dx;
+          ann.y += command.dy;
+        }
+      });
+      return { next, diff: { type: 'annotation-moved', id: command.id } };
+    }
     case 'set-nmr-prediction': {
       const next = produce(state, (draft) => {
         const page = draft.pages[pageIndex];

@@ -29,6 +29,17 @@ export type RemoveArrowCommand = { type: 'remove-arrow'; id: ArrowId };
 
 export type AddAnnotationCommand = { type: 'add-annotation'; annotation: Annotation };
 export type RemoveAnnotationCommand = { type: 'remove-annotation'; id: AnnotationId };
+export type UpdateAnnotationCommand = {
+  type: 'update-annotation';
+  id: AnnotationId;
+  changes: Partial<Pick<Annotation, 'richText' | 'fontSize' | 'bold' | 'italic' | 'color'>>;
+};
+export type MoveAnnotationCommand = {
+  type: 'move-annotation';
+  id: AnnotationId;
+  dx: number;
+  dy: number;
+};
 
 export type SetNmrPredictionCommand = {
   type: 'set-nmr-prediction';
@@ -48,6 +59,8 @@ export type Command =
   | RemoveArrowCommand
   | AddAnnotationCommand
   | RemoveAnnotationCommand
+  | UpdateAnnotationCommand
+  | MoveAnnotationCommand
   | SetNmrPredictionCommand;
 
 export type SceneDiff =
@@ -63,5 +76,7 @@ export type SceneDiff =
   | { type: 'arrow-removed'; id: ArrowId }
   | { type: 'annotation-added'; id: AnnotationId }
   | { type: 'annotation-removed'; id: AnnotationId }
+  | { type: 'annotation-updated'; id: AnnotationId }
+  | { type: 'annotation-moved'; id: AnnotationId }
   | { type: 'nmr-prediction-set' }
   | { type: 'state-restored' };

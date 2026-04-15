@@ -82,6 +82,10 @@ export type Annotation = {
   x: number;
   y: number;
   richText: RichTextNode[];
+  fontSize?: number;
+  bold?: boolean;
+  italic?: boolean;
+  color?: string;
   anchorRef?: { kind: 'arrow'; refId: ArrowId; slot: 'above' | 'below' };
 };
 

@@ -1,4 +1,4 @@
-import type { Atom, AtomId, Bond, BondId } from './types.js';
+import type { Atom, AtomId, Bond, BondId, Annotation, AnnotationId, RichTextNode } from './types.js';
 
 export function createAtom(
   x: number,
@@ -28,5 +28,20 @@ export function createBond(
     toAtomId,
     order,
     style,
+  };
+}
+
+export function createAnnotation(
+  x: number,
+  y: number,
+  richText: RichTextNode[],
+  options?: { fontSize?: number; bold?: boolean; italic?: boolean; color?: string },
+): Annotation {
+  return {
+    id: crypto.randomUUID() as AnnotationId,
+    x,
+    y,
+    richText,
+    ...options,
   };
 }
