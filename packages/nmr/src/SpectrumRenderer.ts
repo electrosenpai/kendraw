@@ -384,15 +384,16 @@ export function renderSpectrum(
 
     // DEPT mode uses dept_class colors; normal uses confidence colors
     const deptClass = peak.dept_class ?? 'C';
-    const color = deptMode ? (DEPT_COLORS[deptClass] ?? '#888888') : (CONF_COLORS[peak.confidence] ?? '#888888');
+    const color = deptMode
+      ? (DEPT_COLORS[deptClass] ?? '#888888')
+      : (CONF_COLORS[peak.confidence] ?? '#888888');
     const isDeptInverted = deptMode && deptClass === 'CH2';
     const deptSign = isDeptInverted ? -1 : 1;
 
     let peakTopY: number;
     if (deptMode) {
       const peakIntensity =
-        (nH * lorentzian(peak.shift_ppm, peak.shift_ppm, LORENTZIAN_HALF_WIDTH_PPM)) /
-        maxIntensity;
+        (nH * lorentzian(peak.shift_ppm, peak.shift_ppm, LORENTZIAN_HALF_WIDTH_PPM)) / maxIntensity;
       peakTopY = baselineY - deptSign * peakIntensity * plotH * 0.42;
     } else {
       peakTopY =

@@ -1,4 +1,12 @@
-import type { Atom, AtomId, Bond, BondId, Annotation, AnnotationId, RichTextNode } from './types.js';
+import type {
+  Atom,
+  AtomId,
+  Bond,
+  BondId,
+  Annotation,
+  AnnotationId,
+  RichTextNode,
+} from './types.js';
 
 export function createAtom(
   x: number,

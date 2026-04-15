@@ -1,0 +1,31 @@
+{
+  "name": "chemcanvas-studio",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "nmr:benchmark": "vitest run src/chem/nmr.benchmark.test.ts"
+  },
+  "dependencies": {
+    "nmr-predictor": "^1.2.0",
+    "nmr-simulation": "^1.0.21",
+    "openchemlib": "^9.18.2",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "util": "^0.12.5"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "typescript": "^5.8.0",
+    "vite": "^7.0.0",
+    "vitest": "^4.1.4"
+  }
+}

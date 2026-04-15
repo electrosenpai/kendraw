@@ -1,0 +1,36 @@
+[
+  {
+    "name": "Lactate",
+    "nucleus": "1H",
+    "source": "demo",
+    "peaks": [
+      { "shift": 1.33, "multiplicity": "d", "relative_intensity": 3.0 },
+      { "shift": 4.11, "multiplicity": "q", "relative_intensity": 1.0 }
+    ]
+  },
+  {
+    "name": "Alanine",
+    "nucleus": "1H",
+    "source": "demo",
+    "peaks": [
+      { "shift": 1.48, "multiplicity": "d", "relative_intensity": 3.0 },
+      { "shift": 3.78, "multiplicity": "q", "relative_intensity": 1.0 }
+    ]
+  },
+  {
+    "name": "Acetate",
+    "nucleus": "1H",
+    "source": "demo",
+    "peaks": [{ "shift": 1.92, "multiplicity": "s", "relative_intensity": 3.0 }]
+  },
+  {
+    "name": "Lactate",
+    "nucleus": "13C",
+    "source": "demo",
+    "peaks": [
+      { "shift": 21.0, "relative_intensity": 1.0 },
+      { "shift": 69.4, "relative_intensity": 1.0 },
+      { "shift": 183.0, "relative_intensity": 1.0 }
+    ]
+  }
+]

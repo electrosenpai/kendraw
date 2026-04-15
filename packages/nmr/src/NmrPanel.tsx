@@ -936,7 +936,9 @@ export default function NmrPanel({
           }}
         >
           <span style={{ color: 'var(--kd-color-accent, #4dabf7)', fontWeight: 600 }}>
-            {nucleus === '13C' ? `C${selectedPeak.proton_group_id}` : `H${selectedPeak.proton_group_id}`}
+            {nucleus === '13C'
+              ? `C${selectedPeak.proton_group_id}`
+              : `H${selectedPeak.proton_group_id}`}
           </span>
           <span>
             {'\u03B4'} {selectedPeak.shift_ppm.toFixed(2)} ppm
@@ -1219,9 +1221,7 @@ export default function NmrPanel({
                       </td>
                     )}
                     {nucleus === '1H' && (
-                      <td style={{ padding: '2px 6px', textAlign: 'center' }}>
-                        {pk.multiplicity}
-                      </td>
+                      <td style={{ padding: '2px 6px', textAlign: 'center' }}>{pk.multiplicity}</td>
                     )}
                     {nucleus === '1H' && (
                       <td style={{ padding: '2px 6px', textAlign: 'right' }}>
@@ -1231,9 +1231,7 @@ export default function NmrPanel({
                       </td>
                     )}
                     {nucleus === '1H' && (
-                      <td style={{ padding: '2px 6px', textAlign: 'center' }}>
-                        {pk.integral}H
-                      </td>
+                      <td style={{ padding: '2px 6px', textAlign: 'center' }}>{pk.integral}H</td>
                     )}
                     <td style={{ padding: '2px 6px' }}>{formatEnvironment(pk.environment)}</td>
                     <td style={{ padding: '2px 6px', textAlign: 'center', color: confInfo.color }}>

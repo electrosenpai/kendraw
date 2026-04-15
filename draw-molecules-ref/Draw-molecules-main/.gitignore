@@ -1,0 +1,16 @@
+node_modules/
+dist/
+
+*.tsbuildinfo
+*.pyc
+__pycache__/
+.venv/
+venv/
+
+.agents/
+_bmad/
+_bmad-output/
+{output_folder}/
+
+.DS_Store
+Thumbs.db

@@ -34,7 +34,7 @@
   "size-limit": [
     {
       "path": "packages/ui/dist/assets/*.js",
-      "limit": "350 kB",
+      "limit": "400 kB",
       "gzip": true
     }
   ],

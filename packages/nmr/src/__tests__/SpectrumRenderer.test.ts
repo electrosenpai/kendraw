@@ -114,11 +114,7 @@ function createMockCtx(): CanvasRenderingContext2D {
   } as unknown as CanvasRenderingContext2D;
 }
 
-function makePeak(
-  shift: number,
-  dept: string | null,
-  idx: number,
-): NmrPrediction['peaks'][number] {
+function makePeak(shift: number, dept: string | null, idx: number): NmrPrediction['peaks'][number] {
   return {
     atom_index: idx,
     atom_indices: [idx],
@@ -139,20 +135,14 @@ describe('DEPT mode rendering', () => {
   const ethanol13C: NmrPrediction = {
     nucleus: '13C',
     solvent: 'CDCl3',
-    peaks: [
-      makePeak(15.0, 'CH3', 0),
-      makePeak(65.0, 'CH2', 1),
-    ],
+    peaks: [makePeak(15.0, 'CH3', 0), makePeak(65.0, 'CH2', 1)],
     metadata: { engine_version: '0.2.0', data_version: null, method: 'additive' },
   };
 
   const acetone13C: NmrPrediction = {
     nucleus: '13C',
     solvent: 'CDCl3',
-    peaks: [
-      makePeak(30.0, 'CH3', 0),
-      makePeak(205.0, 'C', 1),
-    ],
+    peaks: [makePeak(30.0, 'CH3', 0), makePeak(205.0, 'C', 1)],
     metadata: { engine_version: '0.2.0', data_version: null, method: 'additive' },
   };
 

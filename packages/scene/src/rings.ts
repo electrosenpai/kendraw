@@ -104,7 +104,12 @@ export interface FusedRingTemplate {
   name: string;
   category: 'aromatic' | 'heterocyclic' | 'biological';
   atoms: Array<{ dx: number; dy: number; element: number }>;
-  bonds: Array<{ from: number; to: number; order: 1 | 2 | 1.5; style: 'single' | 'double' | 'aromatic' }>;
+  bonds: Array<{
+    from: number;
+    to: number;
+    order: 1 | 2 | 1.5;
+    style: 'single' | 'double' | 'aromatic';
+  }>;
 }
 
 // Hex geometry constants (bond length = 50, matching default ring radius)
@@ -118,19 +123,31 @@ const A5 = B / (2 * Math.tan(Math.PI / 5)); // ≈ 34.41
 
 // Pentagon vertices when fused to right side of hex (sharing atoms at (0,-HH) and (0,HH))
 // Pentagon center at (A5, 0), vertices at angles 216°,288°,0°,72°,144° from center
-const P5_TOP_X = A5 + R5 * Math.cos((-72 * Math.PI) / 180);    // ≈ 47.55
-const P5_TOP_Y = R5 * Math.sin((-72 * Math.PI) / 180);          // ≈ -40.45
-const P5_MID_X = A5 + R5;                                        // ≈ 76.94
-const P5_BOT_X = P5_TOP_X;                                       // ≈ 47.55
-const P5_BOT_Y = -P5_TOP_Y;                                      // ≈ 40.45
+const P5_TOP_X = A5 + R5 * Math.cos((-72 * Math.PI) / 180); // ≈ 47.55
+const P5_TOP_Y = R5 * Math.sin((-72 * Math.PI) / 180); // ≈ -40.45
+const P5_MID_X = A5 + R5; // ≈ 76.94
+const P5_BOT_X = P5_TOP_X; // ≈ 47.55
+const P5_BOT_Y = -P5_TOP_Y; // ≈ 40.45
 
 // Helper: all aromatic bonds
-const aro = (from: number, to: number) =>
-  ({ from, to, order: 1.5 as const, style: 'aromatic' as const });
-const sng = (from: number, to: number) =>
-  ({ from, to, order: 1 as const, style: 'single' as const });
-const dbl = (from: number, to: number) =>
-  ({ from, to, order: 2 as const, style: 'double' as const });
+const aro = (from: number, to: number) => ({
+  from,
+  to,
+  order: 1.5 as const,
+  style: 'aromatic' as const,
+});
+const sng = (from: number, to: number) => ({
+  from,
+  to,
+  order: 1 as const,
+  style: 'single' as const,
+});
+const dbl = (from: number, to: number) => ({
+  from,
+  to,
+  order: 2 as const,
+  style: 'double' as const,
+});
 
 export const FUSED_RING_TEMPLATES: FusedRingTemplate[] = [
   // ══════════════════ AROMATIC FUSED ══════════════════
@@ -141,20 +158,29 @@ export const FUSED_RING_TEMPLATES: FusedRingTemplate[] = [
     // Two fused hexagons, symmetric about origin
     // Ring A centered at (-H, 0), Ring B at (H, 0)
     atoms: [
-      { dx: -H, dy: -B, element: 6 },     // 0: A-top
-      { dx: 0, dy: -HH, element: 6 },     // 1: shared top
-      { dx: 0, dy: HH, element: 6 },      // 2: shared bottom
-      { dx: -H, dy: B, element: 6 },      // 3: A-bottom
+      { dx: -H, dy: -B, element: 6 }, // 0: A-top
+      { dx: 0, dy: -HH, element: 6 }, // 1: shared top
+      { dx: 0, dy: HH, element: 6 }, // 2: shared bottom
+      { dx: -H, dy: B, element: 6 }, // 3: A-bottom
       { dx: -2 * H, dy: HH, element: 6 }, // 4: A-bottom-left
-      { dx: -2 * H, dy: -HH, element: 6 },// 5: A-top-left
-      { dx: H, dy: -B, element: 6 },      // 6: B-top
+      { dx: -2 * H, dy: -HH, element: 6 }, // 5: A-top-left
+      { dx: H, dy: -B, element: 6 }, // 6: B-top
       { dx: 2 * H, dy: -HH, element: 6 }, // 7: B-top-right
-      { dx: 2 * H, dy: HH, element: 6 },  // 8: B-bottom-right
-      { dx: H, dy: B, element: 6 },       // 9: B-bottom
+      { dx: 2 * H, dy: HH, element: 6 }, // 8: B-bottom-right
+      { dx: H, dy: B, element: 6 }, // 9: B-bottom
     ],
     bonds: [
-      aro(0, 1), aro(1, 2), aro(2, 3), aro(3, 4), aro(4, 5), aro(5, 0),
-      aro(1, 6), aro(6, 7), aro(7, 8), aro(8, 9), aro(9, 2),
+      aro(0, 1),
+      aro(1, 2),
+      aro(2, 3),
+      aro(3, 4),
+      aro(4, 5),
+      aro(5, 0),
+      aro(1, 6),
+      aro(6, 7),
+      aro(7, 8),
+      aro(8, 9),
+      aro(9, 2),
     ],
   },
   {
@@ -163,25 +189,38 @@ export const FUSED_RING_TEMPLATES: FusedRingTemplate[] = [
     category: 'aromatic',
     // Three linear fused hexagons: A at (-2H,0), B at (0,0), C at (2H,0)
     atoms: [
-      { dx: -2 * H, dy: -B, element: 6 },  // 0: A-top
-      { dx: -H, dy: -HH, element: 6 },     // 1: A/B shared top
-      { dx: -H, dy: HH, element: 6 },      // 2: A/B shared bottom
-      { dx: -2 * H, dy: B, element: 6 },    // 3: A-bottom
-      { dx: -3 * H, dy: HH, element: 6 },   // 4: A-far-left-bot
-      { dx: -3 * H, dy: -HH, element: 6 },  // 5: A-far-left-top
-      { dx: 0, dy: -B, element: 6 },        // 6: B-top
-      { dx: H, dy: -HH, element: 6 },       // 7: B/C shared top
-      { dx: H, dy: HH, element: 6 },        // 8: B/C shared bottom
-      { dx: 0, dy: B, element: 6 },         // 9: B-bottom
-      { dx: 2 * H, dy: -B, element: 6 },    // 10: C-top
-      { dx: 3 * H, dy: -HH, element: 6 },   // 11: C-far-right-top
-      { dx: 3 * H, dy: HH, element: 6 },    // 12: C-far-right-bot
-      { dx: 2 * H, dy: B, element: 6 },     // 13: C-bottom
+      { dx: -2 * H, dy: -B, element: 6 }, // 0: A-top
+      { dx: -H, dy: -HH, element: 6 }, // 1: A/B shared top
+      { dx: -H, dy: HH, element: 6 }, // 2: A/B shared bottom
+      { dx: -2 * H, dy: B, element: 6 }, // 3: A-bottom
+      { dx: -3 * H, dy: HH, element: 6 }, // 4: A-far-left-bot
+      { dx: -3 * H, dy: -HH, element: 6 }, // 5: A-far-left-top
+      { dx: 0, dy: -B, element: 6 }, // 6: B-top
+      { dx: H, dy: -HH, element: 6 }, // 7: B/C shared top
+      { dx: H, dy: HH, element: 6 }, // 8: B/C shared bottom
+      { dx: 0, dy: B, element: 6 }, // 9: B-bottom
+      { dx: 2 * H, dy: -B, element: 6 }, // 10: C-top
+      { dx: 3 * H, dy: -HH, element: 6 }, // 11: C-far-right-top
+      { dx: 3 * H, dy: HH, element: 6 }, // 12: C-far-right-bot
+      { dx: 2 * H, dy: B, element: 6 }, // 13: C-bottom
     ],
     bonds: [
-      aro(0, 1), aro(1, 2), aro(2, 3), aro(3, 4), aro(4, 5), aro(5, 0),
-      aro(1, 6), aro(6, 7), aro(7, 8), aro(8, 9), aro(9, 2),
-      aro(7, 10), aro(10, 11), aro(11, 12), aro(12, 13), aro(13, 8),
+      aro(0, 1),
+      aro(1, 2),
+      aro(2, 3),
+      aro(3, 4),
+      aro(4, 5),
+      aro(5, 0),
+      aro(1, 6),
+      aro(6, 7),
+      aro(7, 8),
+      aro(8, 9),
+      aro(9, 2),
+      aro(7, 10),
+      aro(10, 11),
+      aro(11, 12),
+      aro(12, 13),
+      aro(13, 8),
     ],
   },
   // ══════════════════ HETEROCYCLIC FUSED ══════════════════
@@ -192,19 +231,27 @@ export const FUSED_RING_TEMPLATES: FusedRingTemplate[] = [
     // Benzene (left) + pyrrole (right), N in 5-ring
     // Benzene centered at (-H, 0); pyrrole shares atoms 1,2
     atoms: [
-      { dx: -H, dy: -B, element: 6 },      // 0: benz-top
-      { dx: 0, dy: -HH, element: 6 },      // 1: shared top (7a)
-      { dx: 0, dy: HH, element: 6 },       // 2: shared bot (3a)
-      { dx: -H, dy: B, element: 6 },       // 3: benz-bot
-      { dx: -2 * H, dy: HH, element: 6 },  // 4: benz-bot-left
+      { dx: -H, dy: -B, element: 6 }, // 0: benz-top
+      { dx: 0, dy: -HH, element: 6 }, // 1: shared top (7a)
+      { dx: 0, dy: HH, element: 6 }, // 2: shared bot (3a)
+      { dx: -H, dy: B, element: 6 }, // 3: benz-bot
+      { dx: -2 * H, dy: HH, element: 6 }, // 4: benz-bot-left
       { dx: -2 * H, dy: -HH, element: 6 }, // 5: benz-top-left
-      { dx: P5_TOP_X, dy: P5_TOP_Y, element: 7 },  // 6: N (pos 1)
-      { dx: P5_MID_X, dy: 0, element: 6 },          // 7: C-2
-      { dx: P5_BOT_X, dy: P5_BOT_Y, element: 6 },  // 8: C-3
+      { dx: P5_TOP_X, dy: P5_TOP_Y, element: 7 }, // 6: N (pos 1)
+      { dx: P5_MID_X, dy: 0, element: 6 }, // 7: C-2
+      { dx: P5_BOT_X, dy: P5_BOT_Y, element: 6 }, // 8: C-3
     ],
     bonds: [
-      aro(0, 1), aro(1, 2), aro(2, 3), aro(3, 4), aro(4, 5), aro(5, 0),
-      sng(1, 6), dbl(6, 7), sng(7, 8), dbl(8, 2),
+      aro(0, 1),
+      aro(1, 2),
+      aro(2, 3),
+      aro(3, 4),
+      aro(4, 5),
+      aro(5, 0),
+      sng(1, 6),
+      dbl(6, 7),
+      sng(7, 8),
+      dbl(8, 2),
     ],
   },
   {
@@ -219,14 +266,23 @@ export const FUSED_RING_TEMPLATES: FusedRingTemplate[] = [
       { dx: -H, dy: B, element: 6 },
       { dx: -2 * H, dy: HH, element: 6 },
       { dx: -2 * H, dy: -HH, element: 6 },
-      { dx: H, dy: -B, element: 7 },       // N at position 1
+      { dx: H, dy: -B, element: 7 }, // N at position 1
       { dx: 2 * H, dy: -HH, element: 6 },
       { dx: 2 * H, dy: HH, element: 6 },
       { dx: H, dy: B, element: 6 },
     ],
     bonds: [
-      aro(0, 1), aro(1, 2), aro(2, 3), aro(3, 4), aro(4, 5), aro(5, 0),
-      aro(1, 6), aro(6, 7), aro(7, 8), aro(8, 9), aro(9, 2),
+      aro(0, 1),
+      aro(1, 2),
+      aro(2, 3),
+      aro(3, 4),
+      aro(4, 5),
+      aro(5, 0),
+      aro(1, 6),
+      aro(6, 7),
+      aro(7, 8),
+      aro(8, 9),
+      aro(9, 2),
     ],
   },
   {
@@ -242,13 +298,22 @@ export const FUSED_RING_TEMPLATES: FusedRingTemplate[] = [
       { dx: -2 * H, dy: HH, element: 6 },
       { dx: -2 * H, dy: -HH, element: 6 },
       { dx: H, dy: -B, element: 6 },
-      { dx: 2 * H, dy: -HH, element: 7 },  // N at position 2
+      { dx: 2 * H, dy: -HH, element: 7 }, // N at position 2
       { dx: 2 * H, dy: HH, element: 6 },
       { dx: H, dy: B, element: 6 },
     ],
     bonds: [
-      aro(0, 1), aro(1, 2), aro(2, 3), aro(3, 4), aro(4, 5), aro(5, 0),
-      aro(1, 6), aro(6, 7), aro(7, 8), aro(8, 9), aro(9, 2),
+      aro(0, 1),
+      aro(1, 2),
+      aro(2, 3),
+      aro(3, 4),
+      aro(4, 5),
+      aro(5, 0),
+      aro(1, 6),
+      aro(6, 7),
+      aro(7, 8),
+      aro(8, 9),
+      aro(9, 2),
     ],
   },
   {
@@ -263,13 +328,21 @@ export const FUSED_RING_TEMPLATES: FusedRingTemplate[] = [
       { dx: -H, dy: B, element: 6 },
       { dx: -2 * H, dy: HH, element: 6 },
       { dx: -2 * H, dy: -HH, element: 6 },
-      { dx: P5_TOP_X, dy: P5_TOP_Y, element: 7 },  // N-1
-      { dx: P5_MID_X, dy: 0, element: 6 },          // C-2
-      { dx: P5_BOT_X, dy: P5_BOT_Y, element: 7 },  // N-3
+      { dx: P5_TOP_X, dy: P5_TOP_Y, element: 7 }, // N-1
+      { dx: P5_MID_X, dy: 0, element: 6 }, // C-2
+      { dx: P5_BOT_X, dy: P5_BOT_Y, element: 7 }, // N-3
     ],
     bonds: [
-      aro(0, 1), aro(1, 2), aro(2, 3), aro(3, 4), aro(4, 5), aro(5, 0),
-      sng(1, 6), dbl(6, 7), sng(7, 8), dbl(8, 2),
+      aro(0, 1),
+      aro(1, 2),
+      aro(2, 3),
+      aro(3, 4),
+      aro(4, 5),
+      aro(5, 0),
+      sng(1, 6),
+      dbl(6, 7),
+      sng(7, 8),
+      dbl(8, 2),
     ],
   },
   {
@@ -284,13 +357,21 @@ export const FUSED_RING_TEMPLATES: FusedRingTemplate[] = [
       { dx: -H, dy: B, element: 6 },
       { dx: -2 * H, dy: HH, element: 6 },
       { dx: -2 * H, dy: -HH, element: 6 },
-      { dx: P5_TOP_X, dy: P5_TOP_Y, element: 8 },  // O
+      { dx: P5_TOP_X, dy: P5_TOP_Y, element: 8 }, // O
       { dx: P5_MID_X, dy: 0, element: 6 },
       { dx: P5_BOT_X, dy: P5_BOT_Y, element: 6 },
     ],
     bonds: [
-      aro(0, 1), aro(1, 2), aro(2, 3), aro(3, 4), aro(4, 5), aro(5, 0),
-      sng(1, 6), dbl(6, 7), sng(7, 8), dbl(8, 2),
+      aro(0, 1),
+      aro(1, 2),
+      aro(2, 3),
+      aro(3, 4),
+      aro(4, 5),
+      aro(5, 0),
+      sng(1, 6),
+      dbl(6, 7),
+      sng(7, 8),
+      dbl(8, 2),
     ],
   },
   {
@@ -310,8 +391,16 @@ export const FUSED_RING_TEMPLATES: FusedRingTemplate[] = [
       { dx: P5_BOT_X, dy: P5_BOT_Y, element: 6 },
     ],
     bonds: [
-      aro(0, 1), aro(1, 2), aro(2, 3), aro(3, 4), aro(4, 5), aro(5, 0),
-      sng(1, 6), dbl(6, 7), sng(7, 8), dbl(8, 2),
+      aro(0, 1),
+      aro(1, 2),
+      aro(2, 3),
+      aro(3, 4),
+      aro(4, 5),
+      aro(5, 0),
+      sng(1, 6),
+      dbl(6, 7),
+      sng(7, 8),
+      dbl(8, 2),
     ],
   },
   // ══════════════════ BIOLOGICAL ══════════════════
@@ -321,20 +410,28 @@ export const FUSED_RING_TEMPLATES: FusedRingTemplate[] = [
     category: 'biological',
     // Pyrimidine (6-ring, 2N) + imidazole (5-ring, 2N)
     atoms: [
-      { dx: -H, dy: -B, element: 7 },      // 0: N-1
-      { dx: 0, dy: -HH, element: 6 },      // 1: C-2 (shared)
-      { dx: 0, dy: HH, element: 6 },       // 2: C-5 (shared)
-      { dx: -H, dy: B, element: 6 },       // 3: C-6
-      { dx: -2 * H, dy: HH, element: 7 },  // 4: N-3 (was C → N)
+      { dx: -H, dy: -B, element: 7 }, // 0: N-1
+      { dx: 0, dy: -HH, element: 6 }, // 1: C-2 (shared)
+      { dx: 0, dy: HH, element: 6 }, // 2: C-5 (shared)
+      { dx: -H, dy: B, element: 6 }, // 3: C-6
+      { dx: -2 * H, dy: HH, element: 7 }, // 4: N-3 (was C → N)
       { dx: -2 * H, dy: -HH, element: 6 }, // 5: C-4 (wait numbering...)
       // Imidazole ring
-      { dx: P5_TOP_X, dy: P5_TOP_Y, element: 7 },  // 6: N-7
-      { dx: P5_MID_X, dy: 0, element: 6 },          // 7: C-8
-      { dx: P5_BOT_X, dy: P5_BOT_Y, element: 7 },  // 8: N-9
+      { dx: P5_TOP_X, dy: P5_TOP_Y, element: 7 }, // 6: N-7
+      { dx: P5_MID_X, dy: 0, element: 6 }, // 7: C-8
+      { dx: P5_BOT_X, dy: P5_BOT_Y, element: 7 }, // 8: N-9
     ],
     bonds: [
-      aro(0, 1), aro(1, 2), aro(2, 3), aro(3, 4), aro(4, 5), aro(5, 0),
-      sng(1, 6), dbl(6, 7), sng(7, 8), dbl(8, 2),
+      aro(0, 1),
+      aro(1, 2),
+      aro(2, 3),
+      aro(3, 4),
+      aro(4, 5),
+      aro(5, 0),
+      sng(1, 6),
+      dbl(6, 7),
+      sng(7, 8),
+      dbl(8, 2),
     ],
   },
   {
@@ -345,36 +442,52 @@ export const FUSED_RING_TEMPLATES: FusedRingTemplate[] = [
     // A at (-2H,0), B at (0,0), C at (2H,0), D fused to right of C
     atoms: [
       // Ring A
-      { dx: -2 * H, dy: -B, element: 6 },   // 0
-      { dx: -H, dy: -HH, element: 6 },      // 1: A/B shared
-      { dx: -H, dy: HH, element: 6 },       // 2: A/B shared
-      { dx: -2 * H, dy: B, element: 6 },    // 3
-      { dx: -3 * H, dy: HH, element: 6 },   // 4
-      { dx: -3 * H, dy: -HH, element: 6 },  // 5
+      { dx: -2 * H, dy: -B, element: 6 }, // 0
+      { dx: -H, dy: -HH, element: 6 }, // 1: A/B shared
+      { dx: -H, dy: HH, element: 6 }, // 2: A/B shared
+      { dx: -2 * H, dy: B, element: 6 }, // 3
+      { dx: -3 * H, dy: HH, element: 6 }, // 4
+      { dx: -3 * H, dy: -HH, element: 6 }, // 5
       // Ring B (shares 1,2)
-      { dx: 0, dy: -B, element: 6 },        // 6
-      { dx: H, dy: -HH, element: 6 },       // 7: B/C shared
-      { dx: H, dy: HH, element: 6 },        // 8: B/C shared
-      { dx: 0, dy: B, element: 6 },         // 9
+      { dx: 0, dy: -B, element: 6 }, // 6
+      { dx: H, dy: -HH, element: 6 }, // 7: B/C shared
+      { dx: H, dy: HH, element: 6 }, // 8: B/C shared
+      { dx: 0, dy: B, element: 6 }, // 9
       // Ring C (shares 7,8)
-      { dx: 2 * H, dy: -B, element: 6 },    // 10
-      { dx: 3 * H, dy: -HH, element: 6 },   // 11: C/D shared
-      { dx: 3 * H, dy: HH, element: 6 },    // 12: C/D shared
-      { dx: 2 * H, dy: B, element: 6 },     // 13
+      { dx: 2 * H, dy: -B, element: 6 }, // 10
+      { dx: 3 * H, dy: -HH, element: 6 }, // 11: C/D shared
+      { dx: 3 * H, dy: HH, element: 6 }, // 12: C/D shared
+      { dx: 2 * H, dy: B, element: 6 }, // 13
       // Ring D (5-ring, shares 11,12)
-      { dx: 3 * H + P5_TOP_X, dy: P5_TOP_Y, element: 6 },  // 14
-      { dx: 3 * H + P5_MID_X, dy: 0, element: 6 },         // 15
-      { dx: 3 * H + P5_BOT_X, dy: P5_BOT_Y, element: 6 },  // 16
+      { dx: 3 * H + P5_TOP_X, dy: P5_TOP_Y, element: 6 }, // 14
+      { dx: 3 * H + P5_MID_X, dy: 0, element: 6 }, // 15
+      { dx: 3 * H + P5_BOT_X, dy: P5_BOT_Y, element: 6 }, // 16
     ],
     bonds: [
       // Ring A
-      sng(0, 1), sng(1, 2), sng(2, 3), sng(3, 4), sng(4, 5), sng(5, 0),
+      sng(0, 1),
+      sng(1, 2),
+      sng(2, 3),
+      sng(3, 4),
+      sng(4, 5),
+      sng(5, 0),
       // Ring B
-      sng(1, 6), sng(6, 7), sng(7, 8), sng(8, 9), sng(9, 2),
+      sng(1, 6),
+      sng(6, 7),
+      sng(7, 8),
+      sng(8, 9),
+      sng(9, 2),
       // Ring C
-      sng(7, 10), sng(10, 11), sng(11, 12), sng(12, 13), sng(13, 8),
+      sng(7, 10),
+      sng(10, 11),
+      sng(11, 12),
+      sng(12, 13),
+      sng(13, 8),
       // Ring D
-      sng(11, 14), sng(14, 15), sng(15, 16), sng(16, 12),
+      sng(11, 14),
+      sng(14, 15),
+      sng(15, 16),
+      sng(16, 12),
     ],
   },
 ];

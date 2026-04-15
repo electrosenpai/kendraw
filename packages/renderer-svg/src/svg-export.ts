@@ -271,9 +271,7 @@ function renderAnnotationSVG(ann: Annotation): string {
     let dy = '0';
     if (isSubscript) dy = `${fontSize * 0.3}`;
     if (isSuperscript) dy = `${-fontSize * 0.3}`;
-    parts.push(
-      `<tspan font-size="${size}" dy="${dy}">${escapeXml(seg.text)}</tspan>`,
-    );
+    parts.push(`<tspan font-size="${size}" dy="${dy}">${escapeXml(seg.text)}</tspan>`);
     if (isSubscript || isSuperscript) {
       parts.push(`<tspan dy="${isSubscript ? -fontSize * 0.3 : fontSize * 0.3}"></tspan>`);
     }

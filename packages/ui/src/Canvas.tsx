@@ -870,7 +870,12 @@ export function Canvas({
         const existingAnn = hitTestAnnotation(x, y);
         if (existingAnn) {
           const plainText = existingAnn.richText.map((s) => s.text).join('');
-          setTextEditing({ x: existingAnn.x, y: existingAnn.y, text: plainText, annotationId: existingAnn.id });
+          setTextEditing({
+            x: existingAnn.x,
+            y: existingAnn.y,
+            text: plainText,
+            annotationId: existingAnn.id,
+          });
         } else {
           setTextEditing({ x, y, text: '' });
         }
@@ -1332,10 +1337,17 @@ export function Canvas({
             ref={textInputRef}
             autoFocus
             value={textEditing.text}
-            onChange={(e) => setTextEditing((s) => s ? { ...s, text: e.target.value } : null)}
+            onChange={(e) => setTextEditing((s) => (s ? { ...s, text: e.target.value } : null))}
             onKeyDown={(e) => {
-              if (e.key === 'Escape') { cancelText(); e.stopPropagation(); }
-              if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); confirmText(); e.stopPropagation(); }
+              if (e.key === 'Escape') {
+                cancelText();
+                e.stopPropagation();
+              }
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                confirmText();
+                e.stopPropagation();
+              }
             }}
             onBlur={confirmText}
             placeholder="Type text..."

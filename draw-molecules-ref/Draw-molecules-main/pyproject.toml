@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nmr-mixture-analyzer"
+version = "0.1.0"
+description = "Python toolkit for metabolomic mixture analysis from 1H and 13C NMR spectra."
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [{name = "OpenAI Codex"}]
+dependencies = [
+  "numpy>=1.24",
+  "scipy>=1.10",
+  "matplotlib>=3.7",
+  "plotly>=5.20",
+  "pandas>=2.0",
+  "scikit-learn>=1.3",
+  "nmrglue>=0.10",
+  "lmfit>=1.2",
+]
+
+[project.scripts]
+nmrmix = "nmr_mix_analyzer.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
