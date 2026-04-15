@@ -5,6 +5,12 @@ export interface MolecularProperties {
   canonical_smiles: string;
   inchi: string;
   inchi_key: string;
+  logp: number | null;
+  tpsa: number | null;
+  hbd: number | null;
+  hba: number | null;
+  rotatable_bonds: number | null;
+  lipinski_pass: boolean | null;
 }
 
 export interface ConversionResult {

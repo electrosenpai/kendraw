@@ -16,6 +16,13 @@ class MolecularProperties(BaseModel):
     canonical_smiles: str
     inchi: str
     inchi_key: str
+    # Molecular descriptors (drug design)
+    logp: float | None = None
+    tpsa: float | None = None
+    hbd: int | None = None  # H-bond donors
+    hba: int | None = None  # H-bond acceptors
+    rotatable_bonds: int | None = None
+    lipinski_pass: bool | None = None
 
 
 class ComputeService:
@@ -55,16 +62,25 @@ class ComputeService:
 
     def _compute_rdkit(self, smiles: str) -> MolecularProperties:
         from rdkit import Chem
-        from rdkit.Chem import Descriptors, inchi
+        from rdkit.Chem import Descriptors, Lipinski, inchi, rdMolDescriptors
 
         mol = Chem.MolFromSmiles(smiles)
         if mol is None:
             msg = f"Invalid SMILES: {smiles}"
             raise ValueError(msg)
 
+        mw = round(Descriptors.MolWt(mol), 3)  # type: ignore[attr-defined]
+        logp = round(Descriptors.MolLogP(mol), 3)  # type: ignore[attr-defined]
+        tpsa = round(rdMolDescriptors.CalcTPSA(mol), 2)
+        hbd = Lipinski.NumHDonors(mol)  # type: ignore[attr-defined]
+        hba = Lipinski.NumHAcceptors(mol)  # type: ignore[attr-defined]
+        rotatable = Lipinski.NumRotatableBonds(mol)  # type: ignore[attr-defined]
+        # Lipinski Rule of 5: MW <= 500, LogP <= 5, HBD <= 5, HBA <= 10
+        lipinski = mw <= 500 and logp <= 5 and hbd <= 5 and hba <= 10
+
         return MolecularProperties(
-            formula=Chem.rdMolDescriptors.CalcMolFormula(mol),
-            molecular_weight=round(Descriptors.MolWt(mol), 3),  # type: ignore[attr-defined]
+            formula=rdMolDescriptors.CalcMolFormula(mol),
+            molecular_weight=mw,
             exact_mass=round(Descriptors.ExactMolWt(mol), 6),  # type: ignore[attr-defined]
             canonical_smiles=Chem.MolToSmiles(mol),
             inchi=inchi.MolToInchi(mol) or "",  # type: ignore[no-untyped-call]
@@ -72,6 +88,12 @@ class ComputeService:
                 inchi.MolToInchi(mol) or ""  # type: ignore[no-untyped-call]
             )
             or "",
+            logp=logp,
+            tpsa=tpsa,
+            hbd=hbd,
+            hba=hba,
+            rotatable_bonds=rotatable,
+            lipinski_pass=lipinski,
         )
 
     def _compute_rdkit_mol(self, mol_block: str) -> MolecularProperties:

@@ -1,10 +1,23 @@
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, useEffect, useState } from 'react';
 import type { Document } from '@kendraw/scene';
 import { validateValence } from '@kendraw/scene';
 import { computeProperties } from '@kendraw/chem';
 import { exportToSVG, injectSvgMetadata } from '@kendraw/renderer-svg';
 import { writeMolV2000 } from '@kendraw/io';
 import { jsPDF } from 'jspdf';
+
+interface BackendProps {
+  exact_mass: number;
+  canonical_smiles: string;
+  inchi: string;
+  inchi_key: string;
+  logp: number | null;
+  tpsa: number | null;
+  hbd: number | null;
+  hba: number | null;
+  rotatable_bonds: number | null;
+  lipinski_pass: boolean | null;
+}
 
 interface PropertyPanelProps {
   doc: Document;
@@ -22,6 +35,44 @@ export function PropertyPanel({ doc, visible }: PropertyPanelProps) {
   const valenceIssueCount = useMemo(() => {
     if (!page) return 0;
     return validateValence(page).length;
+  }, [page]);
+
+  // Fetch backend-computed properties (LogP, tPSA, InChI, exact mass, etc.)
+  const [backendProps, setBackendProps] = useState<BackendProps | null>(null);
+  useEffect(() => {
+    if (!page || Object.keys(page.atoms).length === 0) {
+      setBackendProps(null);
+      return;
+    }
+    const atoms = Object.values(page.atoms);
+    const bonds = Object.values(page.bonds);
+    const mol = writeMolV2000(atoms, bonds);
+    let cancelled = false;
+    const baseUrl = '/api/v1';
+    fetch(`${baseUrl}/convert/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ input_data: mol, input_format: 'mol', output_format: 'smiles' }),
+    })
+      .then((r) => r.json())
+      .then((res: { success: boolean; output: string }) => {
+        if (cancelled || !res.success) return;
+        return fetch(`${baseUrl}/compute/properties/smiles`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ smiles: res.output }),
+        });
+      })
+      .then((r) => r?.json())
+      .then((props: BackendProps | undefined) => {
+        if (!cancelled && props) setBackendProps(props);
+      })
+      .catch(() => {
+        /* backend unavailable — silently skip */
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [page]);
 
   const handleExportSVG = useCallback(() => {
@@ -148,6 +199,57 @@ export function PropertyPanel({ doc, visible }: PropertyPanelProps) {
           </div>
         )}
       </div>
+
+      {backendProps && (
+        <>
+          <SectionTitle style={{ marginTop: 12 }}>Descriptors</SectionTitle>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--kd-space-xs)' }}>
+            <PropertyRow
+              label="Exact Mass"
+              value={backendProps.exact_mass > 0 ? backendProps.exact_mass.toFixed(4) : '—'}
+            />
+            <PropertyRow
+              label="LogP"
+              value={backendProps.logp != null ? backendProps.logp.toFixed(2) : '—'}
+            />
+            <PropertyRow
+              label="tPSA"
+              value={backendProps.tpsa != null ? `${backendProps.tpsa.toFixed(1)} A²` : '—'}
+            />
+            <PropertyRow
+              label="HBD"
+              value={backendProps.hbd != null ? String(backendProps.hbd) : '—'}
+            />
+            <PropertyRow
+              label="HBA"
+              value={backendProps.hba != null ? String(backendProps.hba) : '—'}
+            />
+            <PropertyRow
+              label="Rot. Bonds"
+              value={
+                backendProps.rotatable_bonds != null ? String(backendProps.rotatable_bonds) : '—'
+              }
+            />
+            <PropertyRow
+              label="Lipinski"
+              value={
+                backendProps.lipinski_pass != null
+                  ? backendProps.lipinski_pass
+                    ? 'PASS'
+                    : 'FAIL'
+                  : '—'
+              }
+            />
+          </div>
+
+          <SectionTitle style={{ marginTop: 12 }}>Identifiers</SectionTitle>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--kd-space-xs)' }}>
+            <PropertyRow label="SMILES" value={backendProps.canonical_smiles || '—'} copyable />
+            <PropertyRow label="InChI" value={backendProps.inchi || '—'} copyable />
+            <PropertyRow label="InChIKey" value={backendProps.inchi_key || '—'} copyable />
+          </div>
+        </>
+      )}
 
       <SectionTitle style={{ marginTop: 12 }}>Export</SectionTitle>
       <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
