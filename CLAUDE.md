@@ -13,3 +13,7 @@ Frontend (from repo root):
 3. `pnpm test` (zero failures)
 
 Backend (from `backend/`): 4. `cd backend && uv run ruff check .` (zero errors) 5. `cd backend && uv run ruff format --check .` (zero reformats) 6. `cd backend && uv run mypy kendraw_api/ kendraw_chem/ kendraw_settings/ kendraw_observability/` (zero errors) 7. `cd backend && uv run pytest -v` (zero failures)
+
+## Pre-commit hooks
+
+Husky pre-commit hooks automatically run lint, typecheck, and tests before every commit. If any check fails, the commit is BLOCKED. To bypass in emergencies (not recommended): `git commit --no-verify`

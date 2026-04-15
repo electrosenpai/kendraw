@@ -40,12 +40,15 @@ describe('parseMolV2000', () => {
     expect(result.bonds[0]?.order).toBe(2);
   });
 
-  it('parses atom coordinates (scaled to pixels)', () => {
+  it('parses atom coordinates (scaled to pixels, Y inverted)', () => {
     const result = parseMolV2000(WATER_MOL);
     expect(result.atoms[0]?.x).toBeCloseTo(0);
     expect(result.atoms[0]?.y).toBeCloseTo(0);
     // 0.9572 angstrom * 40 scale = 38.288 px
     expect(result.atoms[1]?.x).toBeCloseTo(38.288, 0);
+    // Y is negated: MOL Y-up to canvas Y-down
+    // Atom 2: MOL y=0.9266 -> canvas y=-0.9266*40 = -37.064
+    expect(result.atoms[2]?.y).toBeCloseTo(-37.064, 0);
   });
 
   it('returns empty for empty string', () => {

@@ -39,7 +39,8 @@ export function parseMolV2000(molBlock: string): ParsedMol {
     if (!line) continue;
 
     const x = parseFloat(line.substring(0, 10).trim()) * SCALE;
-    const y = parseFloat(line.substring(10, 20).trim()) * SCALE;
+    // MOL files use Y-up (chemistry convention); canvas uses Y-down — negate
+    const y = -parseFloat(line.substring(10, 20).trim()) * SCALE;
     const symbol = line.substring(31, 34).trim();
     const element = getElementBySymbol(symbol)?.z ?? 6;
     const chargeCode = line.length >= 39 ? parseInt(line.substring(36, 39).trim(), 10) || 0 : 0;
@@ -111,7 +112,8 @@ export function writeMolV2000(atoms: Atom[], bonds: Bond[]): string {
   // Atom block
   for (const atom of atoms) {
     const x = (atom.x / SCALE).toFixed(4).padStart(10);
-    const y = (atom.y / SCALE).toFixed(4).padStart(10);
+    // Negate Y back to MOL convention (Y-up)
+    const y = (-atom.y / SCALE).toFixed(4).padStart(10);
     const z = '    0.0000';
     const sym = getSymbol(atom.element).padEnd(3);
     const chg = atom.charge === 0 ? 0 : 4 - atom.charge;

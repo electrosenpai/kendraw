@@ -34,12 +34,47 @@ export function ImportDialog({ store, onClose }: ImportDialogProps) {
         } else if (ext === 'mol' || ext === 'sdf' || content.includes('V2000')) {
           // SDF can have multiple molecules separated by $$$$
           const blocks = content.split('$$$$').filter((b) => b.trim());
+          let molGroupOffsetX = 0;
           for (const block of blocks) {
             const result = parseMolV2000(block);
-            for (const a of result.atoms) store.dispatch({ type: 'add-atom', atom: a });
+            if (result.atoms.length === 0) continue;
+
+            // Center molecule on canvas viewport
+            let cx = 0;
+            let cy = 0;
+            for (const a of result.atoms) {
+              cx += a.x;
+              cy += a.y;
+            }
+            cx /= result.atoms.length;
+            cy /= result.atoms.length;
+
+            // Find free space to the right of existing atoms
+            const page = store.getState().pages[store.getState().activePageIndex];
+            let baseX = 400 + molGroupOffsetX;
+            if (page) {
+              const existing = Object.values(page.atoms);
+              if (existing.length > 0) {
+                let maxX = -Infinity;
+                for (const ea of existing) {
+                  if (ea.x > maxX) maxX = ea.x;
+                }
+                baseX = Math.max(baseX, maxX + 80);
+              }
+            }
+            const offsetX = baseX - cx;
+            const offsetY = 300 - cy;
+
+            for (const a of result.atoms) {
+              store.dispatch({
+                type: 'add-atom',
+                atom: { ...a, x: a.x + offsetX, y: a.y + offsetY },
+              });
+            }
             for (const b of result.bonds) store.dispatch({ type: 'add-bond', bond: b });
             atoms += result.atoms.length;
             bonds += result.bonds.length;
+            molGroupOffsetX += 200; // space out multiple molecules from SDF
           }
         } else if (ext === 'smi' || ext === 'smiles') {
           // One SMILES per line

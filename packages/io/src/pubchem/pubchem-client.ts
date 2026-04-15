@@ -43,7 +43,7 @@ export async function autocomplete(query: string): Promise<string[]> {
 }
 
 export async function getSDF(cid: number): Promise<string> {
-  const url = `${BASE}/compound/cid/${cid}/SDF`;
+  const url = `${BASE}/compound/cid/${cid}/SDF?record_type=2d`;
   const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
   if (!res.ok) throw new Error(`PubChem SDF fetch failed: ${res.status}`);
   return res.text();

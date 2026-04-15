@@ -1,0 +1,29 @@
+#!/bin/sh
+
+echo "Pre-commit checks..."
+
+# Frontend
+echo "-> ESLint..."
+pnpm lint || { echo "Frontend lint failed"; exit 1; }
+
+echo "-> TypeScript..."
+pnpm typecheck || { echo "TypeScript failed"; exit 1; }
+
+echo "-> Frontend tests..."
+pnpm test || { echo "Frontend tests failed"; exit 1; }
+
+# Backend
+echo "-> Ruff check..."
+cd backend && uv run ruff check . || { echo "Ruff check failed"; exit 1; }
+
+echo "-> Ruff format..."
+uv run ruff format --check . || { echo "Ruff format failed"; exit 1; }
+
+echo "-> mypy..."
+uv run mypy kendraw_api/ kendraw_chem/ kendraw_settings/ kendraw_observability/ || { echo "mypy failed"; exit 1; }
+
+echo "-> Backend tests..."
+uv run pytest -v || { echo "Backend tests failed"; exit 1; }
+
+cd ..
+echo "All checks passed -- committing."
