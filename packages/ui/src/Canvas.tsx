@@ -82,6 +82,7 @@ interface CanvasProps {
   onNmrToggle?: (() => void) | undefined;
   highlightedAtomIds?: Set<AtomId> | undefined;
   onHighlightAtoms?: ((ids: Set<AtomId>) => void) | undefined;
+  onSelectionChange?: ((atomIds: AtomId[]) => void) | undefined;
 }
 
 export function Canvas({
@@ -93,6 +94,7 @@ export function Canvas({
   onNmrToggle,
   highlightedAtomIds,
   onHighlightAtoms,
+  onSelectionChange,
 }: CanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<CanvasRenderer | null>(null);
@@ -246,6 +248,11 @@ export function Canvas({
   useEffect(() => {
     rendererRef.current?.setSelectedAtoms(new Set(selection.atomIds));
   }, [selection]);
+
+  // Notify parent of selection changes (for NMR scope, etc.)
+  useEffect(() => {
+    onSelectionChange?.(selection.atomIds);
+  }, [selection.atomIds, onSelectionChange]);
 
   // Sync NMR highlights to renderer
   useEffect(() => {

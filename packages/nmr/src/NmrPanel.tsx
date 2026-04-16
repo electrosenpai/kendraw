@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import type { SceneStore, NmrPrediction, Page, AtomId } from '@kendraw/scene';
+import type { SceneStore, NmrPrediction, AtomId } from '@kendraw/scene';
 import { KendrawApiClient } from '@kendraw/api-client';
 import { writeMolV2000 } from '@kendraw/io';
+import { computeScope } from './nmr-scope.js';
 import {
   renderSpectrum,
   hitTestPeaks,
@@ -29,22 +30,17 @@ interface NmrPanelProps {
   onHeightChange: (h: number) => void;
   highlightedAtomIds?: Set<AtomId>;
   onHighlightAtoms?: (ids: Set<AtomId>) => void;
+  /**
+   * Atom IDs currently selected on the canvas.
+   * When non-empty AND connected, NMR prediction is scoped to this subset.
+   * When empty, prediction runs on the full canvas (default behavior).
+   */
+  selectedAtomIds?: AtomId[];
 }
 
 const apiClient = new KendrawApiClient('/api');
 const MIN_HEIGHT = 120;
 const MAX_HEIGHT_RATIO = 0.6;
-
-function getMolBlock(page: Page): string | null {
-  const atoms = Object.values(page.atoms);
-  const bonds = Object.values(page.bonds);
-  if (atoms.length === 0) return null;
-  try {
-    return writeMolV2000(atoms, bonds);
-  } catch {
-    return null;
-  }
-}
 
 function formatMultiplicity(mult: string, coupling: number[]): string {
   const LABELS: Record<string, string> = {
@@ -250,6 +246,7 @@ export default function NmrPanel({
   onHeightChange,
   highlightedAtomIds,
   onHighlightAtoms,
+  selectedAtomIds,
 }: NmrPanelProps) {
   const [nucleus, setNucleus] = useState<Nucleus>('1H');
   const [solvent, setSolvent] = useState<SolventId>('CDCl3');
@@ -274,12 +271,17 @@ export default function NmrPanel({
   const predictAbortRef = useRef<AbortController | null>(null);
 
   // Map mol block atom index → scene AtomId (mol block order = Object.values(page.atoms) order)
+  // Atom IDs in the same order the MOL block was serialized. When a connected
+  // selection is active, this reflects the filtered subset — so `parent_indices`
+  // returned by the backend correctly map back to scene atom IDs.
   const getAtomIds = useCallback((): AtomId[] => {
     const doc = store.getState();
     const page = doc.pages[doc.activePageIndex];
     if (!page) return [];
-    return Object.keys(page.atoms) as AtomId[];
-  }, [store]);
+    const scope = computeScope(page, selectedAtomIds);
+    if (scope.kind === 'disconnected') return [];
+    return scope.atomIds;
+  }, [store, selectedAtomIds]);
 
   // Peak click → highlight atoms on the molecule
   const handlePeakHighlight = useCallback(
@@ -349,10 +351,25 @@ export default function NmrPanel({
     const page = doc.pages[doc.activePageIndex];
     if (!page) return;
 
-    const molBlock = getMolBlock(page);
-    if (!molBlock) {
+    // Determine scope: selection-subset vs full canvas vs disconnected warning.
+    const scope = computeScope(page, selectedAtomIds);
+    if (scope.kind === 'disconnected') {
+      setPrediction(null);
+      setError('Selection is not a connected molecule — NMR prediction skipped');
+      return;
+    }
+    if (scope.atoms.length === 0) {
       setPrediction(null);
       setError(null);
+      return;
+    }
+
+    let molBlock: string;
+    try {
+      molBlock = writeMolV2000(scope.atoms, scope.bonds);
+    } catch {
+      setPrediction(null);
+      setError('Failed to serialize molecule for NMR prediction');
       return;
     }
 
@@ -378,7 +395,7 @@ export default function NmrPanel({
     } finally {
       if (!controller.signal.aborted) setLoading(false);
     }
-  }, [store, nucleus, solvent]);
+  }, [store, nucleus, solvent, selectedAtomIds]);
 
   // Predict on mount and when solvent changes
   useEffect(() => {
@@ -667,6 +684,29 @@ export default function NmrPanel({
                 ...
               </span>
             )}
+          </span>
+
+          {/* Scope indicator: selection subset vs full canvas */}
+          <span
+            data-testid="nmr-scope-badge"
+            title={
+              selectedAtomIds && selectedAtomIds.length > 0
+                ? `Predicting on selection (${selectedAtomIds.length} atom${selectedAtomIds.length === 1 ? '' : 's'})`
+                : 'Predicting on full canvas'
+            }
+            style={{
+              fontSize: 9,
+              fontFamily: 'var(--kd-font-mono, monospace)',
+              color: 'var(--kd-color-text-secondary, #a0a0a0)',
+              padding: '1px 5px',
+              borderRadius: 'var(--kd-radius-sm, 4px)',
+              background: 'var(--kd-color-bg-secondary, rgba(255,255,255,0.04))',
+              letterSpacing: '0.04em',
+            }}
+          >
+            {selectedAtomIds && selectedAtomIds.length > 0
+              ? `selection (${selectedAtomIds.length})`
+              : 'full canvas'}
           </span>
 
           {/* Nucleus tabs */}

@@ -47,6 +47,7 @@ export function App() {
     return saved ? parseInt(saved, 10) : Math.round(window.innerHeight * 0.33);
   });
   const [highlightedAtomIds, setHighlightedAtomIds] = useState<Set<AtomId>>(new Set());
+  const [selectedAtomIds, setSelectedAtomIds] = useState<AtomId[]>([]);
 
   // Persist widths
   useEffect(() => {
@@ -189,6 +190,7 @@ export function App() {
           onNmrToggle={() => setNmrOpen((v) => !v)}
           highlightedAtomIds={highlightedAtomIds}
           onHighlightAtoms={setHighlightedAtomIds}
+          onSelectionChange={setSelectedAtomIds}
         />
       ) : (
         <>
@@ -235,6 +237,7 @@ export function App() {
               onHeightChange={setNmrHeight}
               highlightedAtomIds={highlightedAtomIds}
               onHighlightAtoms={setHighlightedAtomIds}
+              selectedAtomIds={selectedAtomIds}
             />
           </Suspense>
         </div>
