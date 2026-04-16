@@ -8,7 +8,13 @@
  * - Colorblind-friendly shapes: filled circle (3), half circle (2), hollow circle (1)
  */
 
-import type { NmrPrediction } from '@kendraw/scene';
+import type { NmrPrediction, NmrPeak } from '@kendraw/scene';
+import {
+  expandMultiplet,
+  isUnresolvedMultiplet,
+  MULTIPLET_BROADENING_FACTOR,
+  type SubLine,
+} from './multiplet.js';
 
 export interface SpectrumViewport {
   minPpm: number;
@@ -26,6 +32,40 @@ export interface RenderOptions {
   solvent?: string;
   showNoise?: boolean;
   deptMode?: boolean;
+  /**
+   * Spectrometer frequency in MHz for multiplet expansion. Defaults to 400.
+   * Higher frequency compresses J-couplings on the ppm axis (Δppm = J_hz / ν₀).
+   */
+  frequencyMhz?: number;
+  /**
+   * When true, publishes the computed sub-lines and per-peak indexing to
+   * `window.__nmrDebugData` so Playwright E2E tests can assert visual state
+   * without relying on pixel-level canvas hit-testing. Tree-shaken in
+   * production call sites that pass `false` (default).
+   */
+  exposeDebug?: boolean;
+}
+
+/** Default spectrometer frequency in MHz used when the caller omits it. */
+export const DEFAULT_FREQUENCY_MHZ = 400;
+
+/**
+ * Debug snapshot exposed on `window.__nmrDebugData` when
+ * {@link RenderOptions.exposeDebug} is true. Contains the last-computed
+ * expansion so E2E tests can count sub-lines in a ppm range without relying
+ * on canvas pixel assertions.
+ */
+export interface NmrDebugData {
+  frequencyMhz: number;
+  peaks: Array<{
+    peakIdx: number;
+    shiftPpm: number;
+    multiplicity: string;
+    couplingHz: number[];
+    subLines: SubLine[];
+  }>;
+  /** Flat list of all sub-lines across all peaks, with parent peakIdx. */
+  allSubLines: Array<SubLine & { peakIdx: number }>;
 }
 
 export interface PeakHitBox {
@@ -67,6 +107,33 @@ function lorentzian(x: number, x0: number, gamma: number): number {
   return 1 / (1 + (dx / gamma) ** 2);
 }
 
+/**
+ * One multiplet sub-line with its parent peak index — internal struct used
+ * by the renderer to iterate lines while keeping bidirectional mapping to
+ * the source NmrPeak for hit-testing and highlighting.
+ */
+interface RenderLine extends SubLine {
+  peakIdx: number;
+  halfWidthPpm: number;
+}
+
+/** Build the flat list of sub-lines for all peaks at a given frequency. */
+function expandAllPeaks(peaks: NmrPeak[], frequencyMhz: number): RenderLine[] {
+  const out: RenderLine[] = [];
+  for (let pi = 0; pi < peaks.length; pi++) {
+    const peak = peaks[pi];
+    if (!peak) continue;
+    const lines = expandMultiplet(peak, frequencyMhz);
+    const hw = isUnresolvedMultiplet(peak)
+      ? LORENTZIAN_HALF_WIDTH_PPM * MULTIPLET_BROADENING_FACTOR
+      : LORENTZIAN_HALF_WIDTH_PPM;
+    for (const l of lines) {
+      out.push({ ...l, peakIdx: pi, halfWidthPpm: hw });
+    }
+  }
+  return out;
+}
+
 export function computeDefaultViewport(prediction: NmrPrediction): SpectrumViewport {
   const is13C = prediction.nucleus === '13C';
   if (prediction.peaks.length === 0) {
@@ -98,6 +165,8 @@ export function renderSpectrum(
     solvent,
     showNoise,
     deptMode,
+    frequencyMhz = DEFAULT_FREQUENCY_MHZ,
+    exposeDebug = false,
   } = options;
   const hitBoxes: PeakHitBox[] = [];
 
@@ -182,35 +251,52 @@ export function renderSpectrum(
     return hitBoxes;
   }
 
-  // Compute composite spectrum via Lorentzian summation
+  // Expand every peak into its constituent multiplet sub-lines, then draw
+  // the envelope by Lorentzian summation over the sub-lines. Each sub-line
+  // carries its share of the parent peak's nH (intensity is conserved).
+  const renderLines = expandAllPeaks(prediction.peaks, frequencyMhz);
+
+  // Optional debug snapshot for E2E tests — published via window.__nmrDebugData
+  if (exposeDebug && typeof window !== 'undefined') {
+    const debug: NmrDebugData = {
+      frequencyMhz,
+      peaks: prediction.peaks.map((p, pi) => ({
+        peakIdx: pi,
+        shiftPpm: p.shift_ppm,
+        multiplicity: p.multiplicity ?? 's',
+        couplingHz: p.coupling_hz ?? [],
+        subLines: expandMultiplet(p, frequencyMhz),
+      })),
+      allSubLines: renderLines.map(({ shiftPpm, intensity, peakIdx }) => ({
+        shiftPpm,
+        intensity,
+        peakIdx,
+      })),
+    };
+    (window as unknown as { __nmrDebugData: NmrDebugData }).__nmrDebugData = debug;
+  }
+
+  // Compute composite spectrum via Lorentzian summation over sub-lines.
   const nPoints = Math.min(plotW * 2, 2000);
   const spectrum = new Float64Array(nPoints);
   let maxIntensity = 0;
 
-  for (const peak of prediction.peaks) {
-    const nH = peak.atom_indices.length;
-    // DEPT mode: signed intensities, skip quaternary C
+  for (const line of renderLines) {
+    const peak = prediction.peaks[line.peakIdx];
+    if (!peak) continue;
+    let sign = 1;
     if (deptMode) {
       const dept = peak.dept_class;
       if (!dept || dept === 'C') continue; // quaternary C invisible
-      const sign = dept === 'CH2' ? -1 : 1;
-      for (let i = 0; i < nPoints; i++) {
-        const ppm = maxPpm - (i / (nPoints - 1)) * ppmRange;
-        const val = sign * nH * lorentzian(ppm, peak.shift_ppm, LORENTZIAN_HALF_WIDTH_PPM);
-        const prev = spectrum[i] ?? 0;
-        spectrum[i] = prev + val;
-        const absVal = Math.abs(spectrum[i] ?? 0);
-        if (absVal > maxIntensity) maxIntensity = absVal;
-      }
-    } else {
-      for (let i = 0; i < nPoints; i++) {
-        const ppm = maxPpm - (i / (nPoints - 1)) * ppmRange;
-        const val = nH * lorentzian(ppm, peak.shift_ppm, LORENTZIAN_HALF_WIDTH_PPM);
-        const prev = spectrum[i] ?? 0;
-        spectrum[i] = prev + val;
-        const cur = spectrum[i] ?? 0;
-        if (cur > maxIntensity) maxIntensity = cur;
-      }
+      sign = dept === 'CH2' ? -1 : 1;
+    }
+    for (let i = 0; i < nPoints; i++) {
+      const ppm = maxPpm - (i / (nPoints - 1)) * ppmRange;
+      const val = sign * line.intensity * lorentzian(ppm, line.shiftPpm, line.halfWidthPpm);
+      const prev = spectrum[i] ?? 0;
+      spectrum[i] = prev + val;
+      const absVal = Math.abs(spectrum[i] ?? 0);
+      if (absVal > maxIntensity) maxIntensity = absVal;
     }
   }
 
@@ -370,8 +456,19 @@ export function renderSpectrum(
     ctx.restore();
   }
 
-  // Draw individual peaks
+  // Draw individual peaks — stems are per sub-line (multiplet pattern is
+  // visible), marker + label stay at peak centroid (one UI anchor per peak).
   const baselineY = deptMode ? MARGIN.top + plotH * 0.5 : MARGIN.top + plotH;
+
+  // Group sub-lines by parent peakIdx so we draw all stems for peak[pi]
+  // before its marker/label (keeps z-order clean).
+  const linesByPeak = new Map<number, RenderLine[]>();
+  for (const line of renderLines) {
+    const arr = linesByPeak.get(line.peakIdx) ?? [];
+    arr.push(line);
+    linesByPeak.set(line.peakIdx, arr);
+  }
+
   for (let pi = 0; pi < prediction.peaks.length; pi++) {
     const peak = prediction.peaks[pi];
     if (!peak) continue;
@@ -390,35 +487,49 @@ export function renderSpectrum(
     const isDeptInverted = deptMode && deptClass === 'CH2';
     const deptSign = isDeptInverted ? -1 : 1;
 
-    let peakTopY: number;
-    if (deptMode) {
-      const peakIntensity =
-        (nH * lorentzian(peak.shift_ppm, peak.shift_ppm, LORENTZIAN_HALF_WIDTH_PPM)) / maxIntensity;
-      peakTopY = baselineY - deptSign * peakIntensity * plotH * 0.42;
-    } else {
-      peakTopY =
-        MARGIN.top +
-        plotH -
-        ((nH * lorentzian(peak.shift_ppm, peak.shift_ppm, LORENTZIAN_HALF_WIDTH_PPM)) /
-          maxIntensity) *
-          plotH *
-          0.85;
-    }
-
     const isHovered = hoveredPeakIdx === pi;
     const isSelected = selectedPeakIdx === pi;
 
-    // Stem line
-    ctx.beginPath();
-    ctx.moveTo(cx, baselineY);
-    ctx.lineTo(cx, peakTopY);
-    ctx.strokeStyle = isSelected ? '#ffffff' : isHovered ? color : color + '88';
-    ctx.lineWidth = isSelected ? 2 : isHovered ? 1.5 : 1;
-    ctx.stroke();
+    // Stem per sub-line. Height = that sub-line's Lorentzian peak value
+    // (lorentzian is 1 at its own center, so y ∝ subLine.intensity).
+    const peakLines = linesByPeak.get(pi) ?? [];
+    const stemStroke = isSelected ? '#ffffff' : isHovered ? color : color + '88';
+    const stemWidth = isSelected ? 2 : isHovered ? 1.5 : 1;
+    let centroidY = baselineY; // updated to the centroid line's top below
+    for (const line of peakLines) {
+      const lineX = ppmToX(line.shiftPpm);
+      const lineYMag = (line.intensity / maxIntensity) * plotH * (deptMode ? 0.42 : 0.85);
+      const lineTopY = baselineY - deptSign * lineYMag;
+      ctx.beginPath();
+      ctx.moveTo(lineX, baselineY);
+      ctx.lineTo(lineX, lineTopY);
+      ctx.strokeStyle = stemStroke;
+      ctx.lineWidth = stemWidth;
+      ctx.stroke();
+      // Record the tallest line's y as the centroid marker anchor.
+      // For symmetric multiplets the tallest line is at the shift centroid,
+      // which is what we want for the marker.
+      if (Math.abs(lineX - cx) < 1e-3) {
+        centroidY = lineTopY;
+      }
+    }
 
-    // Confidence shape at peak top (above for normal/CH3/CH, below for CH2)
+    // Centroid anchor: for multiplets with an EVEN number of lines (doublet,
+    // quartet, …), no line falls exactly at peak.shift_ppm, so derive the
+    // marker's Y from the summed spectrum at the centroid ppm.
+    if (centroidY === baselineY && peakLines.length > 0) {
+      // Estimate envelope height at the centroid ppm.
+      let sum = 0;
+      for (const line of peakLines) {
+        sum += line.intensity * lorentzian(peak.shift_ppm, line.shiftPpm, line.halfWidthPpm);
+      }
+      const sumN = (sum / maxIntensity) * plotH * (deptMode ? 0.42 : 0.85);
+      centroidY = baselineY - deptSign * sumN;
+    }
+
+    // Confidence shape at centroid (above for normal/CH3/CH, below for CH2)
     const r = isHovered || isSelected ? 6 : 4;
-    const markerY = isDeptInverted ? peakTopY + r + 2 : peakTopY - r - 2;
+    const markerY = isDeptInverted ? centroidY + r + 2 : centroidY - r - 2;
     drawConfidenceMarker(ctx, cx, markerY, r, peak.confidence, color, isSelected, bg);
 
     // Peak label — shift + dept class (DEPT mode) or shift + multiplicity (normal)
@@ -428,7 +539,7 @@ export function renderSpectrum(
     const labelText = deptMode
       ? `${peak.shift_ppm.toFixed(1)} ${deptClass}`
       : `${peak.shift_ppm.toFixed(2)} ${peak.multiplicity ?? 's'}`;
-    const labelY = isDeptInverted ? peakTopY + r + 16 : peakTopY - r - 8;
+    const labelY = isDeptInverted ? centroidY + r + 16 : centroidY - r - 8;
     ctx.fillText(labelText, cx, labelY);
 
     // nH indicator (at axis for normal, at baseline for DEPT)
@@ -438,7 +549,7 @@ export function renderSpectrum(
       ctx.fillText(`${nH}H`, cx, MARGIN.top + plotH + 4);
     }
 
-    hitBoxes.push({ peakIdx: pi, x: cx, y: peakTopY, radius: Math.max(r + 4, 10) });
+    hitBoxes.push({ peakIdx: pi, x: cx, y: centroidY, radius: Math.max(r + 4, 10) });
   }
 
   // DEPT legend (top-left area)
