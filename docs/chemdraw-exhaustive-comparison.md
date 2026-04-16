@@ -93,7 +93,8 @@
 | --- | ----------------------------------------------- | ----------------------- | -------------------------------------------------- | ------ | --------------------------------------------- | ------ | -------- |
 | 53  | ChemNMR ¹H (deplacements chimiques)             | Oui                     | Methode additive + RDKit (additive.py, 861 lignes) | ✅     | 15 environnements proton                      | —      | P1       |
 | 54  | ChemNMR ¹³C                                     | Oui                     | additive_13c.py (271 lignes)                       | ✅     | Ajoute Apr 15                                 | —      | P1       |
-| 55  | Multiplicite (s, d, t, m, q, quint, sext, sept) | Oui                     | \_compute_multiplicity_and_coupling()              | ✅     | Regle n+1, heteroatomes singlet               | —      | P1       |
+| 55  | Multiplicite (s, d, t, m, q, quint, sext, sept) | Oui                     | \_compute_multiplicity_and_coupling() + multiplet.ts (expansion)              | ✅     | Regle n+1, dd/ddd convolues, Pascal 1:n:...:1 | —      | P1       |
+| 55b | Rendu visuel des multiplets (lignes J-couplees) | Oui                     | multiplet.ts + SpectrumRenderer, selecteur 300/400/500/600 MHz | ✅     | Δppm = J / ν₀, badge frequence, 60 tests unit | —      | P1       |
 | 56  | Constantes de couplage J (Hz)                   | Oui                     | shift_tables.py, 12 constantes                     | 🟡     | Moyennes empiriques, pas Karplus              | S      | P2       |
 | 57  | Spectre interactif bidirectionnel               | Oui                     | NmrPanel.tsx (1281 lignes), click peak ↔ atom      | ⭐     | Plus fluide que ChemDraw                      | —      | P1       |
 | 58  | Zoom axes, echelle ppm, solvant                 | Oui                     | 6 solvants, zoom/pan interactif                    | ✅     | CDCl3, DMSO-d6, CD3OD, acetone-d6, C6D6, D2O  | —      | P1       |
