@@ -622,6 +622,7 @@ function Btn({
     <div style={{ position: 'relative' }}>
       <button
         ref={ref}
+        data-testid={`tool-${def.id}`}
         onClick={onClick}
         onContextMenu={
           onContextMenu

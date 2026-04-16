@@ -16,4 +16,29 @@ Backend (from `backend/`): 4. `cd backend && uv run ruff check .` (zero errors) 
 
 ## Pre-commit hooks
 
-Husky pre-commit hooks automatically run lint, typecheck, and tests before every commit. If any check fails, the commit is BLOCKED. To bypass in emergencies (not recommended): `git commit --no-verify`
+Husky pre-commit hooks automatically run lint, typecheck, and tests before every commit. The hook also checks for unresolved merge conflict markers and Python syntax errors. If any check fails, the commit is BLOCKED. To bypass in emergencies (not recommended): `git commit --no-verify`
+
+## E2E Tests with Playwright
+
+Before each PR, run E2E tests:
+
+```bash
+pnpm test:e2e
+```
+
+The E2E tests verify:
+
+- App loads without JS errors
+- Backend health, NMR, and properties endpoints respond correctly
+- Vite proxy forwards API calls to backend
+- Drawing tools (bond, atom) work on canvas
+- Undo/redo works after drawing
+- SMILES import via import dialog
+- NMR panel toggles and loads without errors
+- NMR prediction works after molecule import
+
+CI runs these automatically on every PR via `.github/workflows/e2e.yml`.
+
+For debugging: `pnpm test:e2e:headed` or `pnpm test:e2e:debug`
+
+Full local check (all CI + E2E): `./scripts/full-check.sh`

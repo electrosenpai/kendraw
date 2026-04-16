@@ -210,7 +210,7 @@ export function App() {
       )}
 
       {nmrOpen && activeStore && (
-        <div style={{ gridArea: 'nmr' }}>
+        <div data-testid="nmr-panel" style={{ gridArea: 'nmr' }}>
           <Suspense
             fallback={
               <div

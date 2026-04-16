@@ -1313,6 +1313,7 @@ export function Canvas({
       >
         <div
           ref={containerRef}
+          data-testid="drawing-canvas"
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}

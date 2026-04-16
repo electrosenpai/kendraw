@@ -174,6 +174,7 @@ export function PropertyPanel({ doc, visible }: PropertyPanelProps) {
 
   return (
     <div
+      data-testid="properties-panel"
       style={{
         width: '100%',
         height: '100%',
