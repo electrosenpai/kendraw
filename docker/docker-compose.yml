@@ -4,6 +4,9 @@ services:
       context: ..
       dockerfile: docker/Dockerfile.frontend
     ports:
+      # Kept for local dev — Traefik (see docker-compose.traefik.yml) reaches
+      # the container over the kendraw-net network, not through this mapping.
+      # In prod the port stays bound to host 8080 but UFW keeps it internal.
       - '${KENDRAW_FRONTEND_PORT:-8080}:80'
     depends_on:
       backend:
@@ -11,6 +14,36 @@ services:
     networks:
       - kendraw-net
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    # Traefik picks this service up via Docker provider labels. When Traefik
+    # is NOT running (local dev), these labels are harmless metadata.
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=kendraw-net
+      # HTTP router — redirected to HTTPS by the global entrypoint redirect.
+      - traefik.http.routers.kendraw-http.rule=Host(`${KENDRAW_DOMAIN:-fdp.expert}`) || Host(`www.${KENDRAW_DOMAIN:-fdp.expert}`)
+      - traefik.http.routers.kendraw-http.entrypoints=web
+      # HTTPS router with Let's Encrypt.
+      - traefik.http.routers.kendraw.rule=Host(`${KENDRAW_DOMAIN:-fdp.expert}`) || Host(`www.${KENDRAW_DOMAIN:-fdp.expert}`)
+      - traefik.http.routers.kendraw.entrypoints=websecure
+      - traefik.http.routers.kendraw.tls=true
+      - traefik.http.routers.kendraw.tls.certresolver=letsencrypt
+      - traefik.http.routers.kendraw.middlewares=kendraw-security@docker,kendraw-ratelimit@docker
+      # Target port inside the container (nginx on :80).
+      - traefik.http.services.kendraw.loadbalancer.server.port=80
+      # Security headers (belt-and-suspenders — nginx.conf also sets some).
+      - traefik.http.middlewares.kendraw-security.headers.stsSeconds=63072000
+      - traefik.http.middlewares.kendraw-security.headers.stsIncludeSubdomains=true
+      - traefik.http.middlewares.kendraw-security.headers.stsPreload=true
+      - traefik.http.middlewares.kendraw-security.headers.forceSTSHeader=true
+      - traefik.http.middlewares.kendraw-security.headers.contentTypeNosniff=true
+      - traefik.http.middlewares.kendraw-security.headers.browserXssFilter=true
+      - traefik.http.middlewares.kendraw-security.headers.referrerPolicy=no-referrer
+      - traefik.http.middlewares.kendraw-security.headers.customFrameOptionsValue=DENY
+      # Basic rate-limit: 100 req/s average, 200 burst, per source IP.
+      - traefik.http.middlewares.kendraw-ratelimit.ratelimit.average=100
+      - traefik.http.middlewares.kendraw-ratelimit.ratelimit.burst=200
 
   backend:
     build:
@@ -18,8 +51,14 @@ services:
       dockerfile: docker/Dockerfile.backend
       args:
         GIT_COMMIT: '${GIT_COMMIT:-unknown}'
-    ports:
-      - '${KENDRAW_BACKEND_PORT:-8081}:8081'
+    # No ports: — backend is reached only by the frontend nginx over
+    # kendraw-net (location /api/ { proxy_pass http://backend:8081/ }).
+    # Exposing 8081 to the host was useful for dev; remove if you never hit
+    # the backend directly from the host. Kept commented for discoverability.
+    # ports:
+    #   - '${KENDRAW_BACKEND_PORT:-8081}:8081'
+    expose:
+      - '8081'
     environment:
       - KENDRAW_HOST=0.0.0.0
       - KENDRAW_PORT=8081
@@ -27,7 +66,20 @@ services:
     networks:
       - kendraw-net
     restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    # Traefik doesn't route to the backend directly — the frontend nginx
+    # proxies /api/* internally. Leaving enable=false makes that explicit.
+    labels:
+      - traefik.enable=false
 
 networks:
   kendraw-net:
     driver: bridge
+    # Explicit name so docker-compose.traefik.yml can reference it as external.
+    name: kendraw-net

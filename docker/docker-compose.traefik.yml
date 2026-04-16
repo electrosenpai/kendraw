@@ -1,0 +1,93 @@
+# Traefik reverse proxy + Let's Encrypt for production.
+#
+# This file is INDEPENDENT of docker-compose.yml: the base compose still runs
+# standalone locally (with port 8080 exposed). This overlay adds a public
+# reverse proxy on 80/443 that routes the domain to the kendraw frontend
+# container via the shared `kendraw-net` docker network.
+#
+# Deploy order (see docs/deployment-traefik.md for the full runbook):
+#   1. docker compose -f docker/docker-compose.yml up -d
+#      → brings up kendraw and CREATES the kendraw-net network
+#   2. docker compose -f docker/docker-compose.traefik.yml up -d
+#      → brings up Traefik, which JOINS the existing kendraw-net
+#
+# Local dev does not need this file at all — just run step 1.
+
+services:
+  traefik:
+    image: traefik:v3.2
+    container_name: traefik
+    restart: unless-stopped
+    # Traefik needs to read the Docker socket to auto-discover labelled
+    # containers. Mounted read-only — see security hardening below.
+    ports:
+      - '80:80'
+      - '443:443'
+      # Dashboard is DISABLED (see --api.dashboard=false below) so we do NOT
+      # expose 8080 here. Adding it would be a security regression.
+    command:
+      # --- Docker provider ---
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --providers.docker.network=kendraw-net
+      # --- Entrypoints ---
+      - --entrypoints.web.address=:80
+      # Global HTTP → HTTPS redirect so nothing ever serves cleartext.
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      - --entrypoints.web.http.redirections.entrypoint.permanent=true
+      - --entrypoints.websecure.address=:443
+      # Trust X-Forwarded-* only from the docker network gateway.
+      - --entrypoints.websecure.forwardedHeaders.trustedIPs=127.0.0.1/32
+      # --- Let's Encrypt (HTTP-01 challenge) ---
+      - --certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL:-jbdpetracco@gmail.com}
+      - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
+      - --certificatesresolvers.letsencrypt.acme.httpchallenge=true
+      - --certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web
+      # Uncomment during first-time debugging to avoid the 5/week rate limit.
+      # - --certificatesresolvers.letsencrypt.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory
+      # --- TLS defaults (modern cipher suite only) ---
+      - --entrypoints.websecure.http.tls.options=modern@file
+      # --- API / dashboard — OFF, never exposed ---
+      - --api.insecure=false
+      - --api.dashboard=false
+      # --- Logging ---
+      - --log.level=INFO
+      - --accesslog=true
+      - --accesslog.format=json
+      # --- Metrics disabled — no /metrics endpoint to leak ---
+      - --metrics.prometheus=false
+      # --- Ping for container healthcheck ---
+      - --ping=true
+    volumes:
+      # Read-only Docker socket mount. Traefik only needs read access to list
+      # containers; it must never be able to modify the host's docker state.
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./letsencrypt:/letsencrypt
+      - ./traefik/tls-options.yml:/etc/traefik/dynamic/tls-options.yml:ro
+    networks:
+      - kendraw-net
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      # Needed to bind privileged ports 80 and 443 inside the container.
+      - NET_BIND_SERVICE
+    healthcheck:
+      test: ['CMD', 'traefik', 'healthcheck', '--ping']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    labels:
+      # Explicitly disable self-routing: Traefik should never route to itself.
+      - traefik.enable=false
+
+networks:
+  # kendraw-net is created by docker-compose.yml. We attach to it as external
+  # so this compose file is purely additive and can be stopped without taking
+  # down the app.
+  kendraw-net:
+    external: true
+    name: kendraw-net

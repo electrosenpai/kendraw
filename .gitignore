@@ -35,6 +35,11 @@ Desktop.ini
 .env
 .env.local
 .env.*.local
+.env.traefik
+
+# Traefik / Let's Encrypt runtime state (contains TLS private keys)
+docker/letsencrypt/*
+!docker/letsencrypt/.gitkeep
 
 # Debug logs
 npm-debug.log*
