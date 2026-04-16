@@ -193,6 +193,20 @@ export function Canvas({
     setTextEditing(null);
   }, []);
 
+  // Explicitly focus the textarea when text-editing starts.
+  // autoFocus alone is unreliable for dynamically mounted textareas in React.
+  useEffect(() => {
+    if (!textEditing) return;
+    const el = textInputRef.current;
+    if (!el) return;
+    // rAF ensures the element is mounted and laid out before focus
+    const raf = requestAnimationFrame(() => {
+      el.focus();
+      el.select();
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [textEditing]);
+
   const hitTestAnnotation = useCallback(
     (x: number, y: number): Annotation | null => {
       const page = store.getState().pages[store.getState().activePageIndex];
