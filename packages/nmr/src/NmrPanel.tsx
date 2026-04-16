@@ -10,6 +10,7 @@ import {
   type PeakHitBox,
   type SpectrumViewport,
 } from './SpectrumRenderer.js';
+import { resolveMultiplicity } from './multiplet.js';
 
 type Nucleus = '1H' | '13C';
 type SolventId = 'CDCl3' | 'DMSO-d6' | 'CD3OD' | 'acetone-d6' | 'C6D6' | 'D2O';
@@ -60,10 +61,19 @@ function formatMultiplicity(mult: string, coupling: number[]): string {
     ddd: 'doublet of doublet of doublets',
   };
   const label = LABELS[mult] ?? mult;
+  // Sub-line count: product of (n+1) over each coupling in the multiplicity.
+  // 'd' → 2, 't' → 3, 'dd' → 4, 'ddd' → 8. For 'm'/'s' we skip the count.
+  const counts = resolveMultiplicity(mult);
+  const subLineCount = counts.reduce((acc, n) => acc * (n + 1), 1);
+  const parts: string[] = [label];
   if (coupling.length > 0) {
-    return `${label} (J = ${coupling.map((j) => j.toFixed(1)).join(', ')} Hz)`;
+    parts.push(`J = ${coupling.map((j) => j.toFixed(1)).join(', ')} Hz`);
   }
-  return label;
+  if (counts.length > 0 && subLineCount > 1) {
+    parts.push(`${subLineCount} lines`);
+  }
+  if (parts.length === 1) return parts[0] ?? label;
+  return `${parts[0]} (${parts.slice(1).join('; ')})`;
 }
 
 const CONF_LABELS: Record<number, { label: string; color: string }> = {
@@ -79,7 +89,11 @@ function formatEnvironment(env: string): string {
     .replace(/\bbeta\b/, '\u03B2');
 }
 
-function exportPng(prediction: NmrPrediction, viewport: SpectrumViewport): void {
+function exportPng(
+  prediction: NmrPrediction,
+  viewport: SpectrumViewport,
+  frequencyMhz: number,
+): void {
   const W = 1200;
   const H = 500;
   const canvas = document.createElement('canvas');
@@ -103,6 +117,7 @@ function exportPng(prediction: NmrPrediction, viewport: SpectrumViewport): void 
     hoveredPeakIdx: null,
     selectedPeakIdx: null,
     exportMode: true,
+    frequencyMhz,
   });
 
   // Metadata footer
@@ -262,6 +277,22 @@ export default function NmrPanel({
   const [pinnedPeakIdx, setPinnedPeakIdx] = useState<number | null>(null);
   const [showNoise, setShowNoise] = useState(false);
   const [deptMode, setDeptMode] = useState(false);
+  // Spectrometer frequency — drives multiplet spacing (Δppm = J_hz / ν₀).
+  // 400 MHz is the workhorse of most academic labs; 300/500/600 covered for
+  // comparison. Persisted to localStorage so opening/closing the panel
+  // doesn't reset the user's choice within a session.
+  const [frequencyMhz, setFrequencyMhz] = useState<number>(() => {
+    const saved =
+      typeof window !== 'undefined'
+        ? Number(window.localStorage.getItem('kd-nmr-frequency-mhz'))
+        : NaN;
+    return [300, 400, 500, 600].includes(saved) ? saved : 400;
+  });
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('kd-nmr-frequency-mhz', String(frequencyMhz));
+    }
+  }, [frequencyMhz]);
   const panRef = useRef<{ startX: number; startVp: SpectrumViewport } | null>(null);
 
   const dragRef = useRef<{ startY: number; startH: number } | null>(null);
@@ -425,12 +456,12 @@ export default function NmrPanel({
       }
       if (e.key === 'E' && e.ctrlKey && e.shiftKey && prediction) {
         e.preventDefault();
-        exportPng(prediction, viewport);
+        exportPng(prediction, viewport, frequencyMhz);
       }
     }
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [navigateSignal, prediction, viewport]);
+  }, [navigateSignal, prediction, viewport, frequencyMhz]);
 
   // Render spectrum
   useEffect(() => {
@@ -454,7 +485,18 @@ export default function NmrPanel({
       solvent,
       showNoise,
       deptMode: deptMode && nucleus === '13C',
+      frequencyMhz,
+      exposeDebug: true,
     });
+
+    // Frequency badge (bottom-left of spectrum canvas)
+    ctx.save();
+    ctx.fillStyle = '#8a8a8a';
+    ctx.font = '10px "IBM Plex Mono", "Fira Code", monospace';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText(`${frequencyMhz} MHz`, 8, rect.height - 6);
+    ctx.restore();
   }, [
     prediction,
     viewport,
@@ -466,6 +508,7 @@ export default function NmrPanel({
     pinnedPeakIdx,
     deptMode,
     nucleus,
+    frequencyMhz,
   ]);
 
   // Canvas mouse interactions
@@ -762,6 +805,41 @@ export default function NmrPanel({
             ))}
           </select>
 
+          {/* Spectrometer frequency (MHz) — segmented control */}
+          <div
+            role="radiogroup"
+            aria-label="Spectrometer frequency"
+            style={{ display: 'flex', gap: 1 }}
+          >
+            {([300, 400, 500, 600] as const).map((mhz) => (
+              <button
+                key={mhz}
+                role="radio"
+                aria-checked={frequencyMhz === mhz}
+                onClick={() => setFrequencyMhz(mhz)}
+                style={{
+                  padding: '2px 5px',
+                  fontSize: 10,
+                  fontFamily: 'var(--kd-font-mono, monospace)',
+                  border: '1px solid var(--kd-color-border, #333)',
+                  borderRadius: 'var(--kd-radius-sm, 4px)',
+                  background:
+                    frequencyMhz === mhz
+                      ? 'var(--kd-color-accent-muted, rgba(77, 171, 247, 0.15))'
+                      : 'transparent',
+                  color:
+                    frequencyMhz === mhz
+                      ? 'var(--kd-color-accent, #4dabf7)'
+                      : 'var(--kd-color-text-secondary, #a0a0a0)',
+                  cursor: 'pointer',
+                }}
+                title={`Set spectrometer frequency to ${mhz} MHz — changes multiplet spacing (Δppm = J / ν₀)`}
+              >
+                {mhz}
+              </button>
+            ))}
+          </div>
+
           {/* DEPT toggle (13C only) */}
           {nucleus === '13C' && (
             <button
@@ -873,7 +951,7 @@ export default function NmrPanel({
           {/* PNG export */}
           {prediction && prediction.peaks.length > 0 && (
             <button
-              onClick={() => exportPng(prediction, viewport)}
+              onClick={() => exportPng(prediction, viewport, frequencyMhz)}
               style={{
                 padding: '2px 6px',
                 fontSize: 10,
