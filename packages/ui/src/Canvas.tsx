@@ -884,6 +884,11 @@ export function Canvas({
 
       // Text tool: click to create text, or click on existing to edit
       if (toolState.tool === 'text') {
+        // Prevent the browser's default mousedown behavior (focus stealing).
+        // Without this, the click that creates the textarea also triggers a
+        // focus change on mouseup that blurs the freshly-mounted textarea,
+        // firing onBlur → confirmText → immediate removal.
+        e.preventDefault();
         if (textEditing) {
           confirmText();
           return;

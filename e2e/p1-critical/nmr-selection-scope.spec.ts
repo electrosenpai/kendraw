@@ -80,9 +80,9 @@ test.describe('P1 Critical — NMR Selection Scope @p1', () => {
 
     await canvas.selectAll();
     const badge = page.locator('[data-testid="nmr-scope-badge"]');
-    const title = await badge.getAttribute('title');
-    expect(title).toMatch(/selection/i);
-    expect(title).toMatch(/atom/i);
+    // Poll via toHaveAttribute (selection state propagates through Canvas → App → NmrPanel)
+    await expect(badge).toHaveAttribute('title', /selection/i, { timeout: 3_000 });
+    await expect(badge).toHaveAttribute('title', /atom/i, { timeout: 3_000 });
   });
 
   test('NMR prediction succeeds when selection is active (no console errors)', async ({
