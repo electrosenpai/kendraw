@@ -5,6 +5,9 @@ on:
     branches: [main]
   push:
     branches: [main]
+  schedule:
+    # Nightly at 3am UTC
+    - cron: '0 3 * * *'
 
 jobs:
   e2e:
@@ -51,8 +54,20 @@ jobs:
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps chromium
 
-      - name: Run Playwright tests
-        run: pnpm test:e2e
+      # PR: P0 + P1 only (~30 tests, <5 min)
+      - name: Run E2E tests (PR — P0 + P1)
+        if: github.event_name == 'pull_request'
+        run: pnpm exec playwright test --grep '@p0|@p1'
+
+      # Push to main: P0 + P1 + P2 (~50 tests, <10 min)
+      - name: Run E2E tests (main — P0 + P1 + P2)
+        if: github.event_name == 'push'
+        run: pnpm exec playwright test --grep '@p0|@p1|@p2'
+
+      # Nightly: ALL tests including P3 edge cases
+      - name: Run E2E tests (nightly — full suite)
+        if: github.event_name == 'schedule'
+        run: pnpm exec playwright test
 
       - uses: actions/upload-artifact@v4
         if: always()
