@@ -22,10 +22,10 @@ services:
       - traefik.enable=true
       - traefik.docker.network=kendraw-net
       # HTTP router — redirected to HTTPS by the global entrypoint redirect.
-      - traefik.http.routers.kendraw-http.rule=Host(`${KENDRAW_DOMAIN:-fdp.expert}`) || Host(`www.${KENDRAW_DOMAIN:-fdp.expert}`)
+      - traefik.http.routers.kendraw-http.rule=Host(`${KENDRAW_DOMAIN:-kendraw.fdp.expert}`)
       - traefik.http.routers.kendraw-http.entrypoints=web
       # HTTPS router with Let's Encrypt.
-      - traefik.http.routers.kendraw.rule=Host(`${KENDRAW_DOMAIN:-fdp.expert}`) || Host(`www.${KENDRAW_DOMAIN:-fdp.expert}`)
+      - traefik.http.routers.kendraw.rule=Host(`${KENDRAW_DOMAIN:-kendraw.fdp.expert}`)
       - traefik.http.routers.kendraw.entrypoints=websecure
       - traefik.http.routers.kendraw.tls=true
       - traefik.http.routers.kendraw.tls.certresolver=letsencrypt
@@ -61,6 +61,9 @@ services:
       - '8081'
     environment:
       - KENDRAW_HOST=0.0.0.0
+      # Redirect uv cache to a writable tmpfs (filesystem is read-only).
+      - UV_CACHE_DIR=/tmp/uv-cache
+      - HOME=/tmp
       - KENDRAW_PORT=8081
       - KENDRAW_LOG_LEVEL=${KENDRAW_LOG_LEVEL:-info}
     networks:

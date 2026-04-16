@@ -1,0 +1,40 @@
+# Never ship host node_modules into the image — Docker would copy pnpm's
+# symlinks without the `.pnpm` store they point into, shadowing the clean
+# install that ran inside the build stage.
+**/node_modules
+**/.pnpm-store
+
+# Build outputs
+**/dist
+**/build
+**/*.tsbuildinfo
+**/.vite
+
+# Test / coverage artifacts
+**/coverage
+**/test-results
+**/playwright-report
+
+# Python (backend build stage handles its own deps)
+**/__pycache__
+**/*.pyc
+**/.venv
+**/*.egg-info
+
+# Local env files (never baked into images)
+.env
+.env.*
+!.env.traefik.example
+
+# Traefik ACME state — runtime only, never in images
+docker/letsencrypt/acme.json
+
+# Git + IDE
+.git
+.github
+.idea
+.vscode
+*.swp
+
+# Large local fixtures
+tests/fixtures/cdxml-corpus/urd-abbaye

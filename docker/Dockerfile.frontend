@@ -11,12 +11,15 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 
 # Copy all package.json files for dependency resolution
 COPY packages/scene/package.json packages/scene/package.json
+COPY packages/scene-poc/package.json packages/scene-poc/package.json
 COPY packages/chem/package.json packages/chem/package.json
+COPY packages/constraints/package.json packages/constraints/package.json
 COPY packages/renderer-canvas/package.json packages/renderer-canvas/package.json
 COPY packages/renderer-svg/package.json packages/renderer-svg/package.json
 COPY packages/persistence/package.json packages/persistence/package.json
 COPY packages/io/package.json packages/io/package.json
 COPY packages/api-client/package.json packages/api-client/package.json
+COPY packages/nmr/package.json packages/nmr/package.json
 COPY packages/ui/package.json packages/ui/package.json
 
 # Install dependencies (cached unless lockfile changes)

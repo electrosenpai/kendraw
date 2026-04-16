@@ -5,8 +5,8 @@ _Last updated: 2026-04-16._
 Kendraw is deployed as **two independent Docker Compose stacks** that share a
 single bridge network (`kendraw-net`). The base stack runs the frontend +
 backend and is the exact same compose used for local dev. A second stack adds
-Traefik in front, terminates TLS via Let's Encrypt, and routes `fdp.expert`
-to the frontend container. The two files have no import-time dependency: you
+Traefik in front, terminates TLS via Let's Encrypt, and routes
+`kendraw.fdp.expert` to the frontend container. The two files have no import-time dependency: you
 can run the base alone locally with port 8080 exposed, and bring Traefik up
 on the production host without modifying anything in the base compose.
 
@@ -14,7 +14,7 @@ on the production host without modifying anything in the base compose.
 
 | Record    | Value                         |
 | --------- | ----------------------------- |
-| Hostname  | `fdp.expert` (+ `www.`)       |
+| Hostname  | `kendraw.fdp.expert`          |
 | IPv4 (A)  | `51.77.216.170`               |
 | IPv6 (AAAA) | `2001:41d0:303:96aa::1`     |
 
@@ -26,17 +26,15 @@ Create two records at your registrar. Let's Encrypt will not issue a cert
 until these resolve:
 
 ```
-A     fdp.expert        51.77.216.170
-AAAA  fdp.expert        2001:41d0:303:96aa::1
-A     www.fdp.expert    51.77.216.170
-AAAA  www.fdp.expert    2001:41d0:303:96aa::1
+A     kendraw.fdp.expert    51.77.216.170
+AAAA  kendraw.fdp.expert    2001:41d0:303:96aa::1
 ```
 
 Check:
 
 ```bash
-dig +short fdp.expert A
-dig +short fdp.expert AAAA
+dig +short kendraw.fdp.expert A
+dig +short kendraw.fdp.expert AAAA
 ```
 
 ### 2. Firewall
@@ -63,7 +61,7 @@ cp .env.traefik.example .env.traefik
 # edit if you want a different ACME contact email or domain
 ```
 
-If you don't create `.env.traefik`, Compose uses `fdp.expert` +
+If you don't create `.env.traefik`, Compose uses `kendraw.fdp.expert` +
 `jbdpetracco@gmail.com` (hardcoded defaults in the compose files).
 
 ### 4. ACME storage
@@ -72,6 +70,20 @@ Already created at `docker/letsencrypt/` with mode `700`. The directory will
 fill with `acme.json` (TLS private keys) on first cert issuance — **never
 commit it, never chmod it to anything more permissive than 600**. The path
 is in `.gitignore`.
+
+Because Traefik runs with `cap_drop: ALL` (no `DAC_OVERRIDE`), it can't
+bypass file permissions — so the directory **must be owned by the same UID
+Traefik runs as** (root, uid 0 in the official `traefik:v3.2` image).
+Chown once:
+
+```bash
+sudo chown -R 0:0 docker/letsencrypt
+sudo chmod 700 docker/letsencrypt
+```
+
+After this, only `root` on the host can read `acme.json` (use `sudo ls -la
+docker/letsencrypt` to inspect it). This is the correct posture — the file
+holds your TLS private keys.
 
 ## Deployment
 
@@ -110,15 +122,15 @@ docker ps --filter name=traefik --format '{{.Status}}'
 sudo ls -la docker/letsencrypt/acme.json
 
 # 3. HTTP redirects to HTTPS
-curl -sI http://fdp.expert | grep -i location
-# → Location: https://fdp.expert/
+curl -sI http://kendraw.fdp.expert | grep -i location
+# → Location: https://kendraw.fdp.expert/
 
 # 4. TLS works and serves the app
-curl -sI https://fdp.expert | head -5
+curl -sI https://kendraw.fdp.expert | head -5
 # → HTTP/2 200 ...
 
 # 5. SSL Labs grade (external, optional)
-# https://www.ssllabs.com/ssltest/analyze.html?d=fdp.expert
+# https://www.ssllabs.com/ssltest/analyze.html?d=kendraw.fdp.expert
 ```
 
 ## Day-2 operations
@@ -176,7 +188,7 @@ rm -rf docker/letsencrypt/acme.json
 | --- | --- | --- |
 | `connection refused` on port 443 | Traefik not running, or UFW blocking | `docker ps \| grep traefik` + `sudo ufw status` |
 | `404 page not found` from Traefik | Frontend container not on `kendraw-net`, or labels wrong | `docker network inspect kendraw-net` and confirm `frontend` is listed |
-| Cert never issues | DNS not propagated, or port 80 unreachable from internet | `dig` the records; check UFW; try from an external host: `curl -v http://fdp.expert/.well-known/acme-challenge/test` |
+| Cert never issues | DNS not propagated, or port 80 unreachable from internet | `dig` the records; check UFW; try from an external host: `curl -v http://kendraw.fdp.expert/.well-known/acme-challenge/test` |
 | `too many requests` in Traefik logs | Let's Encrypt rate limit (5 certs/week per domain) | Uncomment the staging `--caserver` line in `docker-compose.traefik.yml` while debugging |
 | Cert works but browser shows the wrong content | Router `Host()` mismatch | Check `KENDRAW_DOMAIN` matches the DNS name exactly |
 | Backend 502 through Traefik | `frontend` container can't reach `backend` | Both must be on `kendraw-net`; check `docker network inspect` |
