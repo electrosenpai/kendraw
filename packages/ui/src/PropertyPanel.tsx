@@ -48,7 +48,7 @@ export function PropertyPanel({ doc, visible }: PropertyPanelProps) {
     const bonds = Object.values(page.bonds);
     const mol = writeMolV2000(atoms, bonds);
     let cancelled = false;
-    const baseUrl = '/api/v1';
+    const baseUrl = '/api';
     fetch(`${baseUrl}/convert/`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
