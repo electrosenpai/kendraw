@@ -231,6 +231,23 @@ function renderArrowSVG(arrow: Arrow): string {
     ].join('\n');
   }
 
+  if (arrow.type === 'retro') {
+    // Double parallel line with open arrowhead (retrosynthesis, "⇒")
+    const nx = -uy * 3;
+    const ny = ux * 3;
+    const tipX = g.end.x;
+    const tipY = g.end.y;
+    const ax = tipX - headSize * ux + headSize * 0.4 * uy;
+    const ay = tipY - headSize * uy - headSize * 0.4 * ux;
+    const bx = tipX - headSize * ux - headSize * 0.4 * uy;
+    const by = tipY - headSize * uy + headSize * 0.4 * ux;
+    return [
+      `<line x1="${g.start.x + nx}" y1="${g.start.y + ny}" x2="${tipX - headSize * 0.5 * ux + nx}" y2="${tipY - headSize * 0.5 * uy + ny}" stroke="${stroke}" stroke-width="${sw}"/>`,
+      `<line x1="${g.start.x - nx}" y1="${g.start.y - ny}" x2="${tipX - headSize * 0.5 * ux - nx}" y2="${tipY - headSize * 0.5 * uy - ny}" stroke="${stroke}" stroke-width="${sw}"/>`,
+      `<polygon points="${tipX},${tipY} ${ax},${ay} ${bx},${by}" fill="none" stroke="${stroke}" stroke-width="${sw}"/>`,
+    ].join('\n');
+  }
+
   if (arrow.type === 'reversible' || arrow.type === 'resonance') {
     // Double-headed arrow
     const tipX = g.end.x;

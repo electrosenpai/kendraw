@@ -115,6 +115,27 @@ describe('exportToSVG', () => {
     expect(svg).toContain('<text');
   });
 
+  it('renders retro arrows with two parallel lines and an open arrowhead', () => {
+    const page = createPage([]);
+    const arrow: Arrow = {
+      id: 'arrow-retro' as ArrowId,
+      type: 'retro',
+      geometry: {
+        start: { x: 0, y: 50 },
+        c1: { x: 50, y: 50 },
+        c2: { x: 100, y: 50 },
+        end: { x: 150, y: 50 },
+      },
+      startAnchor: { kind: 'free' },
+      endAnchor: { kind: 'free' },
+    };
+    page.arrows = { [arrow.id]: arrow } as Page['arrows'];
+    const svg = exportToSVG(page);
+    const lineCount = (svg.match(/<line /g) || []).length;
+    expect(lineCount).toBeGreaterThanOrEqual(2);
+    expect(svg).toMatch(/<polygon[^>]*fill="none"/);
+  });
+
   it('renders equilibrium arrows with two lines', () => {
     const page = createPage([]);
     const arrow: Arrow = {

@@ -69,4 +69,12 @@ describe('Arrow commands', () => {
     const page = store.getState().pages[0];
     expect(page?.arrows[arrow.id]).toBeUndefined();
   });
+
+  it('accepts retro arrow type (retrosynthesis)', () => {
+    const store = createSceneStore();
+    const arrow = makeArrow({ type: 'retro' });
+    store.dispatch({ type: 'add-arrow', arrow });
+    const page = store.getState().pages[0];
+    expect(page?.arrows[arrow.id]?.type).toBe('retro');
+  });
 });

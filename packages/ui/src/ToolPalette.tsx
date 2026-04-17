@@ -35,7 +35,7 @@ export interface ToolState {
     | 'bold'
     | 'hashed-wedge';
   ringTemplate: string;
-  arrowType: 'forward' | 'equilibrium' | 'reversible';
+  arrowType: 'forward' | 'equilibrium' | 'reversible' | 'retro';
   curlyType: 'pair' | 'radical';
 }
 

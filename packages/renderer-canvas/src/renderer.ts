@@ -854,19 +854,42 @@ export class CanvasRenderer implements Renderer {
   ): void {
     const { start, c1, c2, end } = arrow.geometry;
     const isCurly = arrow.type === 'curly-pair' || arrow.type === 'curly-radical';
+    const isRetro = arrow.type === 'retro';
     const color = isCurly ? '#e06633' : '#ffffff';
 
     // Default arrowhead config: curly arrows always have head, reaction arrows use parsed config
     const headType = arrow.arrowheadHead ?? (isCurly ? 'full' : 'full');
     const tailType = arrow.arrowheadTail ?? 'none';
 
-    // Draw the shaft (Bézier curve)
-    ctx.beginPath();
-    ctx.moveTo(start.x, start.y);
-    ctx.bezierCurveTo(c1.x, c1.y, c2.x, c2.y, end.x, end.y);
+    // Draw the shaft (Bézier curve). Retro = double parallel line (open arrow).
     ctx.strokeStyle = color;
     ctx.lineWidth = isCurly ? 1.5 : 1.5;
-    ctx.stroke();
+    if (isRetro) {
+      const adx = end.x - start.x;
+      const ady = end.y - start.y;
+      const alen = Math.sqrt(adx * adx + ady * ady) || 1;
+      const nx = -ady / alen;
+      const ny = adx / alen;
+      const gap = 3;
+      for (const s of [gap, -gap]) {
+        ctx.beginPath();
+        ctx.moveTo(start.x + nx * s, start.y + ny * s);
+        ctx.bezierCurveTo(
+          c1.x + nx * s,
+          c1.y + ny * s,
+          c2.x + nx * s,
+          c2.y + ny * s,
+          end.x + nx * s,
+          end.y + ny * s,
+        );
+        ctx.stroke();
+      }
+    } else {
+      ctx.beginPath();
+      ctx.moveTo(start.x, start.y);
+      ctx.bezierCurveTo(c1.x, c1.y, c2.x, c2.y, end.x, end.y);
+      ctx.stroke();
+    }
 
     const hl = isCurly ? 6 : 10; // arrowhead length
     const hw = isCurly ? 2.5 : 4; // arrowhead half-width
