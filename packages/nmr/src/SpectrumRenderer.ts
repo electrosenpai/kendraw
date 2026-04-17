@@ -21,6 +21,18 @@ export interface SpectrumViewport {
   maxPpm: number;
 }
 
+/**
+ * Wave-4 P1-01: explicit NMR display mode.
+ *
+ * - `off`     — standard ¹H or ¹³C spectrum (every peak above baseline).
+ * - `dept-90` — DEPT-90: only CH carbons visible (CH₂, CH₃, quaternary absent).
+ * - `dept-135`— DEPT-135: CH and CH₃ point up, CH₂ inverted (down), quaternary absent.
+ *
+ * The boolean `deptMode` legacy flag is mapped to `dept-135` when true so existing
+ * call sites keep working until callers migrate.
+ */
+export type NmrMode = 'off' | 'dept-90' | 'dept-135';
+
 export interface RenderOptions {
   width: number;
   height: number;
@@ -31,7 +43,10 @@ export interface RenderOptions {
   exportMode?: boolean;
   solvent?: string;
   showNoise?: boolean;
+  /** @deprecated since wave-4 — pass `nmrMode: 'dept-135'` instead. */
   deptMode?: boolean;
+  /** Wave-4 P1-01: explicit display mode; takes precedence over `deptMode`. */
+  nmrMode?: NmrMode;
   /**
    * Spectrometer frequency in MHz for multiplet expansion. Defaults to 400.
    * Higher frequency compresses J-couplings on the ppm axis (Δppm = J_hz / ν₀).
@@ -114,6 +129,26 @@ function lorentzian(x: number, x0: number, gamma: number): number {
 }
 
 /**
+ * Wave-4 P1-01: DEPT phase sign per Al-Rashid's spec.
+ *
+ * Returns the phase multiplier for a peak under the given display mode:
+ *  - `+1` — peak is visible above baseline
+ *  - `-1` — peak is inverted (below baseline). Only DEPT-135 / CH₂.
+ *  - ` 0` — peak is absent under this mode (do not render).
+ *
+ * DEPT-90 nulls everything except CH (single-bond methine carbons), which
+ * matches the standard 90° pulse experiment used to disambiguate CH from
+ * CH₂/CH₃ in congested aliphatic regions.
+ */
+export function peakPhaseSign(deptClass: string | null | undefined, mode: NmrMode): -1 | 0 | 1 {
+  if (mode === 'off') return 1;
+  if (!deptClass || deptClass === 'C') return 0;
+  if (mode === 'dept-90') return deptClass === 'CH' ? 1 : 0;
+  // dept-135
+  return deptClass === 'CH2' ? -1 : 1;
+}
+
+/**
  * One multiplet sub-line with its parent peak index — internal struct used
  * by the renderer to iterate lines while keeping bidirectional mapping to
  * the source NmrPeak for hit-testing and highlighting.
@@ -171,11 +206,15 @@ export function renderSpectrum(
     solvent,
     showNoise,
     deptMode,
+    nmrMode,
     frequencyMhz = DEFAULT_FREQUENCY_MHZ,
     exposeDebug = false,
     showIntegration = false,
   } = options;
   const hitBoxes: PeakHitBox[] = [];
+
+  const mode: NmrMode = nmrMode ?? (deptMode ? 'dept-135' : 'off');
+  const isDept = mode === 'dept-90' || mode === 'dept-135';
 
   // Color scheme: dark UI vs white-bg export
   const bg = exportMode ? '#ffffff' : '#0a0a0a';
@@ -291,12 +330,8 @@ export function renderSpectrum(
   for (const line of renderLines) {
     const peak = prediction.peaks[line.peakIdx];
     if (!peak) continue;
-    let sign = 1;
-    if (deptMode) {
-      const dept = peak.dept_class;
-      if (!dept || dept === 'C') continue; // quaternary C invisible
-      sign = dept === 'CH2' ? -1 : 1;
-    }
+    const sign = peakPhaseSign(peak.dept_class, mode);
+    if (sign === 0) continue;
     for (let i = 0; i < nPoints; i++) {
       const ppm = maxPpm - (i / (nPoints - 1)) * ppmRange;
       const val = sign * line.intensity * lorentzian(ppm, line.shiftPpm, line.halfWidthPpm);
@@ -309,7 +344,7 @@ export function renderSpectrum(
 
   if (maxIntensity === 0) return hitBoxes;
 
-  if (deptMode) {
+  if (isDept) {
     // DEPT mode: draw baseline at center, envelope above/below
     const baselineY = MARGIN.top + plotH * 0.5;
 
@@ -465,7 +500,7 @@ export function renderSpectrum(
 
   // Draw individual peaks — stems are per sub-line (multiplet pattern is
   // visible), marker + label stay at peak centroid (one UI anchor per peak).
-  const baselineY = deptMode ? MARGIN.top + plotH * 0.5 : MARGIN.top + plotH;
+  const baselineY = isDept ? MARGIN.top + plotH * 0.5 : MARGIN.top + plotH;
 
   // Group sub-lines by parent peakIdx so we draw all stems for peak[pi]
   // before its marker/label (keeps z-order clean).
@@ -480,19 +515,22 @@ export function renderSpectrum(
     const peak = prediction.peaks[pi];
     if (!peak) continue;
 
-    // DEPT mode: skip quaternary C
-    if (deptMode && (!peak.dept_class || peak.dept_class === 'C')) continue;
+    // Wave-4 P1-01: phase sign is the single source of truth for visibility +
+    // up/down phasing. sign === 0 means "absent in this mode" (DEPT-90 hides
+    // CH₂ and CH₃; both DEPT modes hide quaternary C).
+    const phaseSign = peakPhaseSign(peak.dept_class, mode);
+    if (phaseSign === 0) continue;
 
     const cx = ppmToX(peak.shift_ppm);
     const nH = peak.atom_indices.length;
 
     // DEPT mode uses dept_class colors; normal uses confidence colors
     const deptClass = peak.dept_class ?? 'C';
-    const color = deptMode
+    const color = isDept
       ? (DEPT_COLORS[deptClass] ?? '#888888')
       : (CONF_COLORS[peak.confidence] ?? '#888888');
-    const isDeptInverted = deptMode && deptClass === 'CH2';
-    const deptSign = isDeptInverted ? -1 : 1;
+    const isDeptInverted = phaseSign === -1;
+    const deptSign = phaseSign;
 
     const isHovered = hoveredPeakIdx === pi;
     const isSelected = selectedPeakIdx === pi;
@@ -505,7 +543,7 @@ export function renderSpectrum(
     let centroidY = baselineY; // updated to the centroid line's top below
     for (const line of peakLines) {
       const lineX = ppmToX(line.shiftPpm);
-      const lineYMag = (line.intensity / maxIntensity) * plotH * (deptMode ? 0.42 : 0.85);
+      const lineYMag = (line.intensity / maxIntensity) * plotH * (isDept ? 0.42 : 0.85);
       const lineTopY = baselineY - deptSign * lineYMag;
       ctx.beginPath();
       ctx.moveTo(lineX, baselineY);
@@ -530,7 +568,7 @@ export function renderSpectrum(
       for (const line of peakLines) {
         sum += line.intensity * lorentzian(peak.shift_ppm, line.shiftPpm, line.halfWidthPpm);
       }
-      const sumN = (sum / maxIntensity) * plotH * (deptMode ? 0.42 : 0.85);
+      const sumN = (sum / maxIntensity) * plotH * (isDept ? 0.42 : 0.85);
       centroidY = baselineY - deptSign * sumN;
     }
 
@@ -543,14 +581,14 @@ export function renderSpectrum(
     ctx.fillStyle = isSelected ? peakLabelSelected : isHovered ? peakLabelHover : peakLabelDefault;
     ctx.font = `${isHovered || isSelected ? 11 : 10}px "JetBrains Mono", "IBM Plex Mono", monospace`;
     ctx.textAlign = 'center';
-    const labelText = deptMode
+    const labelText = isDept
       ? `${peak.shift_ppm.toFixed(1)} ${deptClass}`
       : `${peak.shift_ppm.toFixed(2)} ${peak.multiplicity ?? 's'}`;
     const labelY = isDeptInverted ? centroidY + r + 16 : centroidY - r - 8;
     ctx.fillText(labelText, cx, labelY);
 
     // nH indicator (at axis for normal, at baseline for DEPT)
-    if (!deptMode) {
+    if (!isDept) {
       ctx.font = '9px Inter, system-ui, sans-serif';
       ctx.fillStyle = nHColor;
       ctx.fillText(`${nH}H`, cx, MARGIN.top + plotH + 4);
@@ -559,17 +597,31 @@ export function renderSpectrum(
     hitBoxes.push({ peakIdx: pi, x: cx, y: centroidY, radius: Math.max(r + 4, 10) });
   }
 
-  // DEPT legend (top-left area)
-  if (deptMode) {
+  // DEPT legend (top-left area). Wave-4 P1-01: legend tracks the active mode
+  // so users always know whether they're looking at DEPT-90 or DEPT-135.
+  if (isDept) {
     const legendX = MARGIN.left + 8;
     let legendY = MARGIN.top + 28;
     ctx.font = '9px Inter, system-ui, sans-serif';
-    const legendItems: Array<{ label: string; color: string; symbol: string }> = [
-      { label: 'CH\u2083', color: DEPT_COLORS['CH3'] ?? '#3b82f6', symbol: '\u25CF' },
-      { label: 'CH', color: DEPT_COLORS['CH'] ?? '#22c55e', symbol: '\u25CF' },
-      { label: 'CH\u2082 (inv.)', color: DEPT_COLORS['CH2'] ?? '#ef4444', symbol: '\u25CF' },
-      { label: 'C (absent)', color: exportMode ? '#aaaaaa' : '#555555', symbol: '\u25CB' },
-    ];
+    // Mode header
+    ctx.fillStyle = exportMode ? '#444444' : '#bbbbbb';
+    ctx.textAlign = 'left';
+    ctx.fillText(mode === 'dept-90' ? 'DEPT-90' : 'DEPT-135', legendX, legendY);
+    legendY += 13;
+    const legendItems: Array<{ label: string; color: string; symbol: string }> =
+      mode === 'dept-90'
+        ? [
+            { label: 'CH', color: DEPT_COLORS['CH'] ?? '#22c55e', symbol: '\u25CF' },
+            { label: 'CH\u2082 (absent)', color: exportMode ? '#aaaaaa' : '#555555', symbol: '\u25CB' },
+            { label: 'CH\u2083 (absent)', color: exportMode ? '#aaaaaa' : '#555555', symbol: '\u25CB' },
+            { label: 'C (absent)', color: exportMode ? '#aaaaaa' : '#555555', symbol: '\u25CB' },
+          ]
+        : [
+            { label: 'CH\u2083', color: DEPT_COLORS['CH3'] ?? '#3b82f6', symbol: '\u25CF' },
+            { label: 'CH', color: DEPT_COLORS['CH'] ?? '#22c55e', symbol: '\u25CF' },
+            { label: 'CH\u2082 (inv.)', color: DEPT_COLORS['CH2'] ?? '#ef4444', symbol: '\u25CF' },
+            { label: 'C (absent)', color: exportMode ? '#aaaaaa' : '#555555', symbol: '\u25CB' },
+          ];
     for (const item of legendItems) {
       ctx.fillStyle = item.color;
       ctx.textAlign = 'left';
@@ -579,7 +631,7 @@ export function renderSpectrum(
   }
 
   // F-3: Integration bars below peaks (skip in DEPT mode)
-  if (!deptMode) {
+  if (!isDept) {
     const totalH = prediction.peaks.reduce((s, p) => s + p.atom_indices.length, 0);
     if (totalH > 0) {
       const maxBarW = 40;

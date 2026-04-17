@@ -3,6 +3,7 @@ import {
   computeDefaultViewport,
   hitTestPeaks,
   renderSpectrum,
+  peakPhaseSign,
   type PeakHitBox,
 } from '../SpectrumRenderer.js';
 import type { NmrPrediction } from '@kendraw/scene';
@@ -155,12 +156,12 @@ describe('DEPT mode rendering', () => {
       viewport: { minPpm: -5, maxPpm: 220 },
       hoveredPeakIdx: null,
       selectedPeakIdx: null,
-      deptMode: false,
+      nmrMode: 'off',
     });
     expect(hitBoxes).toHaveLength(2);
   });
 
-  it('hides quaternary C peaks in DEPT mode', () => {
+  it('hides quaternary C peaks in DEPT-135 mode', () => {
     const ctx = createMockCtx();
     const hitBoxes = renderSpectrum(ctx, acetone13C, {
       width: 800,
@@ -169,7 +170,7 @@ describe('DEPT mode rendering', () => {
       viewport: { minPpm: -5, maxPpm: 220 },
       hoveredPeakIdx: null,
       selectedPeakIdx: null,
-      deptMode: true,
+      nmrMode: 'dept-135',
     });
     // Only CH3 should have a hitBox; C (quaternary) is invisible
     expect(hitBoxes).toHaveLength(1);
@@ -178,7 +179,7 @@ describe('DEPT mode rendering', () => {
     expect(first?.peakIdx).toBe(0);
   });
 
-  it('keeps CH3 and CH2 visible in DEPT mode', () => {
+  it('keeps CH3 and CH2 visible in DEPT-135 mode', () => {
     const ctx = createMockCtx();
     const hitBoxes = renderSpectrum(ctx, ethanol13C, {
       width: 800,
@@ -187,12 +188,12 @@ describe('DEPT mode rendering', () => {
       viewport: { minPpm: -5, maxPpm: 220 },
       hoveredPeakIdx: null,
       selectedPeakIdx: null,
-      deptMode: true,
+      nmrMode: 'dept-135',
     });
     expect(hitBoxes).toHaveLength(2);
   });
 
-  it('inverts CH2 peaks (y below baseline)', () => {
+  it('inverts CH2 peaks (y below baseline) in DEPT-135', () => {
     const ctx = createMockCtx();
     const hitBoxes = renderSpectrum(ctx, ethanol13C, {
       width: 800,
@@ -201,7 +202,7 @@ describe('DEPT mode rendering', () => {
       viewport: { minPpm: -5, maxPpm: 220 },
       hoveredPeakIdx: null,
       selectedPeakIdx: null,
-      deptMode: true,
+      nmrMode: 'dept-135',
     });
     const baselineY = 24 + (400 - 24 - 34) * 0.5; // MARGIN.top + plotH * 0.5
     const ch3Box = hitBoxes.find((b) => b.peakIdx === 0); // CH3 at 15 ppm
@@ -214,7 +215,7 @@ describe('DEPT mode rendering', () => {
     expect(ch2Box?.y).toBeGreaterThan(baselineY);
   });
 
-  it('renders all peaks normally when deptMode is off', () => {
+  it('renders all peaks normally when nmrMode is off', () => {
     const ctx = createMockCtx();
     const hitBoxes = renderSpectrum(ctx, acetone13C, {
       width: 800,
@@ -223,10 +224,122 @@ describe('DEPT mode rendering', () => {
       viewport: { minPpm: -5, maxPpm: 220 },
       hoveredPeakIdx: null,
       selectedPeakIdx: null,
-      deptMode: false,
+      nmrMode: 'off',
     });
     // Both CH3 and C should be visible in normal mode
     expect(hitBoxes).toHaveLength(2);
+  });
+
+  // Wave-4 P1-01: legacy boolean field still maps to DEPT-135.
+  it('legacy deptMode=true is treated as DEPT-135', () => {
+    const ctx = createMockCtx();
+    const hitBoxes = renderSpectrum(ctx, ethanol13C, {
+      width: 800,
+      height: 400,
+      dpr: 1,
+      viewport: { minPpm: -5, maxPpm: 220 },
+      hoveredPeakIdx: null,
+      selectedPeakIdx: null,
+      deptMode: true,
+    });
+    const baselineY = 24 + (400 - 24 - 34) * 0.5;
+    const ch2Box = hitBoxes.find((b) => b.peakIdx === 1);
+    expect(ch2Box?.y).toBeGreaterThan(baselineY);
+  });
+});
+
+// Wave-4 P1-01: DEPT-90 — CH only.
+describe('DEPT-90 mode', () => {
+  // Mixed-class spectrum: CH₃, CH₂, CH, quaternary C
+  const mixed13C: NmrPrediction = {
+    nucleus: '13C',
+    solvent: 'CDCl3',
+    peaks: [
+      makePeak(15.0, 'CH3', 0),
+      makePeak(45.0, 'CH2', 1),
+      makePeak(70.0, 'CH', 2),
+      makePeak(180.0, 'C', 3),
+    ],
+    metadata: { engine_version: '0.2.0', data_version: null, method: 'additive' },
+  };
+
+  it('renders only CH peaks (1 of 4) in DEPT-90', () => {
+    const ctx = createMockCtx();
+    const hitBoxes = renderSpectrum(ctx, mixed13C, {
+      width: 800,
+      height: 400,
+      dpr: 1,
+      viewport: { minPpm: -5, maxPpm: 220 },
+      hoveredPeakIdx: null,
+      selectedPeakIdx: null,
+      nmrMode: 'dept-90',
+    });
+    expect(hitBoxes).toHaveLength(1);
+    expect(hitBoxes[0]?.peakIdx).toBe(2); // CH at 70 ppm
+  });
+
+  it('CH peak is above baseline in DEPT-90 (positive phase)', () => {
+    const ctx = createMockCtx();
+    const hitBoxes = renderSpectrum(ctx, mixed13C, {
+      width: 800,
+      height: 400,
+      dpr: 1,
+      viewport: { minPpm: -5, maxPpm: 220 },
+      hoveredPeakIdx: null,
+      selectedPeakIdx: null,
+      nmrMode: 'dept-90',
+    });
+    const baselineY = 24 + (400 - 24 - 34) * 0.5;
+    expect(hitBoxes[0]?.y).toBeLessThan(baselineY);
+  });
+
+  it('hides every peak when no CH carbons are present', () => {
+    const noCH: NmrPrediction = {
+      nucleus: '13C',
+      solvent: 'CDCl3',
+      peaks: [makePeak(15.0, 'CH3', 0), makePeak(180.0, 'C', 1)],
+      metadata: { engine_version: '0.2.0', data_version: null, method: 'additive' },
+    };
+    const ctx = createMockCtx();
+    const hitBoxes = renderSpectrum(ctx, noCH, {
+      width: 800,
+      height: 400,
+      dpr: 1,
+      viewport: { minPpm: -5, maxPpm: 220 },
+      hoveredPeakIdx: null,
+      selectedPeakIdx: null,
+      nmrMode: 'dept-90',
+    });
+    expect(hitBoxes).toHaveLength(0);
+  });
+});
+
+// Wave-4 P1-01: phase-sign helper — covered exhaustively so the rendering
+// expectations above always trace back to a single source of truth.
+describe('peakPhaseSign', () => {
+  it('off mode shows every peak above baseline', () => {
+    expect(peakPhaseSign('CH3', 'off')).toBe(1);
+    expect(peakPhaseSign('CH2', 'off')).toBe(1);
+    expect(peakPhaseSign('CH', 'off')).toBe(1);
+    expect(peakPhaseSign('C', 'off')).toBe(1);
+    expect(peakPhaseSign(null, 'off')).toBe(1);
+  });
+
+  it('DEPT-135: CH and CH3 up, CH2 down, C absent', () => {
+    expect(peakPhaseSign('CH3', 'dept-135')).toBe(1);
+    expect(peakPhaseSign('CH', 'dept-135')).toBe(1);
+    expect(peakPhaseSign('CH2', 'dept-135')).toBe(-1);
+    expect(peakPhaseSign('C', 'dept-135')).toBe(0);
+    expect(peakPhaseSign(null, 'dept-135')).toBe(0);
+    expect(peakPhaseSign(undefined, 'dept-135')).toBe(0);
+  });
+
+  it('DEPT-90: only CH visible, everything else absent', () => {
+    expect(peakPhaseSign('CH', 'dept-90')).toBe(1);
+    expect(peakPhaseSign('CH3', 'dept-90')).toBe(0);
+    expect(peakPhaseSign('CH2', 'dept-90')).toBe(0);
+    expect(peakPhaseSign('C', 'dept-90')).toBe(0);
+    expect(peakPhaseSign(null, 'dept-90')).toBe(0);
   });
 });
 

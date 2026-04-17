@@ -9,6 +9,7 @@ import {
   computeDefaultViewport,
   type PeakHitBox,
   type SpectrumViewport,
+  type NmrMode,
 } from './SpectrumRenderer.js';
 import { resolveMultiplicity } from './multiplet.js';
 import { isEditingTextNow } from './isEditingText.js';
@@ -277,7 +278,13 @@ export default function NmrPanel({
   const [isPanning, setIsPanning] = useState(false);
   const [pinnedPeakIdx, setPinnedPeakIdx] = useState<number | null>(null);
   const [showNoise, setShowNoise] = useState(false);
-  const [deptMode, setDeptMode] = useState(false);
+  // Wave-4 P1-01: 3-state DEPT cycle (off → DEPT-135 → DEPT-90 → off).
+  // DEPT-135 phases CH₂ down, CH/CH₃ up. DEPT-90 hides everything but CH.
+  // Quaternary C is absent in either DEPT mode.
+  const [nmrMode, setNmrMode] = useState<NmrMode>('off');
+  const cycleNmrMode = useCallback(() => {
+    setNmrMode((m) => (m === 'off' ? 'dept-135' : m === 'dept-135' ? 'dept-90' : 'off'));
+  }, []);
   const [showIntegration, setShowIntegration] = useState(false);
   // Spectrometer frequency — drives multiplet spacing (Δppm = J_hz / ν₀).
   // 400 MHz is the workhorse of most academic labs; 300/500/600 covered for
@@ -464,10 +471,27 @@ export default function NmrPanel({
         e.preventDefault();
         exportPng(prediction, viewport, frequencyMhz);
       }
+      // Wave-4 P1-01: D cycles DEPT mode when ¹³C is selected and the panel
+      // (or any spectrum-affordance descendant) holds focus. We require
+      // either focus inside the panel OR no focus to avoid hijacking D in
+      // the canvas tool palette while the user is mid-draw.
+      if (
+        e.key === 'd' &&
+        !e.ctrlKey &&
+        !e.metaKey &&
+        !e.altKey &&
+        !e.shiftKey &&
+        nucleus === '13C' &&
+        (panelRef.current?.contains(document.activeElement) ||
+          document.activeElement === document.body)
+      ) {
+        e.preventDefault();
+        cycleNmrMode();
+      }
     }
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [navigateSignal, prediction, viewport, frequencyMhz]);
+  }, [navigateSignal, prediction, viewport, frequencyMhz, nucleus, cycleNmrMode]);
 
   // Render spectrum
   useEffect(() => {
@@ -490,7 +514,7 @@ export default function NmrPanel({
       selectedPeakIdx,
       solvent,
       showNoise,
-      deptMode: deptMode && nucleus === '13C',
+      nmrMode: nucleus === '13C' ? nmrMode : 'off',
       frequencyMhz,
       exposeDebug: true,
       showIntegration: showIntegration && nucleus === '1H',
@@ -513,7 +537,7 @@ export default function NmrPanel({
     solvent,
     showNoise,
     pinnedPeakIdx,
-    deptMode,
+    nmrMode,
     nucleus,
     frequencyMhz,
     showIntegration,
@@ -848,27 +872,30 @@ export default function NmrPanel({
             ))}
           </div>
 
-          {/* DEPT toggle (13C only) */}
+          {/* Wave-4 P1-01: 3-state DEPT cycle (13C only) */}
           {nucleus === '13C' && (
             <button
-              onClick={() => setDeptMode((d) => !d)}
+              onClick={cycleNmrMode}
               style={{
                 padding: '2px 6px',
                 fontSize: 10,
                 fontFamily: 'var(--kd-font-mono, monospace)',
                 border: '1px solid var(--kd-color-border, #333)',
                 borderRadius: 'var(--kd-radius-sm, 4px)',
-                background: deptMode
-                  ? 'var(--kd-color-accent-muted, rgba(77, 171, 247, 0.15))'
-                  : 'transparent',
-                color: deptMode
-                  ? 'var(--kd-color-accent, #4dabf7)'
-                  : 'var(--kd-color-text-secondary, #a0a0a0)',
+                background:
+                  nmrMode !== 'off'
+                    ? 'var(--kd-color-accent-muted, rgba(77, 171, 247, 0.15))'
+                    : 'transparent',
+                color:
+                  nmrMode !== 'off'
+                    ? 'var(--kd-color-accent, #4dabf7)'
+                    : 'var(--kd-color-text-secondary, #a0a0a0)',
                 cursor: 'pointer',
               }}
-              title="Toggle DEPT mode — color-coded carbon types with CH₂ inversion"
+              title="Cycle DEPT mode (D) — off → DEPT-135 (CH₂ inverted) → DEPT-90 (CH only) → off"
+              data-testid="nmr-mode-cycle"
             >
-              DEPT
+              {nmrMode === 'dept-135' ? 'DEPT-135' : nmrMode === 'dept-90' ? 'DEPT-90' : 'DEPT'}
             </button>
           )}
 
