@@ -7,7 +7,8 @@
 // Tools are swapped by id via the registry, and can call back into the
 // ToolContext to read/write the scene store or query hotspots.
 
-import type { AtomId, BondId, Point, SceneStore } from '@kendraw/scene';
+import type { AtomId, BondId, Command, Page, Point, SceneStore } from '@kendraw/scene';
+import type { HoverPreview } from './bondPreview';
 
 export interface ToolModifiers {
   readonly shift: boolean;
@@ -37,8 +38,31 @@ export interface ToolContext {
   hitTestBond(world: Point): BondId | null;
   searchAtomsInRect(p1: Point, p2: Point): readonly AtomId[];
   setSelectedAtoms(ids: ReadonlySet<AtomId>): void;
+  /** Read back the most recently published selection. Returns an empty set
+   *  if nothing is selected. */
+  getSelectedAtoms?(): ReadonlySet<AtomId>;
   setSelectionRect(rect: SelectionRect | null): void;
   requestRepaint(): void;
+  /** Optional: publish a hover preview to be drawn by the canvas overlay.
+   *  Tools that don't use the overlay can ignore it. */
+  setHoverPreview?(preview: HoverPreview | null): void;
+  /** Convenience accessors used by the interactive tools. Optional so older
+   *  tools (W4-R-06 marquee select) compile against the original interface. */
+  getActivePage?(): Page | null;
+  dispatch?(command: Command): void;
+  /** Transient drag overlay for atoms — the canvas paints the listed atoms
+   *  (and their incident bonds) at the displaced position without mutating
+   *  the store. Used by W4-R-07 drag-move. */
+  setDragOffset?(offset: DragOffset | null): void;
+  /** Viewport (zoom + pan) accessors used by W4-R-12. */
+  getViewport?(): { zoom: number; panX: number; panY: number };
+  setViewport?(view: { zoom: number; panX: number; panY: number }): void;
+}
+
+export interface DragOffset {
+  readonly atomIds: ReadonlySet<AtomId>;
+  readonly dx: number;
+  readonly dy: number;
 }
 
 export interface Tool {
