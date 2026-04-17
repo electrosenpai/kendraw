@@ -39,6 +39,7 @@ import { ToolPalette, DEFAULT_TOOL_STATE, type ToolState } from './ToolPalette';
 import { PropertyPanel } from './PropertyPanel';
 import { StatusBar } from './StatusBar';
 import { isEditingTextNow } from './hooks/useIsEditingText';
+import { GROUP_LABEL_HOTKEYS } from './group-label-hotkeys';
 import {
   getGraphicOverlays,
   getCdxmlDocumentSettings,
@@ -739,17 +740,30 @@ export function Canvas({
       // ChemDraw atom hotkeys — change element of selected atoms (Section 9 PDF)
       // Full ChemDraw set: a-z + Shift modifiers
       if (!isMod && selection.atomIds.length > 0) {
+        // ChemDraw group-label hotkeys (Shift+key variants). Run before atom
+        // hotkeys so Shift+O/F/N yield OMe/CF3/NO2 rather than bare O/F/N.
+        // Users still get O/F/N as elements via the lowercase keys below.
+        if (e.shiftKey) {
+          const gl = GROUP_LABEL_HOTKEYS[e.key];
+          if (gl) {
+            for (const id of selection.atomIds) {
+              store.dispatch({
+                type: 'update-atom',
+                id,
+                changes: { element: gl.element, label: gl.label },
+              });
+            }
+            return;
+          }
+        }
         const atomHotkeys: Record<string, number> = {
           c: 6,
           C: 6, // Carbon
-          n: 7,
-          N: 7, // Nitrogen
-          o: 8,
-          O: 8, // Oxygen
+          n: 7, // Nitrogen (Shift+N → NO2 group, handled above)
+          o: 8, // Oxygen (Shift+O → OMe group, handled above)
           s: 16,
           S: 16, // Sulfur
-          f: 9,
-          F: 9, // Fluorine
+          f: 9, // Fluorine (Shift+F → CF3 group, handled above)
           i: 53,
           I: 53, // Iodine
           l: 17,

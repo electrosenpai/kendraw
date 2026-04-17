@@ -19,9 +19,12 @@ Generated: 2026-04-13 (Autonomous Session)
 | M       | Methyl              | Carbon (Z=6)               | Implemented |
 | +       | Add positive charge | Charge +1 (clamped -4..+4) | Implemented |
 | -       | Add negative charge | Charge -1 (clamped -4..+4) | Implemented |
-| Shift+B | Bromine             | Not implemented            | Deferred    |
-| Shift+O | OMe group           | Not implemented            | Deferred    |
-| K       | Sulfonyl            | Not implemented            | Deferred    |
+| Shift+B | Bromine             | Boron (b → Br, B → Boron)  | Implemented (wave-2) |
+| Shift+O | OMe group           | OMe label                  | Implemented (wave-3) |
+| Shift+F | CF₃ group           | CF3 label                  | Implemented (wave-3) |
+| Shift+N | NO₂ group           | NO2 label                  | Implemented (wave-3) |
+| Shift+Y | OAc group           | OAc label                  | Implemented (wave-3) |
+| K       | Sulfonyl            | Potassium (K=19)           | Adapted     |
 
 ## Bond Hotkeys (with selection or as tool modifier)
 
