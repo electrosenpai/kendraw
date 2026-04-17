@@ -37,6 +37,7 @@ import { CanvasRenderer } from '@kendraw/renderer-canvas';
 import { ToolPalette, DEFAULT_TOOL_STATE, type ToolState } from './ToolPalette';
 import { PropertyPanel } from './PropertyPanel';
 import { StatusBar } from './StatusBar';
+import { isEditingTextNow } from './hooks/useIsEditingText';
 import {
   getGraphicOverlays,
   getCdxmlDocumentSettings,
@@ -323,11 +324,15 @@ export function Canvas({
   // Space key tracking for Photoshop-style pan
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
+      if (isEditingTextNow()) return;
+      if (e.isComposing) return;
       if (e.key === ' ' && !e.repeat) {
         spaceHeldRef.current = true;
       }
     }
     function onKeyUp(e: KeyboardEvent) {
+      if (isEditingTextNow()) return;
+      if (e.isComposing) return;
       if (e.key === ' ') {
         spaceHeldRef.current = false;
       }
@@ -343,6 +348,13 @@ export function Canvas({
   // Keyboard shortcuts
   useEffect(() => {
     async function handleKeyDown(e: KeyboardEvent) {
+      // Gate: when a text input has focus (annotation textarea, dialogs,
+      // rename fields, etc.) all canvas hotkeys are disabled. The input
+      // element itself still receives the keystroke — we simply do not
+      // react to it at the window level.
+      if (isEditingTextNow()) return;
+      if (e.isComposing) return;
+
       const isMod = e.ctrlKey || e.metaKey;
 
       // Fit to screen (Ctrl+0)
@@ -1340,6 +1352,8 @@ export function Canvas({
         <div
           ref={containerRef}
           data-testid="drawing-canvas"
+          data-canvas-root
+          tabIndex={0}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
@@ -1363,18 +1377,48 @@ export function Canvas({
           <textarea
             ref={textInputRef}
             autoFocus
+            data-text-editing="true"
+            data-testid="text-annotation-input"
             value={textEditing.text}
             onChange={(e) => setTextEditing((s) => (s ? { ...s, text: e.target.value } : null))}
             onKeyDown={(e) => {
+              // Defense in depth: window-level handlers already gate on
+              // isEditingTextNow(), but we also stop propagation for
+              // single-character keystrokes so any future listener cannot
+              // intercept. Commit keys (Enter/Tab), cancel (Escape), and
+              // browser-default editing combos (Ctrl+A/C/V/X/Z/Y, arrows,
+              // Home/End) are handled explicitly or left untouched.
               if (e.key === 'Escape') {
-                cancelText();
+                e.preventDefault();
                 e.stopPropagation();
+                cancelText();
+                document.querySelector<HTMLElement>('[data-canvas-root]')?.focus();
+                return;
               }
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
-                confirmText();
                 e.stopPropagation();
+                confirmText();
+                document.querySelector<HTMLElement>('[data-canvas-root]')?.focus();
+                return;
               }
+              if (e.key === 'Tab') {
+                e.preventDefault();
+                e.stopPropagation();
+                confirmText();
+                document.querySelector<HTMLElement>('[data-canvas-root]')?.focus();
+                return;
+              }
+              const isMod = e.ctrlKey || e.metaKey;
+              const isNav =
+                e.key === 'ArrowLeft' ||
+                e.key === 'ArrowRight' ||
+                e.key === 'ArrowUp' ||
+                e.key === 'ArrowDown' ||
+                e.key === 'Home' ||
+                e.key === 'End';
+              if (isMod || isNav) return;
+              e.stopPropagation();
             }}
             onBlur={confirmText}
             placeholder="Type text..."

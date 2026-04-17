@@ -8,6 +8,7 @@ import { MoleculeSearch } from './MoleculeSearch';
 import { ImportDialog } from './ImportDialog';
 import { workspaceStore, type WorkspaceState } from './workspace-store';
 import { useResponsiveLayout } from './hooks/useResponsiveLayout';
+import { isEditingTextNow } from './hooks/useIsEditingText';
 
 const LazyNmrPanel = lazy(() => import('@kendraw/nmr'));
 
@@ -78,6 +79,8 @@ export function App() {
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
+      if (isEditingTextNow()) return;
+      if (e.isComposing) return;
       if (e.key === '?') {
         setShowShortcuts((s) => !s);
         return;

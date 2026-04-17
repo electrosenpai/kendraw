@@ -11,6 +11,7 @@ import {
   type SpectrumViewport,
 } from './SpectrumRenderer.js';
 import { resolveMultiplicity } from './multiplet.js';
+import { isEditingTextNow } from './isEditingText.js';
 
 type Nucleus = '1H' | '13C';
 type SolventId = 'CDCl3' | 'DMSO-d6' | 'CD3OD' | 'acetone-d6' | 'C6D6' | 'D2O';
@@ -450,6 +451,10 @@ export default function NmrPanel({
   // Keyboard shortcuts for signal navigation + QW-8: Ctrl+Shift+E for PNG export
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
+      // Gate: when a text input has focus anywhere, suppress NMR hotkeys
+      // so typing into a dialog or annotation does not nudge the spectrum.
+      if (isEditingTextNow()) return;
+      if (e.isComposing) return;
       if (e.key === 'Tab' && panelRef.current?.contains(document.activeElement)) {
         e.preventDefault();
         navigateSignal(e.shiftKey ? -1 : 1);
