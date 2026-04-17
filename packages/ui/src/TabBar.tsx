@@ -8,6 +8,8 @@ interface TabBarProps {
   onCloseTab: (id: string) => void;
   onNewTab: () => void;
   onRenameTab?: ((id: string, name: string) => void) | undefined;
+  theme?: 'dark' | 'light' | undefined;
+  onToggleTheme?: (() => void) | undefined;
 }
 
 export function TabBar({
@@ -17,6 +19,8 @@ export function TabBar({
   onCloseTab,
   onNewTab,
   onRenameTab,
+  theme,
+  onToggleTheme,
 }: TabBarProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
@@ -96,6 +100,17 @@ export function TabBar({
       <button onClick={onNewTab} style={newBtnStyle} title="New document (Ctrl+N)">
         +
       </button>
+      {onToggleTheme && (
+        <button
+          onClick={onToggleTheme}
+          data-testid="theme-toggle"
+          aria-label={theme === 'light' ? 'Switch to dark canvas' : 'Switch to light canvas'}
+          title={theme === 'light' ? 'Switch to dark canvas' : 'Switch to light canvas'}
+          style={{ ...newBtnStyle, marginLeft: 'auto', fontSize: 'var(--kd-font-size-md)' }}
+        >
+          {theme === 'light' ? 'Dark' : 'Light'}
+        </button>
+      )}
     </div>
   );
 }

@@ -205,6 +205,38 @@ describe('CanvasRenderer', () => {
       expect(mock.ctx.stroke).toHaveBeenCalled();
     });
   });
+
+  describe('theme (wave-1 P1-8)', () => {
+    it('defaults to dark theme', () => {
+      expect(renderer.getTheme()).toBe('dark');
+    });
+
+    it('switches to light theme and back', () => {
+      renderer.setTheme('light');
+      expect(renderer.getTheme()).toBe('light');
+      renderer.setTheme('dark');
+      expect(renderer.getTheme()).toBe('dark');
+    });
+
+    it('paints a light-theme label background over atom label (visible contrast)', () => {
+      renderer.attach(container);
+      renderer.setTheme('light');
+      const doc = createDocWithAtoms(1);
+      // Force an O atom so shouldShowLabel returns true.
+      const firstPage = doc.pages[0];
+      if (!firstPage) throw new Error('expected page');
+      const firstAtomId = Object.keys(firstPage.atoms)[0];
+      if (!firstAtomId) throw new Error('expected atom');
+      const firstAtom = firstPage.atoms[firstAtomId as keyof typeof firstPage.atoms];
+      if (!firstAtom) throw new Error('expected atom value');
+      firstAtom.element = 8;
+      mock.ctx.fillRect.mockClear();
+
+      renderer.render(doc);
+
+      expect(mock.ctx.fillRect).toHaveBeenCalled();
+    });
+  });
 });
 
 function createDocWithAtoms(count: number): Document {

@@ -63,6 +63,18 @@ function defaultRenderSettings(): RenderSettings {
 
 const ATOM_RADIUS = 10; // visual hit radius for selection (not rendering)
 
+export type CanvasTheme = 'dark' | 'light';
+
+export interface ThemePalette {
+  /** Canvas background; the label box fill must match this to "erase" bond lines. */
+  background: string;
+  /** Primary text / stroke color for atoms with no element-specific palette. */
+  text: string;
+}
+
+const DARK_PALETTE: ThemePalette = { background: '#0a0a0a', text: '#e0e0e0' };
+const LIGHT_PALETTE: ThemePalette = { background: '#f5f5f5', text: '#1a1a1a' };
+
 export class CanvasRenderer implements Renderer {
   private canvas: HTMLCanvasElement | null = null;
   private ctx: CanvasRenderingContext2D | null = null;
@@ -78,6 +90,20 @@ export class CanvasRenderer implements Renderer {
   private panX = 0;
   private panY = 0;
   private S: RenderSettings = defaultRenderSettings();
+  private theme: CanvasTheme = 'dark';
+  private palette: ThemePalette = DARK_PALETTE;
+
+  /** Switch the canvas palette between dark and light presets. */
+  setTheme(theme: CanvasTheme): void {
+    this.theme = theme;
+    this.palette = theme === 'light' ? LIGHT_PALETTE : DARK_PALETTE;
+    if (this.lastDoc) this.render(this.lastDoc);
+  }
+
+  /** Read-only accessor used by tests and overlays. */
+  getTheme(): CanvasTheme {
+    return this.theme;
+  }
 
   attach(container: HTMLElement): void {
     this.container = container;
@@ -322,7 +348,7 @@ export class CanvasRenderer implements Renderer {
     }
     const pad = 2;
     const halfH = S.labelSize / 2 + pad;
-    ctx.fillStyle = '#0a0a0a'; // match canvas bg
+    ctx.fillStyle = this.palette.background; // match canvas bg (themed)
     ctx.fillRect(bgX - pad, atom.y - halfH, totalWidth + pad * 2, halfH * 2);
 
     // Render label segments (formula mode), anchored so the element symbol
@@ -434,7 +460,13 @@ export class CanvasRenderer implements Renderer {
     }
 
     const color = getColor(element);
-    const textColor = this.isLightColor(color) ? color : '#e0e0e0';
+    // Element color must contrast with the current background:
+    // in dark mode we keep light palette entries; in light mode we keep
+    // dark ones. Anything that fails the contrast check falls back to the
+    // themed text color.
+    const contrastOk =
+      this.theme === 'light' ? !this.isLightColor(color) : this.isLightColor(color);
+    const textColor = contrastOk ? color : this.palette.text;
 
     for (const seg of segments) {
       const isNormal = seg.style === 'normal';
@@ -807,7 +839,7 @@ export class CanvasRenderer implements Renderer {
     const baseFontSize = ann.fontSize ?? this.S.labelSize;
     const weight = ann.bold ? 'bold' : 'normal';
     const style = ann.italic ? 'italic' : 'normal';
-    const fillColor = ann.color ?? '#e0e0e0';
+    const fillColor = ann.color ?? this.palette.text;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
     let x = ann.x;
@@ -855,7 +887,7 @@ export class CanvasRenderer implements Renderer {
     const { start, c1, c2, end } = arrow.geometry;
     const isCurly = arrow.type === 'curly-pair' || arrow.type === 'curly-radical';
     const isRetro = arrow.type === 'retro';
-    const color = isCurly ? '#e06633' : '#ffffff';
+    const color = isCurly ? '#e06633' : this.palette.text;
 
     // Default arrowhead config: curly arrows always have head, reaction arrows use parsed config
     const headType = arrow.arrowheadHead ?? (isCurly ? 'full' : 'full');

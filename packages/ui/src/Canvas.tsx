@@ -84,6 +84,7 @@ interface CanvasProps {
   highlightedAtomIds?: Set<AtomId> | undefined;
   onHighlightAtoms?: ((ids: Set<AtomId>) => void) | undefined;
   onSelectionChange?: ((atomIds: AtomId[]) => void) | undefined;
+  theme?: 'dark' | 'light' | undefined;
 }
 
 export function Canvas({
@@ -96,6 +97,7 @@ export function Canvas({
   highlightedAtomIds,
   onHighlightAtoms,
   onSelectionChange,
+  theme = 'dark',
 }: CanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<CanvasRenderer | null>(null);
@@ -283,11 +285,19 @@ export function Canvas({
     return onGraphicOverlaysChange(update);
   }, []);
 
+  // Keep a ref to the current theme so the attach effect can pick it up on
+  // mount without re-attaching the renderer every time the theme flips.
+  const themeRef = useRef(theme);
+  useEffect(() => {
+    themeRef.current = theme;
+  }, [theme]);
+
   // Attach renderer
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
     const renderer = new CanvasRenderer();
+    renderer.setTheme(themeRef.current);
     renderer.attach(container);
     rendererRef.current = renderer;
     renderer.render(store.getState());
@@ -296,6 +306,11 @@ export function Canvas({
       rendererRef.current = null;
     };
   }, [store]);
+
+  // Propagate theme changes to the renderer (re-renders internally).
+  useEffect(() => {
+    rendererRef.current?.setTheme(theme);
+  }, [theme]);
 
   // Re-render on doc change
   useEffect(() => {

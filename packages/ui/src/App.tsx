@@ -49,6 +49,15 @@ export function App() {
   });
   const [highlightedAtomIds, setHighlightedAtomIds] = useState<Set<AtomId>>(new Set());
   const [selectedAtomIds, setSelectedAtomIds] = useState<AtomId[]>([]);
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    const saved = localStorage.getItem('kd-theme');
+    return saved === 'light' ? 'light' : 'dark';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('kd-theme', theme);
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
 
   // Persist widths
   useEffect(() => {
@@ -179,6 +188,8 @@ export function App() {
           onCloseTab={handleCloseTab}
           onNewTab={handleNewTab}
           onRenameTab={handleRenameTab}
+          theme={theme}
+          onToggleTheme={() => setTheme((t) => (t === 'light' ? 'dark' : 'light'))}
         />
       </div>
 
@@ -194,6 +205,7 @@ export function App() {
           highlightedAtomIds={highlightedAtomIds}
           onHighlightAtoms={setHighlightedAtomIds}
           onSelectionChange={setSelectedAtomIds}
+          theme={theme}
         />
       ) : (
         <>
