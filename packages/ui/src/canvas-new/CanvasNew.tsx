@@ -10,10 +10,12 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { SceneStore, AtomId, BondId, Point } from '@kendraw/scene';
+import { SpatialIndex } from '@kendraw/scene';
 import { CanvasRenderer } from '@kendraw/renderer-canvas';
-import { ToolRegistry, noopSelectTool } from './toolRegistry';
-import type { ToolContext } from './types';
+import { ToolRegistry } from './toolRegistry';
+import type { SelectionRect, ToolContext } from './types';
 import { useToolDispatcher } from './useToolDispatcher';
+import { createMarqueeSelectTool } from './tools/marqueeSelectTool';
 
 export interface CanvasNewProps {
   store: SceneStore;
@@ -29,14 +31,17 @@ export interface CanvasNewProps {
 }
 
 export function CanvasNew(props: CanvasNewProps): JSX.Element {
-  const { store, theme = 'dark', highlightedAtomIds } = props;
+  const { store, theme = 'dark', highlightedAtomIds, onSelectionChange } = props;
   const canvasHostRef = useRef<HTMLDivElement | null>(null);
   const [canvasEl, setCanvasEl] = useState<HTMLDivElement | null>(null);
   const rendererRef = useRef<CanvasRenderer | null>(null);
+  const spatialRef = useRef<SpatialIndex>(new SpatialIndex());
+  const onSelectionChangeRef = useRef(onSelectionChange);
+  onSelectionChangeRef.current = onSelectionChange;
 
   const registry = useMemo(() => {
     const r = new ToolRegistry();
-    r.register(noopSelectTool);
+    r.register(createMarqueeSelectTool());
     r.activate('select');
     return r;
   }, []);
@@ -44,8 +49,18 @@ export function CanvasNew(props: CanvasNewProps): JSX.Element {
   const context = useMemo<ToolContext>(() => ({
     store,
     worldFromScreen: (x: number, y: number): Point => ({ x, y }),
-    hitTestAtom: (_world: Point): AtomId | null => null,
+    hitTestAtom: (world: Point): AtomId | null =>
+      spatialRef.current.hitTest(world.x, world.y),
     hitTestBond: (_world: Point): BondId | null => null,
+    searchAtomsInRect: (p1: Point, p2: Point): readonly AtomId[] =>
+      spatialRef.current.searchRect(p1.x, p1.y, p2.x, p2.y),
+    setSelectedAtoms: (ids: ReadonlySet<AtomId>) => {
+      rendererRef.current?.setSelectedAtoms(new Set(ids));
+      onSelectionChangeRef.current?.([...ids]);
+    },
+    setSelectionRect: (rect: SelectionRect | null) => {
+      rendererRef.current?.setSelectionRect(rect);
+    },
     requestRepaint: () => {
       const r = rendererRef.current;
       if (r) r.render(store.getState());
@@ -62,8 +77,15 @@ export function CanvasNew(props: CanvasNewProps): JSX.Element {
     renderer.setTheme(theme);
     renderer.attach(host);
     rendererRef.current = renderer;
+    const rebuildIndex = (): void => {
+      const doc = store.getState();
+      const page = doc.pages[doc.activePageIndex];
+      if (page) spatialRef.current.rebuild(page);
+    };
+    rebuildIndex();
     renderer.render(store.getState());
     const unsubscribe = store.subscribe(() => {
+      rebuildIndex();
       renderer.render(store.getState());
     });
     return () => {

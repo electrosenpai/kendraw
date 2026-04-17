@@ -48,6 +48,9 @@ function makeContext(): ToolContext {
     worldFromScreen: (x, y) => ({ x: x * 2, y: y * 2 }),
     hitTestAtom: () => null,
     hitTestBond: () => null,
+    searchAtomsInRect: () => [],
+    setSelectedAtoms: () => {},
+    setSelectionRect: () => {},
     requestRepaint: () => {},
   };
 }

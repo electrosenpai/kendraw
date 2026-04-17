@@ -23,11 +23,21 @@ export interface ToolEventPayload<E = Event> {
   readonly event: E;
 }
 
+export interface SelectionRect {
+  readonly x1: number;
+  readonly y1: number;
+  readonly x2: number;
+  readonly y2: number;
+}
+
 export interface ToolContext {
   readonly store: SceneStore;
   worldFromScreen(screenX: number, screenY: number): Point;
   hitTestAtom(world: Point): AtomId | null;
   hitTestBond(world: Point): BondId | null;
+  searchAtomsInRect(p1: Point, p2: Point): readonly AtomId[];
+  setSelectedAtoms(ids: ReadonlySet<AtomId>): void;
+  setSelectionRect(rect: SelectionRect | null): void;
   requestRepaint(): void;
 }
 
