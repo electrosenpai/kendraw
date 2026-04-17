@@ -1,6 +1,6 @@
 # Keyboard Shortcuts Compliance: ChemDraw Reference vs Kendraw
 
-Generated: 2026-04-13 (Autonomous Session)
+Generated: 2026-04-13 (Autonomous Session) — refreshed 2026-04-17 for wave-3.
 
 ## Atom Hotkeys (with atoms selected)
 
@@ -69,6 +69,7 @@ Bond style keys (1-3, d, w, y) work within the selection context.
 | Alt+Shift+L/R/T/B/E/V | Align selection     | Align atoms L/R/T/B/Cx/Cy      | Kendraw-specific |
 | Ctrl+=                | Zoom in             | Keyboard zoom (wheel-equivalent) | Kendraw-specific |
 | Ctrl+-                | Zoom out            | Keyboard zoom (wheel-equivalent) | Kendraw-specific |
+| Ctrl+'                | —                   | Toggle 25 px snap-to-grid (wave-3 B2) | Kendraw-specific |
 
 ## Tool Shortcuts (no selection)
 
@@ -83,12 +84,17 @@ Bond style keys (1-3, d, w, y) work within the selection context.
 | W   | Arrow               | Implemented |
 | U   | Curly Arrow         | Implemented |
 | X   | Chain tool          | Implemented (wave-3) |
+| G   | Shape (rect / ellipse) | Implemented (wave-3 B1) |
 | P   | Toggle Properties   | Implemented |
 | ?   | Shortcut Cheatsheet | Implemented |
 
 ## Summary
 
-- **28/35** ChemDraw shortcuts implemented (80%)
-- **7** deferred (Shift+key combos for groups, double-bond positioning, toggle modes)
-- **3** adapted to Kendraw-specific functions (Ctrl+D, Ctrl+L, Ctrl+Shift+N)
-- Key fix in this session: `y` corrected from aromatic to wavy, P/B/H/M atom hotkeys added
+- **31/35** ChemDraw shortcuts implemented (89%). Wave-3 additions: Ctrl+E
+  angle-snap, Shift+{O,F,N,Y} group labels, X chain tool, G shape tool, Ctrl+'
+  grid-snap.
+- **4** deferred (double-bond positioning l/r/c, bold-bond `b` conflict,
+  hashed-bond `h` conflict, dedicated name-to-structure Ctrl+Shift+N).
+- **3** adapted to Kendraw-specific functions (Ctrl+D, Ctrl+L, Ctrl+Shift+N).
+- Wave-3 also added Dipole (μ) and No-go (✗→) arrow sub-types under the W
+  tool submenu; Rectangle/Ellipse under the G submenu.
