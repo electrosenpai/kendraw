@@ -17,7 +17,8 @@ const TOOL_HELP: Record<string, (ts: ToolState) => string> = {
   eraser: () => 'Click atom or bond to delete.',
   'add-atom': (ts) =>
     `Click to place ${getSymbol(ts.element)}. Right-click for elements. Keys 0-9.`,
-  'add-bond': (ts) => `Click atom A, then atom B for ${ts.bondStyle} bond. Right-click for types.`,
+  'add-bond': (ts) =>
+    `Click atom A, then atom B for ${ts.bondStyle} bond. Right-click for types. Angle snap ${ts.angleSnap ? 'on' : 'off'} (Ctrl+E).`,
   ring: (ts) => `Click to insert ${ts.ringTemplate}. Right-click for templates.`,
   arrow: () => 'Click start, then click end for reaction arrow.',
   'curly-arrow': () => 'Click start, then click end for mechanism arrow.',
@@ -72,6 +73,18 @@ export function StatusBar({
         )}
         <span style={statStyle}>
           {atomCount}a {bondCount}b
+        </span>
+        <span
+          style={{
+            ...statStyle,
+            color: toolState.angleSnap
+              ? 'var(--kd-color-text-muted)'
+              : 'var(--kd-color-warning)',
+          }}
+          title="Angle snap (Ctrl+E)"
+          data-testid="angle-snap-indicator"
+        >
+          ∠{toolState.angleSnap ? 'snap' : 'free'}
         </span>
         <span style={statStyle}>{Math.round(zoom * 100)}%</span>
       </div>

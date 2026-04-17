@@ -63,6 +63,7 @@ const SHORTCUTS = [
       { key: 'Ctrl+A', desc: 'Select all' },
       { key: 'Ctrl+D', desc: 'Duplicate' },
       { key: 'Ctrl+R', desc: 'Rotate 15\u00b0' },
+      { key: 'Ctrl+E', desc: 'Toggle bond angle snap' },
       { key: 'Delete', desc: 'Delete selected' },
       { key: 'Ctrl+Shift+K', desc: 'Clean up structure' },
     ],

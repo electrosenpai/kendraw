@@ -45,6 +45,9 @@ export interface ToolState {
     | 'dipole'
     | 'no-go';
   curlyType: 'pair' | 'radical';
+  /** When true, new bonds snap to 30° increments. When false, bonds follow the
+   *  cursor freely. Shift inverts whichever mode is active (wave-3 A5). */
+  angleSnap: boolean;
 }
 
 export const DEFAULT_TOOL_STATE: ToolState = {
@@ -54,6 +57,7 @@ export const DEFAULT_TOOL_STATE: ToolState = {
   ringTemplate: 'benzene',
   arrowType: 'forward',
   curlyType: 'pair',
+  angleSnap: true,
 };
 
 // ── Icons (20x20 SVG, stroke 1.5) ──────────────────────────

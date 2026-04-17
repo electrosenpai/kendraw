@@ -414,6 +414,14 @@ export function Canvas({
         return;
       }
 
+      // Wave-3 A5: fixed-angle bond-snap toggle (Ctrl+E). Persists through
+      // the tool state so the mode sticks between bonds.
+      if (isMod && !e.shiftKey && (e.key === 'e' || e.key === 'E')) {
+        e.preventDefault();
+        updateToolState({ angleSnap: !toolState.angleSnap });
+        return;
+      }
+
       // Compound numbering toggle (Ctrl+Shift+C)
       if (isMod && e.shiftKey && (e.key === 'c' || e.key === 'C')) {
         e.preventDefault();
@@ -1155,7 +1163,7 @@ export function Canvas({
       if (toolState.tool === 'add-bond') {
         const hitId = spatialIndexRef.current.hitTest(x, y, ATOM_RADIUS);
         const page = store.getState().pages[store.getState().activePageIndex];
-        const freeAngle = e.shiftKey;
+        const freeAngle = toolState.angleSnap ? e.shiftKey : !e.shiftKey;
 
         if (hitId && bondStartAtomRef.current === null) {
           // Click on existing atom → start bond from it, auto-place target
