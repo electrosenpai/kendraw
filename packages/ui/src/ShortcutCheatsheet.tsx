@@ -15,6 +15,7 @@ const SHORTCUTS = [
       { key: 'R', desc: 'Ring' },
       { key: 'W', desc: 'Arrow' },
       { key: 'U', desc: 'Curly arrow' },
+      { key: 'X', desc: 'Chain (drag)' },
     ],
   },
   {

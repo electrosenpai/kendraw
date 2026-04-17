@@ -112,6 +112,9 @@ export {
   getNextChainPosition,
 } from './bond-geometry.js';
 
+export { layoutAcyclicChain } from './acyclic-chain.js';
+export type { ChainLayout } from './acyclic-chain.js';
+
 export {
   ACS_1996,
   RSC,

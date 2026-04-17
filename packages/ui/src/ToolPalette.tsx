@@ -15,6 +15,7 @@ export type ToolId =
   | 'lasso'
   | 'add-atom'
   | 'add-bond'
+  | 'chain'
   | 'ring'
   | 'text'
   | 'eraser'
@@ -116,6 +117,11 @@ const ICN = {
       <circle cx="5" cy="15" r="2.5" />
       <circle cx="15" cy="5" r="2.5" />
       <line x1="7" y1="13" x2="13" y2="7" />
+    </I>
+  ),
+  chain: (
+    <I>
+      <polyline points="2,15 6,6 10,15 14,6 18,15" />
     </I>
   ),
   ring: (
@@ -282,6 +288,13 @@ const GROUPS: { label: string; tools: ToolDef[] }[] = [
         shortcut: '1',
         description: 'Draw bonds (right-click for type)',
         hasSubmenu: true,
+      },
+      {
+        id: 'chain',
+        icon: ICN.chain,
+        label: 'Chain',
+        shortcut: 'X',
+        description: 'Drag to draw an N-carbon zigzag chain',
       },
     ],
   },

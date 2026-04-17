@@ -82,6 +82,7 @@ Bond style keys (1-3, d, w, y) work within the selection context.
 | H   | Pan                 | Implemented |
 | W   | Arrow               | Implemented |
 | U   | Curly Arrow         | Implemented |
+| X   | Chain tool          | Implemented (wave-3) |
 | P   | Toggle Properties   | Implemented |
 | ?   | Shortcut Cheatsheet | Implemented |
 

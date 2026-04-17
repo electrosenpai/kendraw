@@ -23,6 +23,7 @@ import {
   floodSelectMolecule,
   calculateBondTarget,
   getNextChainPosition,
+  layoutAcyclicChain,
   formulaMode,
   type SceneStore,
   type Selection,
@@ -857,6 +858,8 @@ export function Canvas({
           A: { tool: 'add-atom' },
           b: { tool: 'add-bond' },
           B: { tool: 'add-bond' },
+          x: { tool: 'chain' },
+          X: { tool: 'chain' },
           r: { tool: 'ring' },
           R: { tool: 'ring' },
           e: { tool: 'eraser' },
@@ -1254,6 +1257,29 @@ export function Canvas({
             type: 'add-bond',
             bond: createBond(a1.id, a2.id, getBondOrder(toolState.bondStyle), toolState.bondStyle),
           });
+        }
+        dragStartRef.current = null;
+        isDraggingRef.current = false;
+        return;
+      }
+
+      // --- CHAIN TOOL --- (wave-3 A3: drag to draw N-carbon zigzag)
+      if (toolState.tool === 'chain') {
+        const startPt = dragStartRef.current ?? { x, y };
+        const endPt = { x, y };
+        const layout = layoutAcyclicChain(startPt, endPt);
+        const atomIds: AtomId[] = [];
+        for (const pt of layout.atoms) {
+          const atom = createAtom(pt.x, pt.y, 6);
+          atomIds.push(atom.id);
+          store.dispatch({ type: 'add-atom', atom });
+        }
+        for (const b of layout.bonds) {
+          const from = atomIds[b.from];
+          const to = atomIds[b.to];
+          if (from && to) {
+            store.dispatch({ type: 'add-bond', bond: createBond(from, to, 1, 'single') });
+          }
         }
         dragStartRef.current = null;
         isDraggingRef.current = false;

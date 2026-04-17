@@ -19,6 +19,7 @@ const TOOL_HELP: Record<string, (ts: ToolState) => string> = {
     `Click to place ${getSymbol(ts.element)}. Right-click for elements. Keys 0-9.`,
   'add-bond': (ts) =>
     `Click atom A, then atom B for ${ts.bondStyle} bond. Right-click for types. Angle snap ${ts.angleSnap ? 'on' : 'off'} (Ctrl+E).`,
+  chain: () => 'Drag to draw an N-carbon zigzag. Longer drag → more carbons.',
   ring: (ts) => `Click to insert ${ts.ringTemplate}. Right-click for templates.`,
   arrow: () => 'Click start, then click end for reaction arrow.',
   'curly-arrow': () => 'Click start, then click end for mechanism arrow.',
@@ -30,6 +31,7 @@ const TOOL_NAMES: Record<string, string> = {
   eraser: 'Eraser',
   'add-atom': 'Atom',
   'add-bond': 'Bond',
+  chain: 'Chain',
   ring: 'Ring',
   arrow: 'Arrow',
   'curly-arrow': 'Curly Arrow',
