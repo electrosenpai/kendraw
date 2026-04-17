@@ -7,15 +7,42 @@
 // Wave-4 W4-R-03 — render parity: mounts the shared CanvasRenderer and
 // subscribes to the SceneStore so existing molecules draw identically to the
 // legacy Canvas. Hit-testing and interactive tools land in W4-R-04+.
+// Wave-5 W4-R-04 — bond-tool hover preview overlay (SVG above the canvas).
+// Wave-5 W4-R-07 — drag-move ghost overlay (transient atom translation
+// without store mutation; single move-batch dispatched on pointerup).
+// Wave-5 W4-R-08 — quick-edit hotkeys driven by hovered atom.
+// Wave-5 W4-R-11 — Delete / Backspace removes current selection.
+// Wave-5 W4-R-12 — wheel-to-zoom anchored at the cursor.
 
-import { useEffect, useMemo, useRef, useState } from 'react';
-import type { SceneStore, AtomId, BondId, Point } from '@kendraw/scene';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import type {
+  AtomId,
+  BondId,
+  Command,
+  Document,
+  Page,
+  Point,
+  SceneStore,
+} from '@kendraw/scene';
 import { SpatialIndex } from '@kendraw/scene';
 import { CanvasRenderer } from '@kendraw/renderer-canvas';
 import { ToolRegistry } from './toolRegistry';
-import type { SelectionRect, ToolContext } from './types';
+import type { DragOffset, SelectionRect, ToolContext } from './types';
 import { useToolDispatcher } from './useToolDispatcher';
 import { createMarqueeSelectTool } from './tools/marqueeSelectTool';
+import { createBondTool } from './tools/bondTool';
+import { hitTestBond, type HoverPreview } from './bondPreview';
+import { HoverIconOverlay } from './HoverIconOverlay';
+import { resolveQuickEditCommand } from './quickEdit';
+import { isEditingTextNow } from '../hooks/useIsEditingText';
+
+export type CanvasNewToolId = 'select' | 'bond';
 
 export interface CanvasNewProps {
   store: SceneStore;
@@ -28,44 +55,110 @@ export interface CanvasNewProps {
   onHighlightAtoms?: ((ids: Set<AtomId>) => void) | undefined;
   onSelectionChange?: ((atomIds: AtomId[]) => void) | undefined;
   theme?: 'dark' | 'light' | undefined;
+  /** Active tool on mount. Defaults to 'select'. Wave-5 stories make 'bond'
+   *  and 'quick-edit' available; the toolbar UI lands in wave-6. */
+  defaultToolId?: CanvasNewToolId;
 }
 
+const ZOOM_MIN = 0.25;
+const ZOOM_MAX = 8;
+const ZOOM_STEP = 1.1;
+
 export function CanvasNew(props: CanvasNewProps): JSX.Element {
-  const { store, theme = 'dark', highlightedAtomIds, onSelectionChange } = props;
+  const {
+    store,
+    theme = 'dark',
+    highlightedAtomIds,
+    onSelectionChange,
+    defaultToolId = 'select',
+  } = props;
   const canvasHostRef = useRef<HTMLDivElement | null>(null);
   const [canvasEl, setCanvasEl] = useState<HTMLDivElement | null>(null);
   const rendererRef = useRef<CanvasRenderer | null>(null);
   const spatialRef = useRef<SpatialIndex>(new SpatialIndex());
+  const [hoverPreview, setHoverPreview] = useState<HoverPreview | null>(null);
+  const [dragOffset, setDragOffset] = useState<DragOffset | null>(null);
+  const dragOffsetRef = useRef<DragOffset | null>(null);
+  dragOffsetRef.current = dragOffset;
+  const viewportRef = useRef({ zoom: 1, panX: 0, panY: 0 });
+  const overlaySizeRef = useRef({ w: 0, h: 0 });
+  const [overlayTick, setOverlayTick] = useState(0);
   const onSelectionChangeRef = useRef(onSelectionChange);
   onSelectionChangeRef.current = onSelectionChange;
+  const selectedAtomsRef = useRef<Set<AtomId>>(new Set());
+  // Passive hover tracking for keyboard-driven shortcuts (R-08, R-11).
+  // Updated on every pointermove regardless of which tool is active.
+  const hoveredAtomIdRef = useRef<AtomId | null>(null);
+  const hoveredBondIdRef = useRef<BondId | null>(null);
 
   const registry = useMemo(() => {
     const r = new ToolRegistry();
     r.register(createMarqueeSelectTool());
-    r.activate('select');
+    r.register(createBondTool());
+    r.activate(defaultToolId);
     return r;
-  }, []);
+  }, [defaultToolId]);
+
+  const renderEffective = useCallback((): void => {
+    const renderer = rendererRef.current;
+    if (!renderer) return;
+    const doc = store.getState();
+    const offset = dragOffsetRef.current;
+    if (!offset || (offset.dx === 0 && offset.dy === 0)) {
+      renderer.render(doc);
+      return;
+    }
+    renderer.render(applyDragOffsetDoc(doc, offset));
+  }, [store]);
 
   const context = useMemo<ToolContext>(() => ({
     store,
-    worldFromScreen: (x: number, y: number): Point => ({ x, y }),
+    worldFromScreen: (x: number, y: number): Point => {
+      const v = viewportRef.current;
+      return { x: (x - v.panX) / v.zoom, y: (y - v.panY) / v.zoom };
+    },
     hitTestAtom: (world: Point): AtomId | null =>
       spatialRef.current.hitTest(world.x, world.y),
-    hitTestBond: (_world: Point): BondId | null => null,
+    hitTestBond: (world: Point): BondId | null => {
+      const doc = store.getState();
+      const page = doc.pages[doc.activePageIndex];
+      if (!page) return null;
+      return hitTestBond(page, world);
+    },
     searchAtomsInRect: (p1: Point, p2: Point): readonly AtomId[] =>
       spatialRef.current.searchRect(p1.x, p1.y, p2.x, p2.y),
     setSelectedAtoms: (ids: ReadonlySet<AtomId>) => {
+      selectedAtomsRef.current = new Set(ids);
       rendererRef.current?.setSelectedAtoms(new Set(ids));
       onSelectionChangeRef.current?.([...ids]);
     },
+    getSelectedAtoms: (): ReadonlySet<AtomId> => selectedAtomsRef.current,
     setSelectionRect: (rect: SelectionRect | null) => {
       rendererRef.current?.setSelectionRect(rect);
     },
-    requestRepaint: () => {
-      const r = rendererRef.current;
-      if (r) r.render(store.getState());
+    requestRepaint: () => renderEffective(),
+    setHoverPreview: (preview: HoverPreview | null) => {
+      setHoverPreview(preview);
     },
-  }), [store]);
+    getActivePage: (): Page | null => {
+      const doc = store.getState();
+      return doc.pages[doc.activePageIndex] ?? null;
+    },
+    dispatch: (cmd: Command): void => {
+      store.dispatch(cmd);
+    },
+    setDragOffset: (offset: DragOffset | null) => {
+      dragOffsetRef.current = offset;
+      setDragOffset(offset);
+      renderEffective();
+    },
+    getViewport: () => ({ ...viewportRef.current }),
+    setViewport: (view) => {
+      viewportRef.current = { ...view };
+      rendererRef.current?.setViewport(view.zoom, view.panX, view.panY);
+      setOverlayTick((t) => t + 1);
+    },
+  }), [store, renderEffective]);
 
   useToolDispatcher({ target: canvasEl, registry, context });
 
@@ -83,23 +176,145 @@ export function CanvasNew(props: CanvasNewProps): JSX.Element {
       if (page) spatialRef.current.rebuild(page);
     };
     rebuildIndex();
-    renderer.render(store.getState());
+    renderEffective();
     const unsubscribe = store.subscribe(() => {
       rebuildIndex();
-      renderer.render(store.getState());
+      renderEffective();
     });
     return () => {
       unsubscribe();
       renderer.detach();
       rendererRef.current = null;
     };
-  }, [canvasEl, store, theme]);
+  }, [canvasEl, store, theme, renderEffective]);
 
   useEffect(() => {
     const r = rendererRef.current;
     if (!r) return;
     r.setHighlightedAtoms(highlightedAtomIds ?? new Set<AtomId>());
   }, [highlightedAtomIds]);
+
+  // Passive hover tracking — runs in addition to the active tool's
+  // pointermove handler so quick-edit and delete shortcuts know which atom
+  // / bond is currently under the cursor.
+  useEffect(() => {
+    const el = canvasEl;
+    if (!el) return;
+    const onMove = (e: PointerEvent): void => {
+      const rect = el.getBoundingClientRect === undefined
+        ? { left: 0, top: 0 }
+        : el.getBoundingClientRect();
+      const sx = e.clientX - rect.left;
+      const sy = e.clientY - rect.top;
+      const v = viewportRef.current;
+      const wx = (sx - v.panX) / v.zoom;
+      const wy = (sy - v.panY) / v.zoom;
+      hoveredAtomIdRef.current = spatialRef.current.hitTest(wx, wy);
+      const doc = store.getState();
+      const page = doc.pages[doc.activePageIndex];
+      hoveredBondIdRef.current = page ? hitTestBond(page, { x: wx, y: wy }) : null;
+    };
+    const onLeave = (): void => {
+      hoveredAtomIdRef.current = null;
+      hoveredBondIdRef.current = null;
+    };
+    el.addEventListener('pointermove', onMove);
+    el.addEventListener('pointerleave', onLeave);
+    return () => {
+      el.removeEventListener('pointermove', onMove);
+      el.removeEventListener('pointerleave', onLeave);
+    };
+  }, [canvasEl, store]);
+
+  // Quick-edit (R-08) + Delete (R-11) keyboard handler. Respects the
+  // wave-3 hotkey gating so typing into a text input never fires these.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent): void => {
+      if (isEditingTextNow()) return;
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        const selected = [...selectedAtomsRef.current];
+        if (selected.length === 0) return;
+        e.preventDefault();
+        store.dispatch({
+          type: 'remove-batch',
+          atomIds: selected,
+          bondIds: [],
+        });
+        selectedAtomsRef.current = new Set();
+        rendererRef.current?.setSelectedAtoms(new Set());
+        onSelectionChangeRef.current?.([]);
+        return;
+      }
+      const doc = store.getState();
+      const page = doc.pages[doc.activePageIndex];
+      if (!page) return;
+      const cmd = resolveQuickEditCommand(
+        e.key,
+        {
+          atomId: hoveredAtomIdRef.current,
+          bondId: hoveredBondIdRef.current,
+        },
+        page,
+      );
+      if (cmd) {
+        e.preventDefault();
+        store.dispatch(cmd);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [store]);
+
+  // Cursor-centered wheel zoom (W4-R-12). Updates viewport via the
+  // ToolContext setter so renderer and SVG overlay stay in sync.
+  useEffect(() => {
+    const el = canvasEl;
+    if (!el) return;
+    const onWheel = (e: WheelEvent): void => {
+      e.preventDefault();
+      const v = viewportRef.current;
+      const factor = e.deltaY < 0 ? ZOOM_STEP : 1 / ZOOM_STEP;
+      const nextZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, v.zoom * factor));
+      if (nextZoom === v.zoom) return;
+      const rect = el.getBoundingClientRect === undefined
+        ? { left: 0, top: 0 }
+        : el.getBoundingClientRect();
+      const sx = e.clientX - rect.left;
+      const sy = e.clientY - rect.top;
+      // Anchor: world-space point under cursor stays fixed during the zoom.
+      const wx = (sx - v.panX) / v.zoom;
+      const wy = (sy - v.panY) / v.zoom;
+      const nextPanX = sx - wx * nextZoom;
+      const nextPanY = sy - wy * nextZoom;
+      context.setViewport?.({ zoom: nextZoom, panX: nextPanX, panY: nextPanY });
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, [canvasEl, context]);
+
+  // Track the canvas size so the SVG overlay matches.
+  useEffect(() => {
+    const el = canvasEl;
+    if (!el) return;
+    const measure = (): void => {
+      const rect = el.getBoundingClientRect === undefined
+        ? { width: 0, height: 0 }
+        : el.getBoundingClientRect();
+      overlaySizeRef.current = { w: rect.width, h: rect.height };
+      setOverlayTick((t) => t + 1);
+    };
+    measure();
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [canvasEl]);
+
+  // Re-publish overlay tick when hoverPreview / dragOffset change to ensure
+  // the SVG layer above re-flows after a viewport update.
+  useEffect(() => {
+    setOverlayTick((t) => t + 1);
+  }, [hoverPreview, dragOffset]);
 
   return (
     <>
@@ -119,9 +334,17 @@ export function CanvasNew(props: CanvasNewProps): JSX.Element {
         }}
         data-testid="canvas-new-root"
         data-active-tool={registry.getActiveId() ?? ''}
+        data-overlay-tick={overlayTick}
         role="region"
         aria-label="New canvas (wave-4 redraw)"
-      />
+      >
+        <HoverIconOverlay
+          preview={projectPreviewToScreen(hoverPreview, viewportRef.current)}
+          width={overlaySizeRef.current.w}
+          height={overlaySizeRef.current.h}
+          theme={theme}
+        />
+      </div>
       <div style={{ gridArea: 'properties' }} data-testid="canvas-new-properties" />
       <div style={{ gridArea: 'status' }} data-testid="canvas-new-status" />
     </>
@@ -129,3 +352,43 @@ export function CanvasNew(props: CanvasNewProps): JSX.Element {
 }
 
 export default CanvasNew;
+
+/** Project a hover preview from world space into screen space so the SVG
+ *  overlay (which uses container-local pixels) lines up with the canvas. */
+function projectPreviewToScreen(
+  preview: HoverPreview | null,
+  v: { zoom: number; panX: number; panY: number },
+): HoverPreview | null {
+  if (!preview) return null;
+  const toScreen = (p: Point): Point => ({
+    x: p.x * v.zoom + v.panX,
+    y: p.y * v.zoom + v.panY,
+  });
+  return {
+    kind: preview.kind,
+    sourceId: preview.sourceId,
+    angle: preview.angle,
+    anchor: toScreen(preview.anchor),
+    iconAt: toScreen(preview.iconAt),
+    endpoint: toScreen(preview.endpoint),
+  };
+}
+
+/** Apply a transient drag offset to the document so the renderer paints the
+ *  dragged atoms at their displaced position — no store mutation occurs. */
+function applyDragOffsetDoc(doc: Document, offset: DragOffset): Document {
+  const page = doc.pages[doc.activePageIndex];
+  if (!page) return doc;
+  const ids = offset.atomIds;
+  if (ids.size === 0) return doc;
+  const nextAtoms: Page['atoms'] = { ...page.atoms };
+  for (const id of ids) {
+    const a = nextAtoms[id];
+    if (!a) continue;
+    nextAtoms[id] = { ...a, x: a.x + offset.dx, y: a.y + offset.dy };
+  }
+  const nextPage: Page = { ...page, atoms: nextAtoms };
+  const nextPages = [...doc.pages];
+  nextPages[doc.activePageIndex] = nextPage;
+  return { ...doc, pages: nextPages };
+}
