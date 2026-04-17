@@ -61,6 +61,7 @@ Bond style keys (1-3, d, w, y) work within the selection context.
 | Ctrl+Shift+N          | Name to Structure   | NMR panel toggle               | Adapted          |
 | Ctrl+L                | Toggle Fixed Length | Molecule search                | Adapted          |
 | Ctrl+E                | Toggle Fixed Angles | Not implemented                | Deferred         |
+| Ctrl+Shift+C          | (none in ChemDraw)  | Toggle compound numbering      | Kendraw-specific |
 
 ## Tool Shortcuts (no selection)
 

@@ -400,6 +400,13 @@ export function Canvas({
         return;
       }
 
+      // Compound numbering toggle (Ctrl+Shift+C)
+      if (isMod && e.shiftKey && (e.key === 'c' || e.key === 'C')) {
+        e.preventDefault();
+        store.dispatch({ type: 'toggle-compound-numbering' });
+        return;
+      }
+
       // Structure cleanup (Shift+Ctrl+K, reference Section 4.1)
       if (isMod && e.shiftKey && (e.key === 'k' || e.key === 'K')) {
         e.preventDefault();
@@ -1429,6 +1436,12 @@ export function Canvas({
           onFitToScreen={fitToScreen}
           onNmrToggle={onNmrToggle}
           nmrOpen={nmrOpen}
+          onToggleCompoundNumbering={() => {
+            store.dispatch({ type: 'toggle-compound-numbering' });
+          }}
+          compoundNumberingEnabled={
+            doc.pages[doc.activePageIndex]?.compoundNumbering?.enabled ?? false
+          }
           canUndo={store.canUndo()}
           canRedo={store.canRedo()}
         />

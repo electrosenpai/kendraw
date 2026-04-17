@@ -1,5 +1,5 @@
 import type { Page, Atom, Bond, Annotation, Arrow, BezierGeometry } from '@kendraw/scene';
-import { getColor, getSymbol } from '@kendraw/scene';
+import { getColor, getSymbol, computeCompoundLabels } from '@kendraw/scene';
 
 const ATOM_RADIUS = 14;
 const FONT_SIZE = 12;
@@ -110,6 +110,21 @@ export function exportToSVG(page: Page, options?: ExportToSvgOptions): string {
   // Annotations
   for (const ann of annotations) {
     parts.push(renderAnnotationSVG(ann));
+  }
+
+  // Compound numbering labels (under each connected component)
+  if (page.compoundNumbering?.enabled) {
+    const labels = computeCompoundLabels(page);
+    for (const lbl of labels) {
+      const cx = lbl.bbox.x + lbl.bbox.w / 2;
+      const cy = lbl.bbox.y + lbl.bbox.h + 14;
+      parts.push(
+        `<text x="${cx.toFixed(2)}" y="${cy.toFixed(2)}" ` +
+          `text-anchor="middle" font-family="sans-serif" font-size="14" ` +
+          `font-weight="bold" fill="#222" data-compound-number="${lbl.number}">` +
+          `${lbl.number}</text>`,
+      );
+    }
   }
 
   parts.push('</svg>');

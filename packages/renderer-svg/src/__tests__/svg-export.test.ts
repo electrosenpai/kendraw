@@ -189,4 +189,38 @@ describe('exportToSVG', () => {
     const lineCount = (svg.match(/<line /g) || []).length;
     expect(lineCount).toBeGreaterThanOrEqual(2);
   });
+
+  it('renders compound numbering labels when enabled', () => {
+    const a1 = createAtom(0, 0);
+    const a2 = createAtom(20, 0);
+    const a3 = createAtom(200, 200);
+    const a4 = createAtom(220, 200);
+    const b1 = createBond(a1.id, a2.id);
+    const b2 = createBond(a3.id, a4.id);
+    const page = createPage([a1, a2, a3, a4], [b1, b2]);
+    page.compoundNumbering = {
+      enabled: true,
+      assignments: { [a1.id]: 1, [a3.id]: 2 },
+      nextNumber: 3,
+    };
+    const svg = exportToSVG(page);
+    expect(svg).toContain('data-compound-number="1"');
+    expect(svg).toContain('data-compound-number="2"');
+    expect(svg).toMatch(/<text[^>]*>1<\/text>/);
+    expect(svg).toMatch(/<text[^>]*>2<\/text>/);
+  });
+
+  it('omits compound numbering when disabled', () => {
+    const a1 = createAtom(0, 0);
+    const a2 = createAtom(20, 0);
+    const b1 = createBond(a1.id, a2.id);
+    const page = createPage([a1, a2], [b1]);
+    page.compoundNumbering = {
+      enabled: false,
+      assignments: { [a1.id]: 1 },
+      nextNumber: 2,
+    };
+    const svg = exportToSVG(page);
+    expect(svg).not.toContain('data-compound-number');
+  });
 });

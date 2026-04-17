@@ -14,6 +14,7 @@ export const TOOL_IDS = [
   'nmr',
   'molecules',
   'import',
+  'compound-numbering',
   'undo',
   'redo',
   'fit',

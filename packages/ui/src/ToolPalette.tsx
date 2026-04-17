@@ -178,12 +178,58 @@ const ICN = {
       <path d="M2 14h3l2-8 2 12 2-6 2 4 2-10 2 6h3" />
     </I>
   ),
+  numbering: (
+    <I>
+      <text
+        x="3"
+        y="14"
+        textAnchor="start"
+        fill="currentColor"
+        stroke="none"
+        fontSize="9"
+        fontWeight="bold"
+      >
+        1
+      </text>
+      <text
+        x="9"
+        y="14"
+        textAnchor="start"
+        fill="currentColor"
+        stroke="none"
+        fontSize="9"
+        fontWeight="bold"
+      >
+        2
+      </text>
+      <text
+        x="15"
+        y="14"
+        textAnchor="start"
+        fill="currentColor"
+        stroke="none"
+        fontSize="9"
+        fontWeight="bold"
+      >
+        3
+      </text>
+    </I>
+  ),
 };
 
 // ── Tool definitions ────────────────────────────────────────
 
 interface ToolDef {
-  id: ToolId | 'molecules' | 'import' | 'undo' | 'redo' | 'fit' | 'nmr';
+  id:
+    | ToolId
+    | 'molecules'
+    | 'import'
+    | 'undo'
+    | 'redo'
+    | 'fit'
+    | 'nmr'
+    | 'compound-numbering'
+    | 'print';
   icon: React.ReactNode;
   label: string;
   shortcut: string;
@@ -323,6 +369,19 @@ const GROUPS: { label: string; tools: ToolDef[] }[] = [
       },
     ],
   },
+  // Group 8 — Display
+  {
+    label: 'Display',
+    tools: [
+      {
+        id: 'compound-numbering',
+        icon: ICN.numbering,
+        label: 'Compound #',
+        shortcut: 'Ctrl+Shift+C',
+        description: 'Toggle compound numbers (1, 2, 3…) under each connected molecule',
+      },
+    ],
+  },
 ];
 
 const ACTIONS: ToolDef[] = [
@@ -375,6 +434,8 @@ interface ToolPaletteProps {
   onImportFile?: (() => void) | undefined;
   onFitToScreen?: (() => void) | undefined;
   onNmrToggle?: (() => void) | undefined;
+  onToggleCompoundNumbering?: (() => void) | undefined;
+  compoundNumberingEnabled?: boolean;
   nmrOpen?: boolean;
   canUndo?: boolean;
   canRedo?: boolean;
@@ -389,6 +450,8 @@ export function ToolPalette({
   onMoleculeSearch,
   onFitToScreen,
   onNmrToggle,
+  onToggleCompoundNumbering,
+  compoundNumberingEnabled = false,
   nmrOpen = false,
   canUndo = true,
   canRedo = false,
@@ -433,10 +496,23 @@ export function ToolPalette({
         onNmrToggle?.();
         return;
       }
+      if (def.id === 'compound-numbering') {
+        onToggleCompoundNumbering?.();
+        return;
+      }
       onToolStateChange({ tool: def.id as ToolId });
       setSubmenu(null);
     },
-    [onToolStateChange, onMoleculeSearch, onImportFile, onUndo, onRedo, onFitToScreen, onNmrToggle],
+    [
+      onToolStateChange,
+      onMoleculeSearch,
+      onImportFile,
+      onUndo,
+      onRedo,
+      onFitToScreen,
+      onNmrToggle,
+      onToggleCompoundNumbering,
+    ],
   );
 
   const handleContext = useCallback(
@@ -459,7 +535,13 @@ export function ToolPalette({
             <Btn
               key={def.id}
               def={def}
-              active={def.id === 'nmr' ? nmrOpen : toolState.tool === def.id}
+              active={
+                def.id === 'nmr'
+                  ? nmrOpen
+                  : def.id === 'compound-numbering'
+                    ? compoundNumberingEnabled
+                    : toolState.tool === def.id
+              }
               badge={def.id === 'add-atom' ? getSymbol(toolState.element) : undefined}
               badgeColor={def.id === 'add-atom' ? getColor(toolState.element) : undefined}
               onClick={() => handleClick(def)}
