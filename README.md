@@ -77,9 +77,9 @@ Composite score from the 8-expert scientific review V5: **8.3 / 10 raw**, **7.8 
 - pnpm monorepo with 11 workspace packages (`ui`, `chem`, `constraints`, `io`, `nmr`, `persistence`, `renderer-canvas`, `renderer-svg`, `scene`, `api-client`, `scene-poc`)
 - TypeScript 6 strict mode across every package
 - Python 3.11 + FastAPI 0.115 + Pydantic 2 + mypy strict on the backend
-- **500 frontend unit tests** across 9 Vitest workspaces (scene 228, io 74, nmr 64, constraints 45, ui 31, renderer-canvas 24, renderer-svg 18, persistence 10, chem 6)
+- **546 frontend unit tests** across 9 Vitest workspaces (scene 242, io 74, nmr 64, ui 52, constraints 45, renderer-canvas 30, renderer-svg 23, persistence 10, chem 6)
 - **242 backend unit tests** (pytest)
-- **25 Playwright E2E specs** split across p0-smoke, p1-critical, p2-features, p3-edge, and regression suites
+- **24 Playwright E2E specs** split across p0-smoke, p1-critical, p2-features, p3-edge, and regression suites
 - Husky pre-commit hook running all 7 CI checks (eslint, tsc, vitest, ruff check, ruff format, mypy, pytest) before every commit
 - GitHub Actions CI + Playwright E2E workflow
 - Docker Compose + Traefik + Let's Encrypt production stack (deployed at `kendraw.fdp.expert`)
