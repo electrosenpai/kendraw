@@ -2,8 +2,35 @@ import { describe, it, expect } from 'vitest';
 import { RING_TEMPLATES, FUSED_RING_TEMPLATES, generateRing, generateFusedRing } from '../rings.js';
 
 describe('Ring templates', () => {
-  it('has 11 ring templates', () => {
-    expect(RING_TEMPLATES).toHaveLength(11);
+  it('has 14 ring templates', () => {
+    expect(RING_TEMPLATES).toHaveLength(14);
+  });
+
+  it('includes cyclononane, cyclodecane and cyclopentadiene', () => {
+    const ids = RING_TEMPLATES.map((r) => r.id);
+    expect(ids).toContain('cyclononane');
+    expect(ids).toContain('cyclodecane');
+    expect(ids).toContain('cyclopentadiene');
+  });
+
+  it('cyclononane is a 9-membered all-single-bond ring', () => {
+    const c9 = RING_TEMPLATES.find((r) => r.id === 'cyclononane');
+    expect(c9?.atomCount).toBe(9);
+    expect(c9?.bondOrders.every((o) => o === 1)).toBe(true);
+    expect(c9?.elements.every((e) => e === 6)).toBe(true);
+  });
+
+  it('cyclodecane is a 10-membered all-single-bond ring', () => {
+    const c10 = RING_TEMPLATES.find((r) => r.id === 'cyclodecane');
+    expect(c10?.atomCount).toBe(10);
+    expect(c10?.bondOrders.every((o) => o === 1)).toBe(true);
+  });
+
+  it('cyclopentadiene has exactly two double bonds (1,3-diene)', () => {
+    const cp = RING_TEMPLATES.find((r) => r.id === 'cyclopentadiene');
+    expect(cp?.atomCount).toBe(5);
+    const doubles = cp?.bondOrders.filter((o) => o === 2) ?? [];
+    expect(doubles).toHaveLength(2);
   });
 
   it('benzene has 6 atoms and aromatic bonds', () => {

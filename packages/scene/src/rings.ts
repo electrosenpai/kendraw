@@ -95,6 +95,30 @@ export const RING_TEMPLATES: RingTemplate[] = [
     elements: [6, 6, 6, 6, 6, 6, 6, 6],
     bondOrders: [1, 1, 1, 1, 1, 1, 1, 1],
   },
+  {
+    id: 'cyclononane',
+    name: 'Cyclononane',
+    shortcut: '9',
+    atomCount: 9,
+    elements: [6, 6, 6, 6, 6, 6, 6, 6, 6],
+    bondOrders: [1, 1, 1, 1, 1, 1, 1, 1, 1],
+  },
+  {
+    id: 'cyclodecane',
+    name: 'Cyclodecane',
+    atomCount: 10,
+    elements: [6, 6, 6, 6, 6, 6, 6, 6, 6, 6],
+    bondOrders: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+  },
+  {
+    id: 'cyclopentadiene',
+    name: 'Cyclopentadiene (1,3)',
+    // 1,3-cyclopentadiene: C=C-C=C-C cyclic
+    // Bond order array describes the bond between atom i and atom (i+1) mod 5.
+    atomCount: 5,
+    elements: [6, 6, 6, 6, 6],
+    bondOrders: [2, 1, 2, 1, 1],
+  },
 ];
 
 // ── Fused ring templates with pre-computed coordinates ────
