@@ -66,6 +66,16 @@ export type RepackCompoundNumbersCommand = {
   type: 'repack-compound-numbers';
 };
 
+/** Wave-2 B1: align selected atoms along one axis.
+ *  - left/center-x/right snap x-coordinates to the selection's bbox
+ *  - top/center-y/bottom snap y-coordinates to the selection's bbox
+ */
+export type AlignAtomsCommand = {
+  type: 'align-atoms';
+  ids: AtomId[];
+  axis: 'left' | 'center-x' | 'right' | 'top' | 'center-y' | 'bottom';
+};
+
 export type Command =
   | AddAtomCommand
   | RemoveAtomCommand
@@ -85,7 +95,8 @@ export type Command =
   | SetNmrPredictionCommand
   | SetStylePresetCommand
   | ToggleCompoundNumberingCommand
-  | RepackCompoundNumbersCommand;
+  | RepackCompoundNumbersCommand
+  | AlignAtomsCommand;
 
 export type SceneDiff =
   | { type: 'atom-added'; id: AtomId }
@@ -108,4 +119,5 @@ export type SceneDiff =
   | { type: 'compound-numbering-toggled' }
   | { type: 'compound-numbers-repacked' }
   | { type: 'compound-numbers-reconciled' }
+  | { type: 'atoms-aligned' }
   | { type: 'state-restored' };

@@ -415,6 +415,26 @@ export function Canvas({
         return;
       }
 
+      // Wave-2 B1: align selected atoms (Alt+Shift+{L,R,T,B,E,V})
+      // L=left, R=right, T=top, B=bottom, E=center-x, V=center-y.
+      // Alt+Shift avoids clashing with the bond/atom hotkey layer.
+      if (e.altKey && e.shiftKey && selection.atomIds.length >= 2) {
+        const axisMap: Record<string, 'left' | 'right' | 'top' | 'bottom' | 'center-x' | 'center-y'> = {
+          l: 'left',
+          r: 'right',
+          t: 'top',
+          b: 'bottom',
+          e: 'center-x',
+          v: 'center-y',
+        };
+        const axis = axisMap[e.key.toLowerCase()];
+        if (axis) {
+          e.preventDefault();
+          store.dispatch({ type: 'align-atoms', ids: [...selection.atomIds], axis });
+          return;
+        }
+      }
+
       // Structure cleanup (Shift+Ctrl+K, reference Section 4.1)
       if (isMod && e.shiftKey && (e.key === 'k' || e.key === 'K')) {
         e.preventDefault();

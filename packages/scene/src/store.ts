@@ -98,6 +98,49 @@ function applyCommand(state: Document, command: Command): { next: Document; diff
       });
       return { next, diff: { type: 'batch-moved' } };
     }
+    case 'align-atoms': {
+      const next = produce(state, (draft) => {
+        const page = draft.pages[pageIndex];
+        if (!page) return;
+        const picked = command.ids
+          .map((id) => page.atoms[id])
+          .filter((a): a is NonNullable<typeof a> => a !== undefined);
+        if (picked.length < 2) return;
+
+        const xs = picked.map((a) => a.x);
+        const ys = picked.map((a) => a.y);
+        const minX = Math.min(...xs);
+        const maxX = Math.max(...xs);
+        const minY = Math.min(...ys);
+        const maxY = Math.max(...ys);
+        const cx = (minX + maxX) / 2;
+        const cy = (minY + maxY) / 2;
+
+        for (const atom of picked) {
+          switch (command.axis) {
+            case 'left':
+              atom.x = minX;
+              break;
+            case 'center-x':
+              atom.x = cx;
+              break;
+            case 'right':
+              atom.x = maxX;
+              break;
+            case 'top':
+              atom.y = minY;
+              break;
+            case 'center-y':
+              atom.y = cy;
+              break;
+            case 'bottom':
+              atom.y = maxY;
+              break;
+          }
+        }
+      });
+      return { next, diff: { type: 'atoms-aligned' } };
+    }
     case 'update-atom': {
       const next = produce(state, (draft) => {
         const page = draft.pages[pageIndex];
