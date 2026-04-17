@@ -101,6 +101,7 @@ class NmrService:
                 engine_version=ENGINE_VERSION,
                 data_version=None,
                 method=method,
+                disclaimer=settings.disclaimer,
             ),
         )
 
@@ -127,6 +128,8 @@ class NmrService:
 
     @staticmethod
     def _stub_prediction(solvent: str = DEFAULT_SOLVENT, nucleus: str = "1H") -> NmrPrediction:
+        from kendraw_settings.config import get_settings
+
         return NmrPrediction(
             nucleus=nucleus,
             solvent=solvent,
@@ -135,5 +138,6 @@ class NmrService:
                 engine_version=ENGINE_VERSION,
                 data_version=None,
                 method="unavailable",
+                disclaimer=get_settings().disclaimer,
             ),
         )

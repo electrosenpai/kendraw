@@ -133,3 +133,26 @@ def test_nmr_metadata_schema_version_default() -> None:
 
     meta = NmrMetadata(engine_version="0.2.0", data_version=None, method="additive")
     assert meta.schema_version == "1.1"
+
+
+def test_nmr_metadata_disclaimer_optional_defaults_none() -> None:
+    """Disclaimer is optional; defaults to None when not supplied."""
+    from kendraw_chem.nmr.models import NmrMetadata
+
+    meta = NmrMetadata(engine_version="0.2.0", data_version=None, method="additive")
+    assert meta.disclaimer is None
+
+
+def test_nmr_service_populates_disclaimer() -> None:
+    """wave-1 P1-10: NmrService must surface the settings disclaimer on predictions."""
+    import pytest
+
+    pytest.importorskip("rdkit")
+    from kendraw_chem.nmr.nmr_service import NmrService
+    from kendraw_settings.config import get_settings
+
+    get_settings.cache_clear()
+    service = NmrService()
+    result = service.predict_nmr("CCO")
+    assert result.metadata.disclaimer
+    assert "approximate" in result.metadata.disclaimer.lower()

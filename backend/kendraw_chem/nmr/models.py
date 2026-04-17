@@ -29,6 +29,7 @@ class NmrMetadata(BaseModel):
     data_version: str | None
     method: str
     schema_version: str = "1.1"
+    disclaimer: str | None = None
 
 
 class NmrPrediction(BaseModel):
