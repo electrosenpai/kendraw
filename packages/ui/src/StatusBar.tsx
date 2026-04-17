@@ -88,6 +88,18 @@ export function StatusBar({
         >
           ∠{toolState.angleSnap ? 'snap' : 'free'}
         </span>
+        <span
+          style={{
+            ...statStyle,
+            color: toolState.gridSnap
+              ? 'var(--kd-color-accent)'
+              : 'var(--kd-color-text-muted)',
+          }}
+          title="Snap to grid (Ctrl+')"
+          data-testid="grid-snap-indicator"
+        >
+          ⋯{toolState.gridSnap ? 'grid' : 'off'}
+        </span>
         <span style={statStyle}>{Math.round(zoom * 100)}%</span>
       </div>
     </div>

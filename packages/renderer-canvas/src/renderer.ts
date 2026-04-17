@@ -45,7 +45,12 @@ export interface Renderer {
   setValenceIssues(ids: Set<AtomId>): void;
   setGraphics(graphics: GraphicOverlay[]): void;
   setDocumentStyle(settings: Partial<RenderSettings>): void;
+  setGridVisible(visible: boolean): void;
 }
+
+/** Grid step for wave-3 B2 snap-to-grid overlay. Kept as a module constant
+ *  so Canvas.tsx can snap coordinates to the same modulus. */
+export const GRID_SIZE_PX = 25;
 
 /** Build default RenderSettings from the NEW_DOCUMENT preset. */
 function defaultRenderSettings(): RenderSettings {
@@ -90,6 +95,7 @@ export class CanvasRenderer implements Renderer {
   private lastDoc: Document | null = null;
   private zoom = 1;
   private graphicOverlays: GraphicOverlay[] = [];
+  private gridVisible = false;
   private panX = 0;
   private panY = 0;
   private S: RenderSettings = defaultRenderSettings();
@@ -172,6 +178,11 @@ export class CanvasRenderer implements Renderer {
     if (this.lastDoc) this.render(this.lastDoc);
   }
 
+  setGridVisible(visible: boolean): void {
+    this.gridVisible = visible;
+    if (this.lastDoc) this.render(this.lastDoc);
+  }
+
   render(doc: Document): void {
     const { canvas, ctx } = this;
     if (!canvas || !ctx) return;
@@ -201,6 +212,12 @@ export class CanvasRenderer implements Renderer {
         labelSegments.set(atom.id, buildAtomLabel(page, atom.id));
         labelJust.set(atom.id, getLabelJustification(page, atom.id));
       }
+    }
+
+    // 0a. Snap-to-grid overlay (wave-3 B2) — faint dotted 25 px grid drawn
+    //     behind every layer. Bounds come from the visible viewport.
+    if (this.gridVisible) {
+      this.drawGrid(ctx, w, h);
     }
 
     // 0. Graphic overlays (rectangles, lines from CDXML)
@@ -872,6 +889,31 @@ export class CanvasRenderer implements Renderer {
     ctx.moveTo(x1, y1);
     ctx.lineTo(x2, y2);
     ctx.stroke();
+  }
+
+  // ── Grid overlay (wave-3 B2) ────────────────────────────
+
+  private drawGrid(ctx: CanvasRenderingContext2D, w: number, h: number): void {
+    ctx.save();
+    // Convert canvas-space box to world-space bounds so the grid tiles
+    // across the visible viewport regardless of pan/zoom.
+    const x0 = -this.panX / this.zoom;
+    const y0 = -this.panY / this.zoom;
+    const x1 = (w - this.panX) / this.zoom;
+    const y1 = (h - this.panY) / this.zoom;
+    const step = GRID_SIZE_PX;
+    const startX = Math.floor(x0 / step) * step;
+    const startY = Math.floor(y0 / step) * step;
+    ctx.fillStyle = this.theme === 'light' ? '#c8c8c8' : '#3a3a3a';
+    const r = 0.75;
+    for (let gx = startX; gx <= x1; gx += step) {
+      for (let gy = startY; gy <= y1; gy += step) {
+        ctx.beginPath();
+        ctx.arc(gx, gy, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    ctx.restore();
   }
 
   // ── Shape rendering (wave-3 B1) ─────────────────────────

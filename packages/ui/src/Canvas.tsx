@@ -37,7 +37,7 @@ import {
   type Shape,
   type ArrowAnchor,
 } from '@kendraw/scene';
-import { CanvasRenderer } from '@kendraw/renderer-canvas';
+import { CanvasRenderer, GRID_SIZE_PX } from '@kendraw/renderer-canvas';
 import { parseTextClipboard } from '@kendraw/io';
 import { ToolPalette, DEFAULT_TOOL_STATE, type ToolState } from './ToolPalette';
 import { PropertyPanel } from './PropertyPanel';
@@ -339,6 +339,11 @@ export function Canvas({
     rendererRef.current?.setTheme(theme);
   }, [theme]);
 
+  // Propagate grid visibility to the renderer (wave-3 B2).
+  useEffect(() => {
+    rendererRef.current?.setGridVisible(toolState.gridSnap);
+  }, [toolState.gridSnap]);
+
   // Re-render on doc change
   useEffect(() => {
     rendererRef.current?.render(doc);
@@ -424,6 +429,15 @@ export function Canvas({
       if (isMod && !e.shiftKey && (e.key === 'e' || e.key === 'E')) {
         e.preventDefault();
         updateToolState({ angleSnap: !toolState.angleSnap });
+        return;
+      }
+
+      // Wave-3 B2: snap-to-grid toggle (Ctrl+'). When on, atom placement
+      // rounds to the nearest 25 px and a dotted grid is drawn behind
+      // chemistry.
+      if (isMod && !e.shiftKey && e.key === "'") {
+        e.preventDefault();
+        updateToolState({ gridSnap: !toolState.gridSnap });
         return;
       }
 
@@ -1155,7 +1169,12 @@ export function Canvas({
         return;
       }
 
-      const { x, y } = toCanvasCoords(e);
+      const raw = toCanvasCoords(e);
+      // Wave-3 B2: snap final mouseup coords to the 25 px grid when the
+      // snap mode is active. Downstream drag geometry (e.g. acyclic
+      // chain) therefore starts from the nearest lattice point.
+      const x = toolState.gridSnap ? Math.round(raw.x / GRID_SIZE_PX) * GRID_SIZE_PX : raw.x;
+      const y = toolState.gridSnap ? Math.round(raw.y / GRID_SIZE_PX) * GRID_SIZE_PX : raw.y;
 
       // --- ATOM TOOL --- (only on click, not drag)
       if (toolState.tool === 'add-atom') {

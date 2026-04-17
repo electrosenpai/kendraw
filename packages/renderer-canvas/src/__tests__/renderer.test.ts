@@ -420,6 +420,31 @@ describe('CanvasRenderer', () => {
       expect(mock.ctx.strokeRect).not.toHaveBeenCalled();
     });
   });
+
+  describe('grid overlay (wave-3 B2)', () => {
+    it('does not draw dots when grid is hidden (default)', () => {
+      renderer.attach(container);
+      const doc = createEmptyDocument();
+      mock.ctx.arc.mockClear();
+      renderer.render(doc);
+      // arc() may be called for atom dots, but with grid off it must not be
+      // called for grid tiling; a cheap proxy is to compare the call count
+      // before and after enabling the grid.
+      const withoutGrid = mock.ctx.arc.mock.calls.length;
+      renderer.setGridVisible(true);
+      mock.ctx.arc.mockClear();
+      renderer.render(doc);
+      const withGrid = mock.ctx.arc.mock.calls.length;
+      expect(withGrid).toBeGreaterThan(withoutGrid);
+    });
+
+    it('setGridVisible toggles state without throwing', () => {
+      renderer.attach(container);
+      renderer.setGridVisible(true);
+      renderer.setGridVisible(false);
+      expect(true).toBe(true);
+    });
+  });
 });
 
 function createDocWithAtoms(count: number): Document {

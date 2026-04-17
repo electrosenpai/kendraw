@@ -52,6 +52,9 @@ export interface ToolState {
   angleSnap: boolean;
   /** Geometric-shape sub-kind (wave-3 B1). Only used when tool === 'shape'. */
   shapeKind: 'rect' | 'ellipse';
+  /** When true, atom placement snaps to a 25 px grid and a dotted grid is
+   *  drawn behind chemistry. Toggled with Ctrl+' (wave-3 B2). */
+  gridSnap: boolean;
 }
 
 export const DEFAULT_TOOL_STATE: ToolState = {
@@ -63,6 +66,7 @@ export const DEFAULT_TOOL_STATE: ToolState = {
   curlyType: 'pair',
   angleSnap: true,
   shapeKind: 'rect',
+  gridSnap: false,
 };
 
 // ── Icons (20x20 SVG, stroke 1.5) ──────────────────────────
