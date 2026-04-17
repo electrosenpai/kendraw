@@ -33,11 +33,13 @@ import {
   type AnnotationId,
   type Bond,
   type Annotation,
+  type ArrowAnchor,
 } from '@kendraw/scene';
 import { CanvasRenderer } from '@kendraw/renderer-canvas';
 import { parseTextClipboard } from '@kendraw/io';
 import { ToolPalette, DEFAULT_TOOL_STATE, type ToolState } from './ToolPalette';
 import { PropertyPanel } from './PropertyPanel';
+import { snapArrowAnchor } from './anchor-snap';
 import { StatusBar } from './StatusBar';
 import { isEditingTextNow } from './hooks/useIsEditingText';
 import { GROUP_LABEL_HOTKEYS } from './group-label-hotkeys';
@@ -1420,12 +1422,19 @@ export function Canvas({
         }
         const geom = defaultCurlyGeometry(dragStartRef.current, { x, y });
         const arrowType = toolState.curlyType === 'radical' ? 'curly-radical' : 'curly-pair';
+        const activePage = store.getState().pages[store.getState().activePageIndex];
+        const startAnchor: ArrowAnchor = activePage
+          ? snapArrowAnchor(dragStartRef.current, activePage)
+          : { kind: 'free' };
+        const endAnchor: ArrowAnchor = activePage
+          ? snapArrowAnchor({ x, y }, activePage)
+          : { kind: 'free' };
         const arrow = {
           id: crypto.randomUUID() as ArrowId,
           type: arrowType as 'curly-radical' | 'curly-pair',
           geometry: geom,
-          startAnchor: { kind: 'free' as const },
-          endAnchor: { kind: 'free' as const },
+          startAnchor,
+          endAnchor,
         };
         store.dispatch({ type: 'add-arrow', arrow });
         dragStartRef.current = null;
