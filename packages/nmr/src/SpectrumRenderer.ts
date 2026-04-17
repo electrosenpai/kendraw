@@ -65,6 +65,13 @@ export interface RenderOptions {
    * count. Wave-2 A3.
    */
   showIntegration?: boolean;
+  /**
+   * Wave-4 P1-03: experimental spectrum overlay imported from a JCAMP-DX file.
+   * When present, drawn as a thin contrasting line on top of the synthetic
+   * envelope so the chemist can compare prediction vs. real data side-by-side.
+   * `xPpm` must be sorted ascending and aligned with `y`.
+   */
+  experimentalOverlay?: { xPpm: number[]; y: number[] } | null;
 }
 
 /** Default spectrometer frequency in MHz used when the caller omits it. */
@@ -210,6 +217,7 @@ export function renderSpectrum(
     frequencyMhz = DEFAULT_FREQUENCY_MHZ,
     exposeDebug = false,
     showIntegration = false,
+    experimentalOverlay = null,
   } = options;
   const hitBoxes: PeakHitBox[] = [];
 
@@ -410,6 +418,60 @@ export function renderSpectrum(
     ctx.strokeStyle = envelopeStroke;
     ctx.lineWidth = 1;
     ctx.stroke();
+  }
+
+  // Wave-4 P1-03: experimental JCAMP-DX overlay on top of the synthetic envelope.
+  // Drawn as a thin orange line so it pops against the blue prediction. We
+  // re-normalise the imported intensity to the same maxIntensity so the two
+  // envelopes share a vertical scale; this is purely visual — quantitative
+  // overlay alignment is out of scope for wave-4.
+  if (
+    experimentalOverlay &&
+    experimentalOverlay.xPpm.length > 0 &&
+    experimentalOverlay.xPpm.length === experimentalOverlay.y.length
+  ) {
+    const overlayY = experimentalOverlay.y;
+    let overlayMax = 0;
+    for (const v of overlayY) {
+      const a = Math.abs(v);
+      if (a > overlayMax) overlayMax = a;
+    }
+    if (overlayMax > 0) {
+      const baselineY = isDept ? MARGIN.top + plotH * 0.5 : MARGIN.top + plotH;
+      const ampScale = (isDept ? plotH * 0.42 : plotH * 0.85) / overlayMax;
+      const overlayX = experimentalOverlay.xPpm;
+      ctx.save();
+      ctx.strokeStyle = exportMode ? 'rgba(217, 119, 6, 0.85)' : 'rgba(251, 146, 60, 0.85)';
+      ctx.lineWidth = 1.1;
+      ctx.beginPath();
+      let started = false;
+      for (let i = 0; i < overlayX.length; i++) {
+        const ppm = overlayX[i] ?? 0;
+        if (ppm < minPpm || ppm > maxPpm) {
+          started = false;
+          continue;
+        }
+        const x = ppmToX(ppm);
+        const y = baselineY - (overlayY[i] ?? 0) * ampScale;
+        if (!started) {
+          ctx.moveTo(x, y);
+          started = true;
+        } else {
+          ctx.lineTo(x, y);
+        }
+      }
+      ctx.stroke();
+      ctx.restore();
+      // Tiny legend swatch so the user knows what the orange line is.
+      ctx.save();
+      ctx.fillStyle = exportMode ? 'rgba(217, 119, 6, 0.85)' : 'rgba(251, 146, 60, 0.85)';
+      ctx.fillRect(MARGIN.left + 6, MARGIN.top + 4, 10, 2);
+      ctx.fillStyle = exportMode ? '#666666' : '#aaaaaa';
+      ctx.font = '9px Inter, system-ui, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('exp', MARGIN.left + 20, MARGIN.top + 8);
+      ctx.restore();
+    }
   }
 
   // QW-1: Solvent label (top-right) + residual peak markers (dashed vertical lines)

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { SceneStore, NmrPrediction, AtomId } from '@kendraw/scene';
 import { KendrawApiClient } from '@kendraw/api-client';
-import { writeMolV2000 } from '@kendraw/io';
+import { writeMolV2000, parseJcampDx1D, type JcampNmr1D } from '@kendraw/io';
 import { computeScope } from './nmr-scope.js';
 import {
   renderSpectrum,
@@ -286,6 +286,25 @@ export default function NmrPanel({
     setNmrMode((m) => (m === 'off' ? 'dept-135' : m === 'dept-135' ? 'dept-90' : 'off'));
   }, []);
   const [showIntegration, setShowIntegration] = useState(false);
+  // Wave-4 P1-03: experimental JCAMP-DX overlay. `meta` keeps the parsed
+  // header so we can show provenance (filename, observe freq, solvent) next
+  // to the spectrum after import.
+  const [experimental, setExperimental] = useState<{
+    file: string;
+    data: JcampNmr1D;
+  } | null>(null);
+  const [importError, setImportError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const handleJcampFile = useCallback(async (file: File) => {
+    setImportError(null);
+    try {
+      const text = await file.text();
+      const data = parseJcampDx1D(text);
+      setExperimental({ file: file.name, data });
+    } catch (err) {
+      setImportError(err instanceof Error ? err.message : String(err));
+    }
+  }, []);
   // Spectrometer frequency — drives multiplet spacing (Δppm = J_hz / ν₀).
   // 400 MHz is the workhorse of most academic labs; 300/500/600 covered for
   // comparison. Persisted to localStorage so opening/closing the panel
@@ -533,6 +552,7 @@ export default function NmrPanel({
       frequencyMhz,
       exposeDebug: true,
       showIntegration: showIntegration && nucleus === '1H',
+      experimentalOverlay: experimental ? { xPpm: experimental.data.xPpm, y: experimental.data.y } : null,
     });
 
     // Frequency badge (bottom-left of spectrum canvas)
@@ -556,6 +576,7 @@ export default function NmrPanel({
     nucleus,
     frequencyMhz,
     showIntegration,
+    experimental,
   ]);
 
   // Canvas mouse interactions
@@ -912,6 +933,54 @@ export default function NmrPanel({
             >
               {nmrMode === 'dept-135' ? 'DEPT-135' : nmrMode === 'dept-90' ? 'DEPT-90' : 'DEPT'}
             </button>
+          )}
+
+          {/* Wave-4 P1-03: JCAMP-DX experimental overlay import */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".jdx,.dx,.jcamp,.txt,text/plain"
+            style={{ display: 'none' }}
+            data-testid="nmr-jcamp-input"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) void handleJcampFile(f);
+              e.target.value = '';
+            }}
+          />
+          <button
+            onClick={() =>
+              experimental ? setExperimental(null) : fileInputRef.current?.click()
+            }
+            style={{
+              padding: '2px 6px',
+              fontSize: 10,
+              fontFamily: 'var(--kd-font-mono, monospace)',
+              border: '1px solid var(--kd-color-border, #333)',
+              borderRadius: 'var(--kd-radius-sm, 4px)',
+              background: experimental
+                ? 'rgba(251, 146, 60, 0.18)'
+                : 'transparent',
+              color: experimental ? '#fb923c' : 'var(--kd-color-text-secondary, #a0a0a0)',
+              cursor: 'pointer',
+            }}
+            title={
+              experimental
+                ? `Loaded: ${experimental.file} (${experimental.data.nucleus || '?'}, ${experimental.data.observeFrequencyMhz ?? '?'} MHz). Click to remove overlay.`
+                : 'Import a JCAMP-DX 1D NMR file (.jdx/.dx) and overlay it on the prediction'
+            }
+            data-testid="nmr-jcamp-button"
+          >
+            {experimental ? 'EXP ✕' : 'JCAMP'}
+          </button>
+          {importError && (
+            <span
+              style={{ fontSize: 10, color: '#ef4444', maxWidth: 220 }}
+              title={importError}
+              data-testid="nmr-jcamp-error"
+            >
+              import failed — see hover
+            </span>
           )}
 
           {/* Peak count */}

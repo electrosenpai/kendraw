@@ -33,3 +33,5 @@ export {
   type CdxmlDocumentSettings,
   type CdxmlGraphic,
 } from './cdxml-parser.js';
+
+export { parseJcampDx1D, JCAMP_DX_PARSE_ERROR, type JcampNmr1D } from './jcamp-dx.js';
