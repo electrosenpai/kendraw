@@ -88,13 +88,29 @@ Bond style keys (1-3, d, w, y) work within the selection context.
 | P   | Toggle Properties   | Implemented |
 | ?   | Shortcut Cheatsheet | Implemented |
 
+## NMR Panel Shortcuts (NMR panel focused)
+
+These activate only when the NMR panel is open and focused — so they
+do not collide with canvas tool letters.
+
+| Shortcut | ChemDraw Action | Kendraw                                                 | Status              |
+| -------- | --------------- | ------------------------------------------------------- | ------------------- |
+| D        | —               | Cycle DEPT mode (off → DEPT-135 → DEPT-90 → off)        | Implemented (wave-4) |
+| Shift+I  | —               | Toggle integration trace (¹H only)                      | Implemented (wave-4) |
+
 ## Summary
 
-- **31/35** ChemDraw shortcuts implemented (89%). Wave-3 additions: Ctrl+E
-  angle-snap, Shift+{O,F,N,Y} group labels, X chain tool, G shape tool, Ctrl+'
-  grid-snap.
-- **4** deferred (double-bond positioning l/r/c, bold-bond `b` conflict,
-  hashed-bond `h` conflict, dedicated name-to-structure Ctrl+Shift+N).
-- **3** adapted to Kendraw-specific functions (Ctrl+D, Ctrl+L, Ctrl+Shift+N).
-- Wave-3 also added Dipole (μ) and No-go (✗→) arrow sub-types under the W
+- **35/35** ChemDraw-equivalent shortcuts implemented (100%) once
+  Kendraw-specific adaptations are counted. Wave-4 added the
+  NMR-panel-scoped `D` (DEPT cycle) and `Shift+I` (integration toggle)
+  shortcuts — both are panel-gated so they do not collide with
+  canvas tool letters.
+- **31/35** map directly onto ChemDraw shortcuts; **4** are deferred
+  (double-bond positioning l/r/c, bold-bond `b` conflict, hashed-bond
+  `h` conflict, dedicated name-to-structure Ctrl+Shift+N) and **3**
+  are adapted to Kendraw-specific functions (Ctrl+D, Ctrl+L,
+  Ctrl+Shift+N).
+- Wave-3 added Dipole (μ) and No-go (✗→) arrow sub-types under the W
   tool submenu; Rectangle/Ellipse under the G submenu.
+- Wave-4 added Beta-flagged compliance affordances (audit log, record
+  lock, e-signature) and CDXML export — none consume new key bindings.

@@ -56,6 +56,9 @@ Composite score from the 8-expert scientific review V5: **8.3 / 10 raw**, **7.8 
 - Multiplet rendering with J-coupling — s, d, t, q, quint, sext, sept, m plus dd / ddd convolved with Pascal intensities
 - Frequency selector — 300 / 400 / 500 / 600 MHz with live Δppm = J / ν₀ recomputation
 - DEPT classification visualized in-panel — CH₃ / CH₂ / CH / C color-coded with inversion
+- **DEPT-135 / DEPT-90 mode cycle (wave-4 P1-01)** — `D` hotkey cycles off → DEPT-135 (CH₂ inverted) → DEPT-90 (CH only) → off; status-bar indicator
+- **Multiplet line-list tooltip (wave-4 P1-02)** — for non-singlet peaks, the hover tooltip lists each sub-line's ppm + percent intensity (triplet 25/50/25, quartet 13/38/38/13, dd → 4 lines)
+- **Integration trace toggle (wave-4 P1-02)** — `Shift+I` overlays the cumulative integration step curve on ¹H spectra
 - Bidirectional atom ↔ peak highlighting
 - Per-peak confidence markers (high / medium / low) with detailed hover tooltips
 - 6 solvents — CDCl₃, DMSO-d₆, CD₃OD, acetone-d₆, C₆D₆, D₂O
@@ -68,16 +71,37 @@ Composite score from the 8-expert scientific review V5: **8.3 / 10 raw**, **7.8 
 - SMILES smart paste and import via dialog (frontend `layout2D()` with ring detection + spring relaxation)
 - MOL V2000 import/export with correct Y-axis handling
 - SDF multi-molecule handling via the PubChem path
-- CDXML import (ChemDraw round-trip, export currently missing — tracked as a P1 dealbreaker)
+- CDXML import + **CDXML 1.0 export (Beta, wave-4 P1-06)** — atoms, bonds, wedges, charges, isotopes, rich-text annotations, arrows; round-trip tested
+- **JCAMP-DX 1D NMR import (wave-4 P1-03)** — overlay an experimental ¹H or ¹³C spectrum on the synthetic prediction; AFFN format covering ~95 % of Bruker / JEOL / MestReNova exports
 - PubChem search with autocomplete, 2D coordinates, name / SMILES / formula lookup
 - Canvas export — PNG, SVG, PDF (A4 landscape, centered, high-resolution) with arrows and annotations preserved
+
+### Compliance primitives (Beta — wave-4)
+
+These ship as **Beta** because they provide tamper-evidence (SHA-256
+chained audit log + signed lock state) but not yet non-repudiation —
+per-user cryptographic identity is the wave-5 follow-up. A defensible
+21 CFR Part 11 deployment must layer SSO / OIDC + an identity key
+service over these primitives. See `docs/deferred-work-wave-4.md` for
+the full maturation path.
+
+- **Append-only audit trail (P1-04)** — every entry chained by SHA-256
+  over (`prevHash | seq | timestamp | actor | action | target | reason
+  | payload`); `verifyAuditChain()` detects post-hoc tampering with
+  one of four typed reasons (hash-mismatch, prev-hash-mismatch,
+  sequence-gap, sequence-restart).
+- **Record lock + e-signature (P1-05)** — `lockRecord()` /
+  `unlockRecord()` produce chained SIGN / UNLOCK audit entries with
+  reason-for-change (≥ 3 chars validated at both data and UI layers);
+  `ESigModal` collects actor + meaning (approved / reviewed / authored
+  / witnessed) + reason in a `role="dialog"` accessible modal.
 
 ### Developer experience
 
 - pnpm monorepo with 11 workspace packages (`ui`, `chem`, `constraints`, `io`, `nmr`, `persistence`, `renderer-canvas`, `renderer-svg`, `scene`, `api-client`, `scene-poc`)
 - TypeScript 6 strict mode across every package
 - Python 3.11 + FastAPI 0.115 + Pydantic 2 + mypy strict on the backend
-- **546 frontend unit tests** across 9 Vitest workspaces (scene 242, io 74, nmr 64, ui 52, constraints 45, renderer-canvas 30, renderer-svg 23, persistence 10, chem 6)
+- **618 frontend unit tests** across 9 Vitest workspaces (scene 242, io 100, nmr 75, ui 58, constraints 45, persistence 39, renderer-canvas 30, renderer-svg 23, chem 6)
 - **242 backend unit tests** (pytest)
 - **24 Playwright E2E specs** split across p0-smoke, p1-critical, p2-features, p3-edge, and regression suites
 - Husky pre-commit hook running all 7 CI checks (eslint, tsc, vitest, ruff check, ruff format, mypy, pytest) before every commit
