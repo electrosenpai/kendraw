@@ -278,6 +278,7 @@ export default function NmrPanel({
   const [pinnedPeakIdx, setPinnedPeakIdx] = useState<number | null>(null);
   const [showNoise, setShowNoise] = useState(false);
   const [deptMode, setDeptMode] = useState(false);
+  const [showIntegration, setShowIntegration] = useState(false);
   // Spectrometer frequency — drives multiplet spacing (Δppm = J_hz / ν₀).
   // 400 MHz is the workhorse of most academic labs; 300/500/600 covered for
   // comparison. Persisted to localStorage so opening/closing the panel
@@ -492,6 +493,7 @@ export default function NmrPanel({
       deptMode: deptMode && nucleus === '13C',
       frequencyMhz,
       exposeDebug: true,
+      showIntegration: showIntegration && nucleus === '1H',
     });
 
     // Frequency badge (bottom-left of spectrum canvas)
@@ -514,6 +516,7 @@ export default function NmrPanel({
     deptMode,
     nucleus,
     frequencyMhz,
+    showIntegration,
   ]);
 
   // Canvas mouse interactions
@@ -1011,6 +1014,28 @@ export default function NmrPanel({
           >
             Noise
           </button>
+
+          {/* Wave-2 A3: Integration trace (1H only) */}
+          {nucleus === '1H' && (
+            <button
+              data-testid="nmr-integration-toggle"
+              onClick={() => setShowIntegration((v) => !v)}
+              style={{
+                padding: '2px 6px',
+                fontSize: 10,
+                border: '1px solid var(--kd-color-border, #333)',
+                borderRadius: 'var(--kd-radius-sm, 4px)',
+                background: showIntegration ? 'rgba(255, 153, 102, 0.18)' : 'transparent',
+                color: showIntegration
+                  ? '#ff9966'
+                  : 'var(--kd-color-text-secondary, #a0a0a0)',
+                cursor: 'pointer',
+              }}
+              title="Toggle cumulative integration trace"
+            >
+              ∫
+            </button>
+          )}
         </div>
 
         <button

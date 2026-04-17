@@ -44,6 +44,12 @@ export interface RenderOptions {
    * production call sites that pass `false` (default).
    */
   exposeDebug?: boolean;
+  /**
+   * When true, overlays a cumulative integration step curve on the spectrum
+   * — the classic NMR "integral trace" rising at each peak by its proton
+   * count. Wave-2 A3.
+   */
+  showIntegration?: boolean;
 }
 
 /** Default spectrometer frequency in MHz used when the caller omits it. */
@@ -167,6 +173,7 @@ export function renderSpectrum(
     deptMode,
     frequencyMhz = DEFAULT_FREQUENCY_MHZ,
     exposeDebug = false,
+    showIntegration = false,
   } = options;
   const hitBoxes: PeakHitBox[] = [];
 
@@ -588,6 +595,55 @@ export function renderSpectrum(
         ctx.textAlign = 'center';
         ctx.fillText(`${nH}H`, cx, barY + 12);
       }
+    }
+  }
+
+  // Wave-2 A3: cumulative integration trace
+  // Classic NMR convention: integral rises left→right (high ppm → low ppm)
+  // at each peak by the peak's proton count, then plateaus until the next
+  // peak. The curve sits in the upper third of the plot so it doesn't
+  // collide with peak labels.
+  if (showIntegration && prediction && prediction.peaks.length > 0) {
+    const totalH = prediction.peaks.reduce((s, p) => s + Math.max(p.integral, 0), 0);
+    if (totalH > 0) {
+      // Sort peaks left→right (descending shift_ppm)
+      const sorted = [...prediction.peaks].sort((a, b) => b.shift_ppm - a.shift_ppm);
+      const traceTop = MARGIN.top + 14;
+      const traceHeight = Math.min(plotH * 0.35, 80);
+      const traceBaseline = traceTop + traceHeight;
+      const yForCum = (cum: number) => traceBaseline - (cum / totalH) * traceHeight;
+
+      ctx.save();
+      ctx.strokeStyle = exportMode ? 'rgba(180, 60, 30, 0.9)' : 'rgba(255, 140, 90, 0.85)';
+      ctx.lineWidth = 1.2;
+      ctx.lineJoin = 'miter';
+      ctx.beginPath();
+      // Start at the leftmost edge of the plot at baseline (cum = 0)
+      let cum = 0;
+      ctx.moveTo(MARGIN.left, yForCum(cum));
+      for (const peak of sorted) {
+        const x = ppmToX(peak.shift_ppm);
+        // Walk flat to the peak's x at the previous cumulative value
+        ctx.lineTo(x, yForCum(cum));
+        cum += Math.max(peak.integral, 0);
+        // Step up vertically at the peak's ppm
+        ctx.lineTo(x, yForCum(cum));
+      }
+      // Continue flat to right edge
+      ctx.lineTo(MARGIN.left + plotW, yForCum(cum));
+      ctx.stroke();
+
+      // Per-peak integration value text under each step
+      ctx.fillStyle = exportMode ? '#a04020' : '#ff9966';
+      ctx.font = '8px Inter, system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      let cumLabel = 0;
+      for (const peak of sorted) {
+        const x = ppmToX(peak.shift_ppm);
+        cumLabel += Math.max(peak.integral, 0);
+        ctx.fillText(peak.integral.toFixed(1), x, yForCum(cumLabel) - 3);
+      }
+      ctx.restore();
     }
   }
 

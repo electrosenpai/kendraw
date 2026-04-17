@@ -229,3 +229,138 @@ describe('DEPT mode rendering', () => {
     expect(hitBoxes).toHaveLength(2);
   });
 });
+
+// Wave-2 A3: cumulative integration trace overlay
+function createSpyCtx(): {
+  ctx: CanvasRenderingContext2D;
+  calls: { stroke: number; fillText: string[] };
+} {
+  const calls = { stroke: 0, fillText: [] as string[] };
+  const noop = () => {};
+  const ctx = {
+    setTransform: noop,
+    clearRect: noop,
+    fillRect: noop,
+    beginPath: noop,
+    moveTo: noop,
+    lineTo: noop,
+    closePath: noop,
+    fill: noop,
+    stroke: () => {
+      calls.stroke += 1;
+    },
+    arc: noop,
+    rect: noop,
+    clip: noop,
+    save: noop,
+    restore: noop,
+    setLineDash: noop,
+    fillText: (text: string) => {
+      calls.fillText.push(text);
+    },
+    fillStyle: '',
+    strokeStyle: '',
+    lineWidth: 1,
+    lineJoin: 'miter' as CanvasLineJoin,
+    font: '',
+    textAlign: 'center' as CanvasTextAlign,
+  } as unknown as CanvasRenderingContext2D;
+  return { ctx, calls };
+}
+
+describe('showIntegration trace', () => {
+  const ethanol1H: NmrPrediction = {
+    nucleus: '1H',
+    solvent: 'CDCl3',
+    peaks: [
+      { ...makePeak(1.25, null, 0), integral: 3, environment: 'CH3' },
+      { ...makePeak(3.72, null, 1), integral: 2, environment: 'CH2' },
+      { ...makePeak(2.5, null, 2), integral: 1, environment: 'OH' },
+    ],
+    metadata: { engine_version: '0.2.0', data_version: null, method: 'additive' },
+  };
+
+  it('emits extra stroke calls when showIntegration is true', () => {
+    const baseline = createSpyCtx();
+    renderSpectrum(baseline.ctx, ethanol1H, {
+      width: 800,
+      height: 400,
+      dpr: 1,
+      viewport: { minPpm: -1, maxPpm: 12 },
+      hoveredPeakIdx: null,
+      selectedPeakIdx: null,
+      showIntegration: false,
+    });
+
+    const withTrace = createSpyCtx();
+    renderSpectrum(withTrace.ctx, ethanol1H, {
+      width: 800,
+      height: 400,
+      dpr: 1,
+      viewport: { minPpm: -1, maxPpm: 12 },
+      hoveredPeakIdx: null,
+      selectedPeakIdx: null,
+      showIntegration: true,
+    });
+
+    // Integration trace adds exactly one extra stroke() call
+    expect(withTrace.calls.stroke).toBeGreaterThan(baseline.calls.stroke);
+  });
+
+  it('labels each peak with its integral value when enabled', () => {
+    const spy = createSpyCtx();
+    renderSpectrum(spy.ctx, ethanol1H, {
+      width: 800,
+      height: 400,
+      dpr: 1,
+      viewport: { minPpm: -1, maxPpm: 12 },
+      hoveredPeakIdx: null,
+      selectedPeakIdx: null,
+      showIntegration: true,
+    });
+    // Integral labels "3.0", "2.0", "1.0" should be emitted
+    expect(spy.calls.fillText).toEqual(expect.arrayContaining(['3.0', '2.0', '1.0']));
+  });
+
+  it('draws no integration labels when all integrals are zero', () => {
+    const zero: NmrPrediction = {
+      nucleus: '1H',
+      solvent: 'CDCl3',
+      peaks: [{ ...makePeak(2.0, null, 0), integral: 0 }],
+      metadata: { engine_version: '0.2.0', data_version: null, method: 'additive' },
+    };
+    const spy = createSpyCtx();
+    renderSpectrum(spy.ctx, zero, {
+      width: 800,
+      height: 400,
+      dpr: 1,
+      viewport: { minPpm: -1, maxPpm: 12 },
+      hoveredPeakIdx: null,
+      selectedPeakIdx: null,
+      showIntegration: true,
+    });
+    // No "0.0" label should appear — trace skipped entirely when totalH=0
+    expect(spy.calls.fillText).not.toContain('0.0');
+  });
+
+  it('does not throw with empty prediction', () => {
+    const empty: NmrPrediction = {
+      nucleus: '1H',
+      solvent: 'CDCl3',
+      peaks: [],
+      metadata: { engine_version: '0.2.0', data_version: null, method: 'additive' },
+    };
+    const spy = createSpyCtx();
+    expect(() =>
+      renderSpectrum(spy.ctx, empty, {
+        width: 800,
+        height: 400,
+        dpr: 1,
+        viewport: { minPpm: -1, maxPpm: 12 },
+        hoveredPeakIdx: null,
+        selectedPeakIdx: null,
+        showIntegration: true,
+      }),
+    ).not.toThrow();
+  });
+});
