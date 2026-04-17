@@ -12,10 +12,16 @@ services:
       backend:
         condition: service_healthy
     healthcheck:
+      # Use 127.0.0.1 explicitly — the nginx:alpine image resolves
+      # `localhost` to ::1 first, and our nginx only listens on 0.0.0.0:80,
+      # which made wget get Connection refused and the whole container
+      # reported as unhealthy. That in turn caused Traefik to filter it
+      # out of the router (see pkg/provider/docker/config.go:200 — it drops
+      # unhealthy/starting containers by default), breaking kendraw.fdp.expert.
       test:
         [
           'CMD-SHELL',
-          'wget -q -O - http://localhost/ >/dev/null 2>&1 || exit 1',
+          'wget -q -O - http://127.0.0.1/ >/dev/null 2>&1 || exit 1',
         ]
       interval: 30s
       timeout: 5s
