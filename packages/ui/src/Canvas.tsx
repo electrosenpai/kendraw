@@ -407,6 +407,14 @@ export function Canvas({
         return;
       }
 
+      // Wave-2 A5: Print (Ctrl+P) — opens browser print dialog with
+      // print-only CSS that hides chrome and shows only the canvas.
+      if (isMod && !e.shiftKey && (e.key === 'p' || e.key === 'P')) {
+        e.preventDefault();
+        window.print();
+        return;
+      }
+
       // Structure cleanup (Shift+Ctrl+K, reference Section 4.1)
       if (isMod && e.shiftKey && (e.key === 'k' || e.key === 'K')) {
         e.preventDefault();

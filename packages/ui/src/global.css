@@ -22,3 +22,42 @@ body,
 button {
   font-family: inherit;
 }
+
+/* Wave-2 A5: print-only styles — hide chrome, show only the canvas region */
+@media print {
+  html,
+  body,
+  #root {
+    overflow: visible !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  /* Hide non-canvas UI: tool palette, panels, dialogs, tabs, status bar */
+  [data-testid='tool-palette'],
+  [data-testid='nmr-panel'],
+  [data-testid='property-panel'],
+  [data-testid='tab-bar'],
+  [data-testid='status-bar'],
+  [role='dialog'] {
+    display: none !important;
+  }
+
+  /* Let the canvas expand to the full page */
+  [data-testid='drawing-canvas'],
+  [data-canvas-root] {
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 10cm !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+  }
+
+  /* Force canvas SVG/canvas to print with full fidelity */
+  [data-canvas-root] canvas,
+  [data-canvas-root] svg {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+}
