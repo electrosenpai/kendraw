@@ -2,6 +2,7 @@ import { produce } from 'immer';
 import type { Bond, Document, Page } from './types.js';
 import type { Command, SceneDiff } from './commands.js';
 import { NEW_DOCUMENT } from './style-presets.js';
+import { reconcileCompoundNumbers, repackCompoundNumbers } from './compound-numbering.js';
 
 export type Unsubscribe = () => void;
 export type SceneListener = (doc: Document, diff: SceneDiff) => void;
@@ -53,6 +54,7 @@ function applyCommand(state: Document, command: Command): { next: Document; diff
         const page = draft.pages[pageIndex];
         if (page) {
           page.atoms[command.atom.id] = command.atom;
+          reconcileCompoundNumbers(page);
         }
       });
       return { next, diff: { type: 'atom-added', id: command.atom.id } };
@@ -63,6 +65,7 @@ function applyCommand(state: Document, command: Command): { next: Document; diff
         if (page) {
           const { [command.id]: _, ...rest } = page.atoms;
           page.atoms = rest as typeof page.atoms;
+          reconcileCompoundNumbers(page);
         }
       });
       return { next, diff: { type: 'atom-removed', id: command.id } };
@@ -116,6 +119,7 @@ function applyCommand(state: Document, command: Command): { next: Document; diff
         const page = draft.pages[pageIndex];
         if (page) {
           page.bonds[command.bond.id] = command.bond;
+          reconcileCompoundNumbers(page);
         }
       });
       return { next, diff: { type: 'bond-added', id: command.bond.id } };
@@ -126,6 +130,7 @@ function applyCommand(state: Document, command: Command): { next: Document; diff
         if (page) {
           const { [command.id]: _, ...rest } = page.bonds;
           page.bonds = rest as typeof page.bonds;
+          reconcileCompoundNumbers(page);
         }
       });
       return { next, diff: { type: 'bond-removed', id: command.id } };
@@ -245,6 +250,30 @@ function applyCommand(state: Document, command: Command): { next: Document; diff
         }
       });
       return { next, diff: { type: 'nmr-prediction-set' } };
+    }
+    case 'toggle-compound-numbering': {
+      const next = produce(state, (draft) => {
+        const page = draft.pages[pageIndex];
+        if (!page) return;
+        if (!page.compoundNumbering) {
+          page.compoundNumbering = { enabled: true, assignments: {}, nextNumber: 1 };
+        } else {
+          page.compoundNumbering.enabled = !page.compoundNumbering.enabled;
+        }
+        reconcileCompoundNumbers(page);
+      });
+      return { next, diff: { type: 'compound-numbering-toggled' } };
+    }
+    case 'repack-compound-numbers': {
+      const next = produce(state, (draft) => {
+        const page = draft.pages[pageIndex];
+        if (!page) return;
+        if (!page.compoundNumbering) {
+          page.compoundNumbering = { enabled: true, assignments: {}, nextNumber: 1 };
+        }
+        repackCompoundNumbers(page);
+      });
+      return { next, diff: { type: 'compound-numbers-repacked' } };
     }
   }
 }

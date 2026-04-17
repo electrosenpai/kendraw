@@ -20,6 +20,7 @@ export type {
   NmrPeak,
   NmrMetadata,
   NmrPrediction,
+  CompoundNumbering,
 } from './types.js';
 
 export type {
@@ -39,8 +40,19 @@ export type {
   UpdateAnnotationCommand,
   MoveAnnotationCommand,
   SetNmrPredictionCommand,
+  ToggleCompoundNumberingCommand,
+  RepackCompoundNumbersCommand,
   SceneDiff,
 } from './commands.js';
+
+export {
+  findConnectedComponents,
+  reconcileCompoundNumbers,
+  repackCompoundNumbers,
+  computeCompoundLabels,
+  type CompoundComponent,
+  type CompoundLabel,
+} from './compound-numbering.js';
 
 export type { SceneStore, Unsubscribe, SceneListener } from './store.js';
 export { createSceneStore, createEmptyDocument } from './store.js';

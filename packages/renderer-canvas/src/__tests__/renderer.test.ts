@@ -280,6 +280,32 @@ describe('CanvasRenderer', () => {
     });
   });
 
+  describe('compound numbering (wave-1 P1-2)', () => {
+    it('renders no number labels when numbering is disabled or absent', () => {
+      renderer.attach(container);
+      const doc = createDocWithAtoms(1);
+      mock.ctx.fillText.mockClear();
+      renderer.render(doc);
+      const texts = mock.ctx.fillText.mock.calls.map((c) => c[0]);
+      expect(texts).not.toContain('1');
+    });
+
+    it('renders "1" under a single connected molecule when enabled', () => {
+      renderer.attach(container);
+      const doc = createDocWithAtoms(3);
+      const page = doc.pages[0];
+      if (!page) throw new Error('expected page');
+      page.compoundNumbering = { enabled: true, assignments: {}, nextNumber: 1 };
+      const [first] = Object.keys(page.atoms) as Array<keyof typeof page.atoms>;
+      if (!first) throw new Error('expected atom');
+      page.compoundNumbering.assignments[first] = 1;
+      mock.ctx.fillText.mockClear();
+      renderer.render(doc);
+      const texts = mock.ctx.fillText.mock.calls.map((c) => c[0]);
+      expect(texts).toContain('1');
+    });
+  });
+
   describe('theme (wave-1 P1-8)', () => {
     it('defaults to dark theme', () => {
       expect(renderer.getTheme()).toBe('dark');

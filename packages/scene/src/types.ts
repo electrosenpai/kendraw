@@ -146,6 +146,14 @@ export type NmrPrediction = {
   metadata: NmrMetadata;
 };
 
+export type CompoundNumbering = {
+  enabled: boolean;
+  /** Canonical atom per connected component holds the number. Stability under
+   * delete/undo is preserved because numbers live on persistent atom ids. */
+  assignments: Record<AtomId, number>;
+  nextNumber: number;
+};
+
 export type Page = {
   id: string;
   atoms: Record<AtomId, Atom>;
@@ -155,6 +163,7 @@ export type Page = {
   groups: Record<GroupId, Group>;
   viewport: Viewport;
   nmrPrediction?: NmrPrediction;
+  compoundNumbering?: CompoundNumbering;
 };
 
 export type DocumentMetadata = {

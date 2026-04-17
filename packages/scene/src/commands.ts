@@ -58,6 +58,14 @@ export type SetStylePresetCommand = {
   preset: StylePreset;
 };
 
+export type ToggleCompoundNumberingCommand = {
+  type: 'toggle-compound-numbering';
+};
+
+export type RepackCompoundNumbersCommand = {
+  type: 'repack-compound-numbers';
+};
+
 export type Command =
   | AddAtomCommand
   | RemoveAtomCommand
@@ -75,7 +83,9 @@ export type Command =
   | UpdateAnnotationCommand
   | MoveAnnotationCommand
   | SetNmrPredictionCommand
-  | SetStylePresetCommand;
+  | SetStylePresetCommand
+  | ToggleCompoundNumberingCommand
+  | RepackCompoundNumbersCommand;
 
 export type SceneDiff =
   | { type: 'atom-added'; id: AtomId }
@@ -95,4 +105,7 @@ export type SceneDiff =
   | { type: 'annotation-moved'; id: AnnotationId }
   | { type: 'nmr-prediction-set' }
   | { type: 'style-preset-set' }
+  | { type: 'compound-numbering-toggled' }
+  | { type: 'compound-numbers-repacked' }
+  | { type: 'compound-numbers-reconciled' }
   | { type: 'state-restored' };

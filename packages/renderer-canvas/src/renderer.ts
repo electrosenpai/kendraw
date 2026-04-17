@@ -8,6 +8,7 @@ import {
   type LabelDisplayOptions,
   NEW_DOCUMENT,
   ptToPx,
+  computeCompoundLabels,
 } from '@kendraw/scene';
 
 export interface GraphicOverlay {
@@ -269,6 +270,23 @@ export class CanvasRenderer implements Renderer {
     // 4. Annotations (free text: conditions, labels, numbering)
     for (const ann of Object.values(page.annotations)) {
       this.drawAnnotation(ctx, ann);
+    }
+
+    // 4b. Compound numbering labels (bold number under each connected component bbox)
+    if (page.compoundNumbering?.enabled) {
+      const compoundLabels = computeCompoundLabels(page);
+      const labelSize = this.S.labelSize;
+      ctx.save();
+      ctx.fillStyle = this.palette.text;
+      ctx.font = `bold ${labelSize}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      for (const lbl of compoundLabels) {
+        const cx = lbl.bbox.x + lbl.bbox.w / 2;
+        const belowY = lbl.bbox.y + lbl.bbox.h + 14;
+        ctx.fillText(String(lbl.number), cx, belowY);
+      }
+      ctx.restore();
     }
 
     // 5. Selection rect
