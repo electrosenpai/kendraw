@@ -115,6 +115,39 @@ describe('exportToSVG', () => {
     expect(svg).toContain('<text');
   });
 
+  it('emits title, desc, and role="img" for accessibility (a11y)', () => {
+    const page = createPage([createAtom(100, 100, 6)]);
+    const svg = exportToSVG(page, { title: 'Methane', description: 'CH4' });
+    expect(svg).toContain('role="img"');
+    expect(svg).toContain('aria-labelledby="kendraw-title kendraw-desc"');
+    expect(svg).toContain('<title id="kendraw-title">Methane</title>');
+    expect(svg).toContain('<desc id="kendraw-desc">CH4</desc>');
+    const titleIdx = svg.indexOf('<title');
+    const descIdx = svg.indexOf('<desc');
+    const svgOpen = svg.indexOf('>');
+    expect(titleIdx).toBeGreaterThan(svgOpen);
+    expect(descIdx).toBeGreaterThan(titleIdx);
+  });
+
+  it('provides sensible default title and desc when not supplied', () => {
+    const a1 = createAtom(0, 0);
+    const a2 = createAtom(100, 0);
+    const page = createPage([a1, a2], [createBond(a1.id, a2.id)]);
+    const svg = exportToSVG(page);
+    expect(svg).toContain('<title id="kendraw-title">Chemical structure</title>');
+    expect(svg).toContain('2 atoms');
+    expect(svg).toContain('1 bond');
+  });
+
+  it('escapes XML special characters in title/desc', () => {
+    const page = createPage([createAtom(0, 0)]);
+    const svg = exportToSVG(page, { title: 'Compound <1> & "2"', description: "It's a test" });
+    expect(svg).toContain('&lt;1&gt;');
+    expect(svg).toContain('&amp;');
+    expect(svg).toContain('&quot;');
+    expect(svg).toContain('&apos;');
+  });
+
   it('renders retro arrows with two parallel lines and an open arrowhead', () => {
     const page = createPage([]);
     const arrow: Arrow = {

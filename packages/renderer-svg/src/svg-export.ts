@@ -6,10 +6,22 @@ const FONT_SIZE = 12;
 const PADDING = 30;
 
 function escapeXml(s: string): string {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
 }
 
-export function exportToSVG(page: Page, options?: { width?: number; height?: number }): string {
+export interface ExportToSvgOptions {
+  width?: number;
+  height?: number;
+  title?: string;
+  description?: string;
+}
+
+export function exportToSVG(page: Page, options?: ExportToSvgOptions): string {
   const atoms = Object.values(page.atoms);
   const bonds = Object.values(page.bonds);
   const arrows = Object.values(page.arrows);
@@ -57,10 +69,21 @@ export function exportToSVG(page: Page, options?: { width?: number; height?: num
   const width = options?.width ?? Math.round(vbW);
   const height = options?.height ?? Math.round(vbH);
 
+  const title = escapeXml(options?.title ?? 'Chemical structure');
+  const description = escapeXml(
+    options?.description ??
+      `Chemical drawing with ${atoms.length} atom${atoms.length === 1 ? '' : 's'} and ` +
+        `${bonds.length} bond${bonds.length === 1 ? '' : 's'}, exported from Kendraw.`,
+  );
+
   const parts: string[] = [];
   parts.push(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="${vbX} ${vbY} ${vbW} ${vbH}">`,
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" ` +
+      `viewBox="${vbX} ${vbY} ${vbW} ${vbH}" role="img" ` +
+      `aria-labelledby="kendraw-title kendraw-desc">`,
   );
+  parts.push(`<title id="kendraw-title">${title}</title>`);
+  parts.push(`<desc id="kendraw-desc">${description}</desc>`);
   parts.push('<rect width="100%" height="100%" fill="white"/>');
 
   // Bonds
