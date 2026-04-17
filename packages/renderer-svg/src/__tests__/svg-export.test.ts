@@ -1,7 +1,15 @@
 import { describe, it, expect } from 'vitest';
 import { exportToSVG } from '../svg-export.js';
 import { createAtom, createBond } from '@kendraw/scene';
-import type { Page, Arrow, ArrowId, Annotation, AnnotationId, GroupId } from '@kendraw/scene';
+import type {
+  Page,
+  Arrow,
+  ArrowId,
+  Annotation,
+  AnnotationId,
+  GroupId,
+  ShapeId,
+} from '@kendraw/scene';
 
 function createPage(
   atoms: ReturnType<typeof createAtom>[],
@@ -264,5 +272,65 @@ describe('exportToSVG', () => {
     };
     const svg = exportToSVG(page);
     expect(svg).not.toContain('data-compound-number');
+  });
+
+  describe('shapes (wave-3 B1)', () => {
+    it('exports a rect shape as <rect>', () => {
+      const page = createPage([]);
+      page.shapes = {
+        s1: {
+          kind: 'rect',
+          id: 's1' as unknown as ShapeId,
+          x: 10,
+          y: 20,
+          w: 40,
+          h: 30,
+          strokeColor: '#333',
+          strokeWidth: 1.5,
+        },
+      } as NonNullable<Page['shapes']>;
+      const svg = exportToSVG(page);
+      expect(svg).toContain('<rect x="10" y="20" width="40" height="30"');
+      expect(svg).toContain('stroke="#333"');
+      expect(svg).toContain('fill="none"');
+    });
+
+    it('exports an ellipse shape as <ellipse>', () => {
+      const page = createPage([]);
+      page.shapes = {
+        e1: {
+          kind: 'ellipse',
+          id: 'e1' as unknown as ShapeId,
+          x: 0,
+          y: 0,
+          w: 80,
+          h: 40,
+          strokeColor: '#222',
+          strokeWidth: 2,
+        },
+      } as NonNullable<Page['shapes']>;
+      const svg = exportToSVG(page);
+      expect(svg).toContain('<ellipse cx="40" cy="20" rx="40" ry="20"');
+      expect(svg).toContain('stroke="#222"');
+    });
+
+    it('emits fill attribute when fillColor is present', () => {
+      const page = createPage([]);
+      page.shapes = {
+        s2: {
+          kind: 'rect',
+          id: 's2' as unknown as ShapeId,
+          x: 0,
+          y: 0,
+          w: 10,
+          h: 10,
+          strokeColor: '#000',
+          strokeWidth: 1,
+          fillColor: '#ff0',
+        },
+      } as NonNullable<Page['shapes']>;
+      const svg = exportToSVG(page);
+      expect(svg).toContain('fill="#ff0"');
+    });
   });
 });

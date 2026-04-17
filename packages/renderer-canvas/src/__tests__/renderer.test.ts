@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { CanvasRenderer } from '../renderer.js';
 import { createEmptyDocument, createAtom, createBond } from '@kendraw/scene';
-import type { Document, Arrow, ArrowId } from '@kendraw/scene';
+import type { Document, Arrow, ArrowId, ShapeId } from '@kendraw/scene';
 
 // Polyfill ResizeObserver for jsdom
 if (typeof globalThis.ResizeObserver === 'undefined') {
@@ -29,6 +29,10 @@ function mockCanvasContext() {
     setLineDash: vi.fn(),
     strokeRect: vi.fn(),
     fillRect: vi.fn(),
+    ellipse: vi.fn(),
+    arcTo: vi.fn(),
+    quadraticCurveTo: vi.fn(),
+    rect: vi.fn(),
     translate: vi.fn(),
     setTransform: vi.fn(),
     measureText: vi.fn().mockReturnValue({ width: 10 }),
@@ -335,6 +339,85 @@ describe('CanvasRenderer', () => {
       renderer.render(doc);
 
       expect(mock.ctx.fillRect).toHaveBeenCalled();
+    });
+  });
+
+  describe('shapes (wave-3 B1)', () => {
+    it('draws a rect shape with strokeRect', () => {
+      renderer.attach(container);
+      const doc = createEmptyDocument();
+      const page = doc.pages[0];
+      if (!page) throw new Error('expected page');
+      page.shapes = {
+        s1: {
+          kind: 'rect',
+          id: 's1' as unknown as ShapeId,
+          x: 10,
+          y: 20,
+          w: 40,
+          h: 30,
+          strokeColor: '#f00',
+          strokeWidth: 2,
+        },
+      } as unknown as NonNullable<typeof page.shapes>;
+      mock.ctx.strokeRect.mockClear();
+      renderer.render(doc);
+      expect(mock.ctx.strokeRect).toHaveBeenCalledWith(10, 20, 40, 30);
+    });
+
+    it('draws an ellipse shape with ctx.ellipse', () => {
+      renderer.attach(container);
+      const doc = createEmptyDocument();
+      const page = doc.pages[0];
+      if (!page) throw new Error('expected page');
+      page.shapes = {
+        e1: {
+          kind: 'ellipse',
+          id: 'e1' as unknown as ShapeId,
+          x: 0,
+          y: 0,
+          w: 80,
+          h: 40,
+          strokeColor: '#333',
+          strokeWidth: 1,
+        },
+      } as unknown as NonNullable<typeof page.shapes>;
+      mock.ctx.ellipse.mockClear();
+      mock.ctx.stroke.mockClear();
+      renderer.render(doc);
+      expect(mock.ctx.ellipse).toHaveBeenCalledWith(40, 20, 40, 20, 0, 0, Math.PI * 2);
+      expect(mock.ctx.stroke).toHaveBeenCalled();
+    });
+
+    it('fills a rect when fillColor is set', () => {
+      renderer.attach(container);
+      const doc = createEmptyDocument();
+      const page = doc.pages[0];
+      if (!page) throw new Error('expected page');
+      page.shapes = {
+        s2: {
+          kind: 'rect',
+          id: 's2' as unknown as ShapeId,
+          x: 5,
+          y: 5,
+          w: 10,
+          h: 10,
+          strokeColor: '#000',
+          strokeWidth: 1,
+          fillColor: '#ff0',
+        },
+      } as unknown as NonNullable<typeof page.shapes>;
+      mock.ctx.fillRect.mockClear();
+      renderer.render(doc);
+      expect(mock.ctx.fillRect).toHaveBeenCalledWith(5, 5, 10, 10);
+    });
+
+    it('is a no-op when page.shapes is undefined', () => {
+      renderer.attach(container);
+      const doc = createEmptyDocument();
+      mock.ctx.strokeRect.mockClear();
+      renderer.render(doc);
+      expect(mock.ctx.strokeRect).not.toHaveBeenCalled();
     });
   });
 });

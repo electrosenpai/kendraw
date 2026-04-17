@@ -21,7 +21,8 @@ export type ToolId =
   | 'eraser'
   | 'pan'
   | 'arrow'
-  | 'curly-arrow';
+  | 'curly-arrow'
+  | 'shape';
 
 export interface ToolState {
   tool: ToolId;
@@ -49,6 +50,8 @@ export interface ToolState {
   /** When true, new bonds snap to 30° increments. When false, bonds follow the
    *  cursor freely. Shift inverts whichever mode is active (wave-3 A5). */
   angleSnap: boolean;
+  /** Geometric-shape sub-kind (wave-3 B1). Only used when tool === 'shape'. */
+  shapeKind: 'rect' | 'ellipse';
 }
 
 export const DEFAULT_TOOL_STATE: ToolState = {
@@ -59,6 +62,7 @@ export const DEFAULT_TOOL_STATE: ToolState = {
   arrowType: 'forward',
   curlyType: 'pair',
   angleSnap: true,
+  shapeKind: 'rect',
 };
 
 // ── Icons (20x20 SVG, stroke 1.5) ──────────────────────────
@@ -232,6 +236,16 @@ const ICN = {
       </text>
     </I>
   ),
+  shapeRect: (
+    <I>
+      <rect x="3" y="5" width="14" height="10" rx="1" />
+    </I>
+  ),
+  shapeEllipse: (
+    <I>
+      <ellipse cx="10" cy="10" rx="7" ry="5" />
+    </I>
+  ),
 };
 
 // ── Tool definitions ────────────────────────────────────────
@@ -351,6 +365,14 @@ const GROUPS: { label: string; tools: ToolDef[] }[] = [
         label: 'Curly Arrow',
         shortcut: 'U',
         description: 'Curved mechanism arrows (right-click for pair/radical)',
+        hasSubmenu: true,
+      },
+      {
+        id: 'shape',
+        icon: ICN.shapeRect,
+        label: 'Shape',
+        shortcut: 'G',
+        description: 'Draw rectangles and ellipses (right-click to switch kind)',
         hasSubmenu: true,
       },
     ],
@@ -719,6 +741,33 @@ export function ToolPalette({
                   }}
                 >
                   {a.label}
+                </button>
+              ))}
+            </Sub>
+          )}
+          {submenu === 'shape' && (
+            <Sub title="Shape">
+              {(
+                [
+                  { id: 'rect', label: 'Rectangle (□)' },
+                  { id: 'ellipse', label: 'Ellipse (◯)' },
+                ] as const
+              ).map((s) => (
+                <button
+                  key={s.id}
+                  onClick={() => {
+                    onToolStateChange({ shapeKind: s.id, tool: 'shape' });
+                    setSubmenu(null);
+                  }}
+                  style={{
+                    ...ROW,
+                    background:
+                      toolState.shapeKind === s.id
+                        ? 'var(--kd-color-accent-muted)'
+                        : 'transparent',
+                  }}
+                >
+                  {s.label}
                 </button>
               ))}
             </Sub>

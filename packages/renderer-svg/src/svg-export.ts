@@ -1,4 +1,4 @@
-import type { Page, Atom, Bond, Annotation, Arrow, BezierGeometry } from '@kendraw/scene';
+import type { Page, Atom, Bond, Annotation, Arrow, BezierGeometry, Shape } from '@kendraw/scene';
 import { getColor, getSymbol, computeCompoundLabels } from '@kendraw/scene';
 
 const ATOM_RADIUS = 14;
@@ -55,6 +55,14 @@ export function exportToSVG(page: Page, options?: ExportToSvgOptions): string {
     maxX = Math.max(maxX, ann.x + textWidth);
     maxY = Math.max(maxY, ann.y + fontSize);
   }
+  if (page.shapes) {
+    for (const shape of Object.values(page.shapes)) {
+      minX = Math.min(minX, shape.x);
+      minY = Math.min(minY, shape.y);
+      maxX = Math.max(maxX, shape.x + shape.w);
+      maxY = Math.max(maxY, shape.y + shape.h);
+    }
+  }
   if (!isFinite(minX)) {
     minX = 0;
     minY = 0;
@@ -85,6 +93,13 @@ export function exportToSVG(page: Page, options?: ExportToSvgOptions): string {
   parts.push(`<title id="kendraw-title">${title}</title>`);
   parts.push(`<desc id="kendraw-desc">${description}</desc>`);
   parts.push('<rect width="100%" height="100%" fill="white"/>');
+
+  // Shapes (wave-3 B1: free geometric decorations, behind chemistry)
+  if (page.shapes) {
+    for (const shape of Object.values(page.shapes)) {
+      parts.push(renderShapeSVG(shape));
+    }
+  }
 
   // Bonds
   for (const bond of bonds) {
@@ -371,6 +386,19 @@ function renderAnnotationSVG(ann: Annotation): string {
   }
 
   return `<text x="${x}" y="${y}" font-family="Arial, system-ui, sans-serif" font-weight="${weight}" font-style="${style}" fill="${color}">${parts.join('')}</text>`;
+}
+
+function renderShapeSVG(shape: Shape): string {
+  const fill = shape.fillColor ? `fill="${shape.fillColor}"` : 'fill="none"';
+  const stroke = `stroke="${shape.strokeColor}" stroke-width="${shape.strokeWidth}"`;
+  if (shape.kind === 'rect') {
+    return `<rect x="${shape.x}" y="${shape.y}" width="${shape.w}" height="${shape.h}" ${fill} ${stroke}/>`;
+  }
+  const cx = shape.x + shape.w / 2;
+  const cy = shape.y + shape.h / 2;
+  const rx = shape.w / 2;
+  const ry = shape.h / 2;
+  return `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" ${fill} ${stroke}/>`;
 }
 
 function isLightColor(hex: string): boolean {

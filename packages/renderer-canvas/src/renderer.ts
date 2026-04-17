@@ -1,4 +1,4 @@
-import type { AtomId, Document, SceneDiff, Bond, Atom, Page } from '@kendraw/scene';
+import type { AtomId, Document, SceneDiff, Bond, Atom, Page, Shape } from '@kendraw/scene';
 import {
   getColor,
   shouldShowLabel,
@@ -230,6 +230,13 @@ export class CanvasRenderer implements Renderer {
         ctx.moveTo(g.x1, g.y1);
         ctx.lineTo(g.x2, g.y2);
         ctx.stroke();
+      }
+    }
+
+    // 0c. Shapes (wave-3 B1: free geometric decorations, behind chemistry)
+    if (page.shapes) {
+      for (const shape of Object.values(page.shapes)) {
+        this.drawShape(ctx, shape);
       }
     }
 
@@ -865,6 +872,29 @@ export class CanvasRenderer implements Renderer {
     ctx.moveTo(x1, y1);
     ctx.lineTo(x2, y2);
     ctx.stroke();
+  }
+
+  // ── Shape rendering (wave-3 B1) ─────────────────────────
+
+  private drawShape(ctx: CanvasRenderingContext2D, shape: Shape): void {
+    ctx.save();
+    ctx.strokeStyle = shape.strokeColor;
+    ctx.lineWidth = shape.strokeWidth;
+    if (shape.fillColor) ctx.fillStyle = shape.fillColor;
+    if (shape.kind === 'rect') {
+      if (shape.fillColor) ctx.fillRect(shape.x, shape.y, shape.w, shape.h);
+      ctx.strokeRect(shape.x, shape.y, shape.w, shape.h);
+    } else {
+      const cx = shape.x + shape.w / 2;
+      const cy = shape.y + shape.h / 2;
+      const rx = shape.w / 2;
+      const ry = shape.h / 2;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+      if (shape.fillColor) ctx.fill();
+      ctx.stroke();
+    }
+    ctx.restore();
   }
 
   // ── Arrow rendering ─────────────────────────────────────

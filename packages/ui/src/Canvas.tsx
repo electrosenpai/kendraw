@@ -31,8 +31,10 @@ import {
   type AtomId,
   type ArrowId,
   type AnnotationId,
+  type ShapeId,
   type Bond,
   type Annotation,
+  type Shape,
   type ArrowAnchor,
 } from '@kendraw/scene';
 import { CanvasRenderer } from '@kendraw/renderer-canvas';
@@ -874,6 +876,8 @@ export function Canvas({
           T: { tool: 'text' },
           u: { tool: 'curly-arrow' },
           U: { tool: 'curly-arrow' },
+          g: { tool: 'shape' },
+          G: { tool: 'shape' },
         };
         const mapped = toolMap[e.key];
         if (mapped) {
@@ -1442,6 +1446,33 @@ export function Canvas({
         return;
       }
 
+      // --- SHAPE TOOL --- (wave-3 B1: drag to draw rect/ellipse)
+      if (toolState.tool === 'shape') {
+        const startPt = dragStartRef.current ?? { x, y };
+        const dx = x - startPt.x;
+        const dy = y - startPt.y;
+        // Skip zero/tiny shapes; allow single-click fallback to 40x24 box.
+        if (Math.abs(dx) < 2 && Math.abs(dy) < 2) {
+          dragStartRef.current = null;
+          isDraggingRef.current = false;
+          return;
+        }
+        const shape: Shape = {
+          kind: toolState.shapeKind,
+          id: crypto.randomUUID() as ShapeId,
+          x: Math.min(startPt.x, x),
+          y: Math.min(startPt.y, y),
+          w: Math.abs(dx),
+          h: Math.abs(dy),
+          strokeColor: '#555555',
+          strokeWidth: 1.5,
+        };
+        store.dispatch({ type: 'add-shape', shape });
+        dragStartRef.current = null;
+        isDraggingRef.current = false;
+        return;
+      }
+
       // --- LASSO TOOL ---
       if (toolState.tool === 'lasso') {
         const path = lassoPathRef.current;
@@ -1515,6 +1546,7 @@ export function Canvas({
       case 'ring':
       case 'arrow':
       case 'curly-arrow':
+      case 'shape':
         return 'crosshair';
       default:
         return 'default';
