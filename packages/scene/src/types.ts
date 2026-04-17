@@ -4,6 +4,7 @@ export type BondId = string & { readonly __brand: 'BondId' };
 export type ArrowId = string & { readonly __brand: 'ArrowId' };
 export type AnnotationId = string & { readonly __brand: 'AnnotationId' };
 export type GroupId = string & { readonly __brand: 'GroupId' };
+export type ShapeId = string & { readonly __brand: 'ShapeId' };
 
 export type Point = {
   x: number;
@@ -110,6 +111,32 @@ export type Group = {
   name?: string;
 };
 
+/** Wave-3 B1: free-hand geometric shapes for schemes and annotations.
+ *  Rect/ellipse are axis-aligned; (x,y) is the top-left corner, w/h > 0. */
+export type Shape =
+  | {
+      kind: 'rect';
+      id: ShapeId;
+      x: number;
+      y: number;
+      w: number;
+      h: number;
+      strokeColor: string;
+      strokeWidth: number;
+      fillColor?: string;
+    }
+  | {
+      kind: 'ellipse';
+      id: ShapeId;
+      x: number;
+      y: number;
+      w: number;
+      h: number;
+      strokeColor: string;
+      strokeWidth: number;
+      fillColor?: string;
+    };
+
 export type Viewport = {
   x: number;
   y: number;
@@ -163,6 +190,7 @@ export type Page = {
   arrows: Record<ArrowId, Arrow>;
   annotations: Record<AnnotationId, Annotation>;
   groups: Record<GroupId, Group>;
+  shapes?: Record<ShapeId, Shape>;
   viewport: Viewport;
   nmrPrediction?: NmrPrediction;
   compoundNumbering?: CompoundNumbering;

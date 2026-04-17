@@ -4,6 +4,7 @@ export type {
   ArrowId,
   AnnotationId,
   GroupId,
+  ShapeId,
   Point,
   BezierGeometry,
   ArrowAnchor,
@@ -13,6 +14,7 @@ export type {
   RichTextNode,
   Annotation,
   Group,
+  Shape,
   Viewport,
   Page,
   DocumentMetadata,
@@ -42,6 +44,10 @@ export type {
   SetNmrPredictionCommand,
   ToggleCompoundNumberingCommand,
   RepackCompoundNumbersCommand,
+  AddShapeCommand,
+  RemoveShapeCommand,
+  MoveShapeCommand,
+  ResizeShapeCommand,
   SceneDiff,
 } from './commands.js';
 

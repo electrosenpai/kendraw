@@ -25,6 +25,7 @@ function createEmptyPage(): Page {
     arrows: {} as Page['arrows'],
     annotations: {} as Page['annotations'],
     groups: {} as Page['groups'],
+    shapes: {} as NonNullable<Page['shapes']>,
     viewport: { x: 0, y: 0, zoom: 1 },
   };
 }
@@ -317,6 +318,48 @@ function applyCommand(state: Document, command: Command): { next: Document; diff
         repackCompoundNumbers(page);
       });
       return { next, diff: { type: 'compound-numbers-repacked' } };
+    }
+    case 'add-shape': {
+      const next = produce(state, (draft) => {
+        const page = draft.pages[pageIndex];
+        if (!page) return;
+        if (!page.shapes) page.shapes = {} as NonNullable<Page['shapes']>;
+        page.shapes[command.shape.id] = command.shape;
+      });
+      return { next, diff: { type: 'shape-added', id: command.shape.id } };
+    }
+    case 'remove-shape': {
+      const next = produce(state, (draft) => {
+        const page = draft.pages[pageIndex];
+        if (!page?.shapes) return;
+        const { [command.id]: _, ...rest } = page.shapes;
+        page.shapes = rest as NonNullable<Page['shapes']>;
+      });
+      return { next, diff: { type: 'shape-removed', id: command.id } };
+    }
+    case 'move-shape': {
+      const next = produce(state, (draft) => {
+        const page = draft.pages[pageIndex];
+        const shape = page?.shapes?.[command.id];
+        if (shape) {
+          shape.x += command.dx;
+          shape.y += command.dy;
+        }
+      });
+      return { next, diff: { type: 'shape-moved', id: command.id } };
+    }
+    case 'resize-shape': {
+      const next = produce(state, (draft) => {
+        const page = draft.pages[pageIndex];
+        const shape = page?.shapes?.[command.id];
+        if (shape) {
+          shape.x = command.x;
+          shape.y = command.y;
+          shape.w = command.w;
+          shape.h = command.h;
+        }
+      });
+      return { next, diff: { type: 'shape-resized', id: command.id } };
     }
   }
 }

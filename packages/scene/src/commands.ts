@@ -8,6 +8,8 @@ import type {
   Annotation,
   AnnotationId,
   NmrPrediction,
+  Shape,
+  ShapeId,
 } from './types.js';
 import type { StylePreset } from './style-presets.js';
 
@@ -66,6 +68,18 @@ export type RepackCompoundNumbersCommand = {
   type: 'repack-compound-numbers';
 };
 
+export type AddShapeCommand = { type: 'add-shape'; shape: Shape };
+export type RemoveShapeCommand = { type: 'remove-shape'; id: ShapeId };
+export type MoveShapeCommand = { type: 'move-shape'; id: ShapeId; dx: number; dy: number };
+export type ResizeShapeCommand = {
+  type: 'resize-shape';
+  id: ShapeId;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+};
+
 /** Wave-2 B1: align selected atoms along one axis.
  *  - left/center-x/right snap x-coordinates to the selection's bbox
  *  - top/center-y/bottom snap y-coordinates to the selection's bbox
@@ -96,7 +110,11 @@ export type Command =
   | SetStylePresetCommand
   | ToggleCompoundNumberingCommand
   | RepackCompoundNumbersCommand
-  | AlignAtomsCommand;
+  | AlignAtomsCommand
+  | AddShapeCommand
+  | RemoveShapeCommand
+  | MoveShapeCommand
+  | ResizeShapeCommand;
 
 export type SceneDiff =
   | { type: 'atom-added'; id: AtomId }
@@ -120,4 +138,8 @@ export type SceneDiff =
   | { type: 'compound-numbers-repacked' }
   | { type: 'compound-numbers-reconciled' }
   | { type: 'atoms-aligned' }
+  | { type: 'shape-added'; id: ShapeId }
+  | { type: 'shape-removed'; id: ShapeId }
+  | { type: 'shape-moved'; id: ShapeId }
+  | { type: 'shape-resized'; id: ShapeId }
   | { type: 'state-restored' };
