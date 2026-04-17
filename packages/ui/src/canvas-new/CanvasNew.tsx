@@ -4,9 +4,13 @@
 //
 // Wave-4 W4-R-01 — shell component for the new canvas.
 // Wave-4 W4-R-02 — wired to the Tool dispatcher and a default registry.
+// Wave-4 W4-R-03 — render parity: mounts the shared CanvasRenderer and
+// subscribes to the SceneStore so existing molecules draw identically to the
+// legacy Canvas. Hit-testing and interactive tools land in W4-R-04+.
 
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { SceneStore, AtomId, BondId, Point } from '@kendraw/scene';
+import { CanvasRenderer } from '@kendraw/renderer-canvas';
 import { ToolRegistry, noopSelectTool } from './toolRegistry';
 import type { ToolContext } from './types';
 import { useToolDispatcher } from './useToolDispatcher';
@@ -25,9 +29,10 @@ export interface CanvasNewProps {
 }
 
 export function CanvasNew(props: CanvasNewProps): JSX.Element {
-  const { store } = props;
-  const canvasRef = useRef<HTMLDivElement | null>(null);
+  const { store, theme = 'dark', highlightedAtomIds } = props;
+  const canvasHostRef = useRef<HTMLDivElement | null>(null);
   const [canvasEl, setCanvasEl] = useState<HTMLDivElement | null>(null);
+  const rendererRef = useRef<CanvasRenderer | null>(null);
 
   const registry = useMemo(() => {
     const r = new ToolRegistry();
@@ -41,42 +46,60 @@ export function CanvasNew(props: CanvasNewProps): JSX.Element {
     worldFromScreen: (x: number, y: number): Point => ({ x, y }),
     hitTestAtom: (_world: Point): AtomId | null => null,
     hitTestBond: (_world: Point): BondId | null => null,
-    requestRepaint: () => { /* no-op until W4-R-03 */ },
+    requestRepaint: () => {
+      const r = rendererRef.current;
+      if (r) r.render(store.getState());
+    },
   }), [store]);
 
   useToolDispatcher({ target: canvasEl, registry, context });
+
+  useEffect(() => {
+    const host = canvasHostRef.current;
+    if (!host) return;
+    if (typeof document === 'undefined') return;
+    const renderer = new CanvasRenderer();
+    renderer.setTheme(theme);
+    renderer.attach(host);
+    rendererRef.current = renderer;
+    renderer.render(store.getState());
+    const unsubscribe = store.subscribe(() => {
+      renderer.render(store.getState());
+    });
+    return () => {
+      unsubscribe();
+      renderer.detach();
+      rendererRef.current = null;
+    };
+  }, [canvasEl, store, theme]);
+
+  useEffect(() => {
+    const r = rendererRef.current;
+    if (!r) return;
+    r.setHighlightedAtoms(highlightedAtomIds ?? new Set<AtomId>());
+  }, [highlightedAtomIds]);
 
   return (
     <>
       <div style={{ gridArea: 'toolbar' }} data-testid="canvas-new-toolbar" />
       <div
         ref={(el) => {
-          canvasRef.current = el;
+          canvasHostRef.current = el;
           setCanvasEl(el);
         }}
         style={{
           gridArea: 'canvas',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexDirection: 'column',
-          gap: 8,
-          color: 'var(--kd-color-text-muted)',
-          fontFamily: 'system-ui, sans-serif',
+          position: 'relative',
+          width: '100%',
+          height: '100%',
+          minHeight: 0,
           touchAction: 'none',
         }}
         data-testid="canvas-new-root"
         data-active-tool={registry.getActiveId() ?? ''}
         role="region"
-        aria-label="New canvas (wave-4 redraw, shell)"
-      >
-        <div style={{ fontSize: 14, fontWeight: 600 }}>
-          Kendraw new canvas — wave-4 redraw
-        </div>
-        <div style={{ fontSize: 12, opacity: 0.7 }}>
-          Shell + tool dispatcher (W4-R-01/R-02). Rendering lands in W4-R-03.
-        </div>
-      </div>
+        aria-label="New canvas (wave-4 redraw)"
+      />
       <div style={{ gridArea: 'properties' }} data-testid="canvas-new-properties" />
       <div style={{ gridArea: 'status' }} data-testid="canvas-new-status" />
     </>
