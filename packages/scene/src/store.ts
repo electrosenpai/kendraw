@@ -1,6 +1,7 @@
 import { produce } from 'immer';
 import type { Bond, Document, Page } from './types.js';
 import type { Command, SceneDiff } from './commands.js';
+import { NEW_DOCUMENT } from './style-presets.js';
 
 export type Unsubscribe = () => void;
 export type SceneListener = (doc: Document, diff: SceneDiff) => void;
@@ -39,6 +40,7 @@ export function createEmptyDocument(): Document {
     },
     pages: [createEmptyPage()],
     activePageIndex: 0,
+    stylePreset: NEW_DOCUMENT,
   };
 }
 
@@ -224,6 +226,12 @@ function applyCommand(state: Document, command: Command): { next: Document; diff
         }
       });
       return { next, diff: { type: 'annotation-moved', id: command.id } };
+    }
+    case 'set-style-preset': {
+      const next = produce(state, (draft) => {
+        draft.stylePreset = command.preset;
+      });
+      return { next, diff: { type: 'style-preset-set' } };
     }
     case 'set-nmr-prediction': {
       const next = produce(state, (draft) => {

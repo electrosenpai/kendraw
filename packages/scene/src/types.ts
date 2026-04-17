@@ -157,4 +157,6 @@ export type Document = {
   metadata: DocumentMetadata;
   pages: Page[];
   activePageIndex: number;
+  /** Document-level drawing style preset (bond length, widths, font). */
+  stylePreset?: import('./style-presets.js').StylePreset;
 };

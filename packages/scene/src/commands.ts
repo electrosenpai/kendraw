@@ -9,6 +9,7 @@ import type {
   AnnotationId,
   NmrPrediction,
 } from './types.js';
+import type { StylePreset } from './style-presets.js';
 
 export type AddAtomCommand = { type: 'add-atom'; atom: Atom };
 export type RemoveAtomCommand = { type: 'remove-atom'; id: AtomId };
@@ -52,6 +53,11 @@ export type SetNmrPredictionCommand = {
   prediction: NmrPrediction | undefined;
 };
 
+export type SetStylePresetCommand = {
+  type: 'set-style-preset';
+  preset: StylePreset;
+};
+
 export type Command =
   | AddAtomCommand
   | RemoveAtomCommand
@@ -68,7 +74,8 @@ export type Command =
   | RemoveAnnotationCommand
   | UpdateAnnotationCommand
   | MoveAnnotationCommand
-  | SetNmrPredictionCommand;
+  | SetNmrPredictionCommand
+  | SetStylePresetCommand;
 
 export type SceneDiff =
   | { type: 'atom-added'; id: AtomId }
@@ -87,4 +94,5 @@ export type SceneDiff =
   | { type: 'annotation-updated'; id: AnnotationId }
   | { type: 'annotation-moved'; id: AnnotationId }
   | { type: 'nmr-prediction-set' }
+  | { type: 'style-preset-set' }
   | { type: 'state-restored' };

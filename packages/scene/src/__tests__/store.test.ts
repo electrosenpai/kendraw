@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createSceneStore, createEmptyDocument, createAtom, type NmrPrediction } from '../index.js';
+import { ACS_1996, NEW_DOCUMENT, RSC } from '../style-presets.js';
 
 describe('createEmptyDocument', () => {
   it('returns a valid document with one page', () => {
@@ -293,5 +294,39 @@ describe('set-nmr-prediction command', () => {
   it('empty page has no nmrPrediction by default', () => {
     const store = createSceneStore();
     expect(store.getState().pages[0]?.nmrPrediction).toBeUndefined();
+  });
+});
+
+describe('stylePreset persistence', () => {
+  it('new document defaults to NEW_DOCUMENT preset', () => {
+    const doc = createEmptyDocument();
+    expect(doc.stylePreset).toBeDefined();
+    expect(doc.stylePreset?.name).toBe(NEW_DOCUMENT.name);
+    expect(doc.stylePreset?.bondLengthPt).toBe(NEW_DOCUMENT.bondLengthPt);
+  });
+
+  it('set-style-preset updates the document preset', () => {
+    const store = createSceneStore();
+    store.dispatch({ type: 'set-style-preset', preset: ACS_1996 });
+    expect(store.getState().stylePreset?.name).toBe('ACS Document 1996');
+    expect(store.getState().stylePreset?.bondLengthPt).toBe(14.4);
+  });
+
+  it('set-style-preset emits style-preset-set diff', () => {
+    const store = createSceneStore();
+    const listener = vi.fn();
+    store.subscribe(listener);
+    store.dispatch({ type: 'set-style-preset', preset: RSC });
+    expect(listener).toHaveBeenCalledWith(store.getState(), { type: 'style-preset-set' });
+  });
+
+  it('preset survives JSON round-trip (persistence)', () => {
+    const store = createSceneStore();
+    store.dispatch({ type: 'set-style-preset', preset: ACS_1996 });
+    const serialized = JSON.stringify(store.getState());
+    const restored = JSON.parse(serialized);
+    expect(restored.stylePreset.name).toBe('ACS Document 1996');
+    expect(restored.stylePreset.bondLengthPt).toBe(14.4);
+    expect(restored.stylePreset.labelFont).toBe('Arial');
   });
 });
