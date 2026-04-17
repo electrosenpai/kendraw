@@ -1,3 +1,5 @@
+import { useState, useMemo, useEffect, useRef } from 'react';
+
 interface ShortcutCheatsheetProps {
   onClose: () => void;
 }
@@ -62,6 +64,17 @@ const SHORTCUTS = [
     ],
   },
   {
+    category: 'Alignment (2+ atoms selected)',
+    items: [
+      { key: 'Alt+Shift+L', desc: 'Align left' },
+      { key: 'Alt+Shift+R', desc: 'Align right' },
+      { key: 'Alt+Shift+T', desc: 'Align top' },
+      { key: 'Alt+Shift+B', desc: 'Align bottom' },
+      { key: 'Alt+Shift+E', desc: 'Center horizontally' },
+      { key: 'Alt+Shift+V', desc: 'Center vertically' },
+    ],
+  },
+  {
     category: 'Navigation',
     items: [
       { key: 'Scroll', desc: 'Zoom' },
@@ -71,21 +84,48 @@ const SHORTCUTS = [
     ],
   },
   {
-    category: 'Panels',
+    category: 'Panels & Output',
     items: [
       { key: 'Ctrl+M', desc: 'Toggle NMR panel' },
       { key: 'Ctrl+L', desc: 'Molecule search' },
       { key: 'Ctrl+I', desc: 'Import file' },
       { key: 'Ctrl+N', desc: 'New tab' },
+      { key: 'Ctrl+P', desc: 'Print' },
+      { key: 'Ctrl+Shift+C', desc: 'Toggle compound numbering' },
       { key: '?', desc: 'This cheatsheet' },
     ],
   },
 ];
 
+/** Wave-2 B3: case-insensitive filter across key and description.
+ *  Empty query returns the full list; otherwise empty categories are dropped. */
+export function filterShortcuts(query: string) {
+  const q = query.trim().toLowerCase();
+  if (!q) return SHORTCUTS;
+  return SHORTCUTS.map((section) => ({
+    category: section.category,
+    items: section.items.filter(
+      (it) => it.desc.toLowerCase().includes(q) || it.key.toLowerCase().includes(q),
+    ),
+  })).filter((section) => section.items.length > 0);
+}
+
 export function ShortcutCheatsheet({ onClose }: ShortcutCheatsheetProps) {
+  const [query, setQuery] = useState('');
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const filtered = useMemo(() => filterShortcuts(query), [query]);
+  const totalHits = filtered.reduce((s, sec) => s + sec.items.length, 0);
+
+  // Auto-focus the search field when the dialog opens — Wave-2 B3.
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
   return (
     <div
       onClick={onClose}
+      role="dialog"
+      aria-label="Keyboard Shortcuts"
       style={{
         position: 'fixed',
         inset: 0,
@@ -115,7 +155,7 @@ export function ShortcutCheatsheet({ onClose }: ShortcutCheatsheetProps) {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: 16,
+            marginBottom: 12,
           }}
         >
           <h2 style={{ fontSize: 'var(--kd-font-size-lg)', fontWeight: 600, margin: 0 }}>
@@ -123,6 +163,7 @@ export function ShortcutCheatsheet({ onClose }: ShortcutCheatsheetProps) {
           </h2>
           <button
             onClick={onClose}
+            aria-label="Close cheatsheet"
             style={{
               background: 'none',
               border: 'none',
@@ -134,7 +175,51 @@ export function ShortcutCheatsheet({ onClose }: ShortcutCheatsheetProps) {
             x
           </button>
         </div>
-        {SHORTCUTS.map((section) => (
+
+        {/* Wave-2 B3: searchable filter across key + description */}
+        <input
+          ref={inputRef}
+          data-testid="shortcut-search"
+          type="text"
+          placeholder="Filter shortcuts..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              if (query) {
+                setQuery('');
+                e.stopPropagation();
+              }
+            }
+          }}
+          style={{
+            width: '100%',
+            padding: '6px 10px',
+            marginBottom: 14,
+            background: 'var(--kd-color-surface)',
+            color: 'var(--kd-color-text-primary)',
+            border: '1px solid var(--kd-color-border)',
+            borderRadius: 'var(--kd-radius-sm)',
+            fontSize: 'var(--kd-font-size-sm)',
+            fontFamily: 'inherit',
+            outline: 'none',
+          }}
+        />
+
+        {totalHits === 0 && (
+          <div
+            style={{
+              textAlign: 'center',
+              color: 'var(--kd-color-text-muted)',
+              fontSize: 'var(--kd-font-size-sm)',
+              padding: '20px 0',
+            }}
+          >
+            No shortcuts match "{query}"
+          </div>
+        )}
+
+        {filtered.map((section) => (
           <div key={section.category} style={{ marginBottom: 16 }}>
             <h3
               style={{
