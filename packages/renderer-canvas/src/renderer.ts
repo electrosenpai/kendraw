@@ -909,6 +909,7 @@ export class CanvasRenderer implements Renderer {
       };
       arrowheadHead?: 'full' | 'half' | 'none';
       arrowheadTail?: 'full' | 'half' | 'none';
+      conditions?: { above?: string; below?: string };
     },
   ): void {
     const { start, c1, c2, end } = arrow.geometry;
@@ -975,6 +976,27 @@ export class CanvasRenderer implements Renderer {
         const uy = ady / alen;
         this.drawArrowhead(ctx, start.x, start.y, ux, uy, hl, hw, tailType, color);
       }
+    }
+
+    // Conditions (reagents above / solvent-T-time below). Rendered near midpoint so they
+    // move with the arrow without a separate Annotation anchor.
+    if (!isCurly && arrow.conditions) {
+      const midX = (start.x + end.x) / 2;
+      const midY = (start.y + end.y) / 2;
+      const labelSize = this.S.labelSize * 0.85;
+      ctx.save();
+      ctx.fillStyle = this.palette.text;
+      ctx.font = `${labelSize}px sans-serif`;
+      ctx.textAlign = 'center';
+      if (arrow.conditions.above) {
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(arrow.conditions.above, midX, midY - 6);
+      }
+      if (arrow.conditions.below) {
+        ctx.textBaseline = 'top';
+        ctx.fillText(arrow.conditions.below, midX, midY + 6);
+      }
+      ctx.restore();
     }
   }
 

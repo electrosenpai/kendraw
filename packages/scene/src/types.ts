@@ -75,6 +75,10 @@ export type Arrow = {
   startAnchor: ArrowAnchor;
   endAnchor: ArrowAnchor;
   annotations?: { above?: AnnotationId; below?: AnnotationId };
+  /** Reaction conditions rendered near the arrow midpoint. `above` is the reagent/catalyst
+   * line; `below` is typically solvent / temperature / time. Plain strings; anchoring to
+   * the midpoint is handled by the renderer so drags move them with the arrow. */
+  conditions?: { above?: string; below?: string };
   arrowheadHead?: 'full' | 'half' | 'none';
   arrowheadTail?: 'full' | 'half' | 'none';
 };

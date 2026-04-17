@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { CanvasRenderer } from '../renderer.js';
 import { createEmptyDocument, createAtom, createBond } from '@kendraw/scene';
-import type { Document } from '@kendraw/scene';
+import type { Document, Arrow, ArrowId } from '@kendraw/scene';
 
 // Polyfill ResizeObserver for jsdom
 if (typeof globalThis.ResizeObserver === 'undefined') {
@@ -245,6 +245,41 @@ describe('CanvasRenderer', () => {
     });
   });
 
+  describe('reaction arrow conditions (wave-1 P1-1)', () => {
+    it('renders above and below conditions text near midpoint', () => {
+      renderer.attach(container);
+      const doc = createDocWithArrow({
+        conditions: { above: 'Pd/C', below: 'EtOH, rt' },
+      });
+      mock.ctx.fillText.mockClear();
+      renderer.render(doc);
+      const texts = mock.ctx.fillText.mock.calls.map((c) => c[0]);
+      expect(texts).toContain('Pd/C');
+      expect(texts).toContain('EtOH, rt');
+    });
+
+    it('renders no conditions when field is absent', () => {
+      renderer.attach(container);
+      const doc = createDocWithArrow();
+      mock.ctx.fillText.mockClear();
+      renderer.render(doc);
+      const texts = mock.ctx.fillText.mock.calls.map((c) => c[0]);
+      expect(texts).not.toContain('Pd/C');
+    });
+
+    it('does not render conditions on curly arrows', () => {
+      renderer.attach(container);
+      const doc = createDocWithArrow({
+        type: 'curly-pair',
+        conditions: { above: 'SHOULD_NOT_APPEAR' },
+      });
+      mock.ctx.fillText.mockClear();
+      renderer.render(doc);
+      const texts = mock.ctx.fillText.mock.calls.map((c) => c[0]);
+      expect(texts).not.toContain('SHOULD_NOT_APPEAR');
+    });
+  });
+
   describe('theme (wave-1 P1-8)', () => {
     it('defaults to dark theme', () => {
       expect(renderer.getTheme()).toBe('dark');
@@ -286,6 +321,27 @@ function createDocWithAtoms(count: number): Document {
     const atom = createAtom(i * 30, i * 30, 6);
     page.atoms[atom.id] = atom;
   }
+  return doc;
+}
+
+function createDocWithArrow(overrides?: Partial<Arrow>): Document {
+  const doc = createEmptyDocument();
+  const page = doc.pages[0];
+  if (!page) throw new Error('Expected at least one page');
+  const arrow: Arrow = {
+    id: crypto.randomUUID() as ArrowId,
+    type: overrides?.type ?? 'forward',
+    geometry: overrides?.geometry ?? {
+      start: { x: 100, y: 100 },
+      c1: { x: 130, y: 80 },
+      c2: { x: 170, y: 80 },
+      end: { x: 200, y: 100 },
+    },
+    startAnchor: { kind: 'free' },
+    endAnchor: { kind: 'free' },
+    ...(overrides?.conditions ? { conditions: overrides.conditions } : {}),
+  };
+  page.arrows[arrow.id] = arrow;
   return doc;
 }
 
