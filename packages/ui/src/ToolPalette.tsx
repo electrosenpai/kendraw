@@ -36,7 +36,14 @@ export interface ToolState {
     | 'bold'
     | 'hashed-wedge';
   ringTemplate: string;
-  arrowType: 'forward' | 'equilibrium' | 'reversible' | 'retro';
+  arrowType:
+    | 'forward'
+    | 'equilibrium'
+    | 'reversible'
+    | 'resonance'
+    | 'retro'
+    | 'dipole'
+    | 'no-go';
   curlyType: 'pair' | 'radical';
 }
 
@@ -318,14 +325,16 @@ const GROUPS: { label: string; tools: ToolDef[] }[] = [
         icon: ICN.arrow,
         label: 'Arrow',
         shortcut: 'W',
-        description: 'Reaction arrows',
+        description: 'Reaction arrows (right-click for type)',
+        hasSubmenu: true,
       },
       {
         id: 'curly-arrow',
         icon: ICN.curly,
         label: 'Curly Arrow',
         shortcut: 'U',
-        description: 'Curved mechanism arrows',
+        description: 'Curved mechanism arrows (right-click for pair/radical)',
+        hasSubmenu: true,
       },
     ],
   },
@@ -675,11 +684,70 @@ export function ToolPalette({
               })}
             </div>
           )}
+          {submenu === 'arrow' && (
+            <Sub title="Arrow Type">
+              {ARROW_OPTIONS.map((a) => (
+                <button
+                  key={a.id}
+                  onClick={() => {
+                    onToolStateChange({ arrowType: a.id, tool: 'arrow' });
+                    setSubmenu(null);
+                  }}
+                  style={{
+                    ...ROW,
+                    background:
+                      toolState.arrowType === a.id
+                        ? 'var(--kd-color-accent-muted)'
+                        : 'transparent',
+                  }}
+                >
+                  {a.label}
+                </button>
+              ))}
+            </Sub>
+          )}
+          {submenu === 'curly-arrow' && (
+            <Sub title="Curly Arrow">
+              {(
+                [
+                  { id: 'pair', label: 'Electron pair (full head)' },
+                  { id: 'radical', label: 'Radical (half head)' },
+                ] as const
+              ).map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => {
+                    onToolStateChange({ curlyType: c.id, tool: 'curly-arrow' });
+                    setSubmenu(null);
+                  }}
+                  style={{
+                    ...ROW,
+                    background:
+                      toolState.curlyType === c.id
+                        ? 'var(--kd-color-accent-muted)'
+                        : 'transparent',
+                  }}
+                >
+                  {c.label}
+                </button>
+              ))}
+            </Sub>
+          )}
         </div>
       )}
     </div>
   );
 }
+
+const ARROW_OPTIONS: { id: ToolState['arrowType']; label: string }[] = [
+  { id: 'forward', label: 'Forward (→)' },
+  { id: 'equilibrium', label: 'Equilibrium (⇌)' },
+  { id: 'reversible', label: 'Reversible (⇄)' },
+  { id: 'resonance', label: 'Resonance (↔)' },
+  { id: 'retro', label: 'Retrosynthesis (⇒)' },
+  { id: 'dipole', label: 'Dipole (μ)' },
+  { id: 'no-go', label: 'No-go (✗→)' },
+];
 
 // ── Button ──────────────────────────────────────────────────
 

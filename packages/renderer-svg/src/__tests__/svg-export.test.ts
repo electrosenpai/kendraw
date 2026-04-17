@@ -169,6 +169,48 @@ describe('exportToSVG', () => {
     expect(svg).toMatch(/<polygon[^>]*fill="none"/);
   });
 
+  it('renders dipole arrows with shaft, cross-tick, and arrowhead', () => {
+    const page = createPage([]);
+    const arrow: Arrow = {
+      id: 'arrow-dipole' as ArrowId,
+      type: 'dipole',
+      geometry: {
+        start: { x: 0, y: 50 },
+        c1: { x: 50, y: 50 },
+        c2: { x: 100, y: 50 },
+        end: { x: 150, y: 50 },
+      },
+      startAnchor: { kind: 'free' },
+      endAnchor: { kind: 'free' },
+    };
+    page.arrows = { [arrow.id]: arrow } as Page['arrows'];
+    const svg = exportToSVG(page);
+    const lineCount = (svg.match(/<line /g) || []).length;
+    expect(lineCount).toBe(2);
+    expect(svg).toContain('<polygon');
+  });
+
+  it('renders no-go arrows with shaft, arrowhead, and an X overstrike', () => {
+    const page = createPage([]);
+    const arrow: Arrow = {
+      id: 'arrow-nogo' as ArrowId,
+      type: 'no-go',
+      geometry: {
+        start: { x: 0, y: 50 },
+        c1: { x: 50, y: 50 },
+        c2: { x: 100, y: 50 },
+        end: { x: 150, y: 50 },
+      },
+      startAnchor: { kind: 'free' },
+      endAnchor: { kind: 'free' },
+    };
+    page.arrows = { [arrow.id]: arrow } as Page['arrows'];
+    const svg = exportToSVG(page);
+    const lineCount = (svg.match(/<line /g) || []).length;
+    expect(lineCount).toBe(3);
+    expect(svg).toContain('<polygon');
+  });
+
   it('renders equilibrium arrows with two lines', () => {
     const page = createPage([]);
     const arrow: Arrow = {

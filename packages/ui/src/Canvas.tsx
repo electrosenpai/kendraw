@@ -1329,7 +1329,14 @@ export function Canvas({
         }
         const arrow = {
           id: crypto.randomUUID() as ArrowId,
-          type: toolState.arrowType as 'forward' | 'equilibrium' | 'reversible' | 'retro',
+          type: toolState.arrowType as
+            | 'forward'
+            | 'equilibrium'
+            | 'reversible'
+            | 'resonance'
+            | 'retro'
+            | 'dipole'
+            | 'no-go',
           geometry: {
             start: { x: dragStartRef.current.x, y: dragStartRef.current.y },
             c1: {

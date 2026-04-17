@@ -933,6 +933,8 @@ export class CanvasRenderer implements Renderer {
     const { start, c1, c2, end } = arrow.geometry;
     const isCurly = arrow.type === 'curly-pair' || arrow.type === 'curly-radical';
     const isRetro = arrow.type === 'retro';
+    const isDipole = arrow.type === 'dipole';
+    const isNoGo = arrow.type === 'no-go';
     const color = isCurly ? '#e06633' : this.palette.text;
 
     // Default arrowhead config: curly arrows always have head, reaction arrows use parsed config
@@ -994,6 +996,41 @@ export class CanvasRenderer implements Renderer {
         const uy = ady / alen;
         this.drawArrowhead(ctx, start.x, start.y, ux, uy, hl, hw, tailType, color);
       }
+    }
+
+    // Dipole: short perpendicular cross-tick near the tail side denoting δ+ convention.
+    // No-go: X overstrike centered on the shaft.
+    if (isDipole || isNoGo) {
+      const adx = end.x - start.x;
+      const ady = end.y - start.y;
+      const alen = Math.sqrt(adx * adx + ady * ady) || 1;
+      const ux = adx / alen;
+      const uy = ady / alen;
+      const nx = -uy;
+      const ny = ux;
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.5;
+      if (isDipole) {
+        const anchorX = start.x + ux * 8;
+        const anchorY = start.y + uy * 8;
+        const tickHalf = 4;
+        ctx.beginPath();
+        ctx.moveTo(anchorX + nx * tickHalf, anchorY + ny * tickHalf);
+        ctx.lineTo(anchorX - nx * tickHalf, anchorY - ny * tickHalf);
+        ctx.stroke();
+      } else {
+        const midX = (start.x + end.x) / 2;
+        const midY = (start.y + end.y) / 2;
+        const half = 6;
+        ctx.beginPath();
+        ctx.moveTo(midX - ux * half + nx * half, midY - uy * half + ny * half);
+        ctx.lineTo(midX + ux * half - nx * half, midY + uy * half - ny * half);
+        ctx.moveTo(midX - ux * half - nx * half, midY - uy * half - ny * half);
+        ctx.lineTo(midX + ux * half + nx * half, midY + uy * half + ny * half);
+        ctx.stroke();
+      }
+      ctx.restore();
     }
 
     // Conditions (reagents above / solvent-T-time below). Rendered near midpoint so they

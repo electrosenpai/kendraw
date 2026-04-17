@@ -286,6 +286,44 @@ function renderArrowSVG(arrow: Arrow): string {
     ].join('\n');
   }
 
+  if (arrow.type === 'dipole') {
+    const tipX = g.end.x;
+    const tipY = g.end.y;
+    const ax = tipX - headSize * ux + headSize * 0.4 * uy;
+    const ay = tipY - headSize * uy - headSize * 0.4 * ux;
+    const bx = tipX - headSize * ux - headSize * 0.4 * uy;
+    const by = tipY - headSize * uy + headSize * 0.4 * ux;
+    const tickX = g.start.x + ux * 8;
+    const tickY = g.start.y + uy * 8;
+    const tnx = -uy * 4;
+    const tny = ux * 4;
+    return [
+      `<line x1="${g.start.x}" y1="${g.start.y}" x2="${tipX - headSize * 0.5 * ux}" y2="${tipY - headSize * 0.5 * uy}" stroke="${stroke}" stroke-width="${sw}"/>`,
+      `<line x1="${tickX + tnx}" y1="${tickY + tny}" x2="${tickX - tnx}" y2="${tickY - tny}" stroke="${stroke}" stroke-width="${sw}"/>`,
+      `<polygon points="${tipX},${tipY} ${ax},${ay} ${bx},${by}" fill="${stroke}"/>`,
+    ].join('\n');
+  }
+
+  if (arrow.type === 'no-go') {
+    const tipX = g.end.x;
+    const tipY = g.end.y;
+    const ax = tipX - headSize * ux + headSize * 0.4 * uy;
+    const ay = tipY - headSize * uy - headSize * 0.4 * ux;
+    const bx = tipX - headSize * ux - headSize * 0.4 * uy;
+    const by = tipY - headSize * uy + headSize * 0.4 * ux;
+    const mx = (g.start.x + g.end.x) / 2;
+    const my = (g.start.y + g.end.y) / 2;
+    const h = 6;
+    const nx = -uy;
+    const ny = ux;
+    return [
+      `<line x1="${g.start.x}" y1="${g.start.y}" x2="${tipX - headSize * 0.5 * ux}" y2="${tipY - headSize * 0.5 * uy}" stroke="${stroke}" stroke-width="${sw}"/>`,
+      `<polygon points="${tipX},${tipY} ${ax},${ay} ${bx},${by}" fill="${stroke}"/>`,
+      `<line x1="${mx - ux * h + nx * h}" y1="${my - uy * h + ny * h}" x2="${mx + ux * h - nx * h}" y2="${my + uy * h - ny * h}" stroke="${stroke}" stroke-width="${sw}"/>`,
+      `<line x1="${mx - ux * h - nx * h}" y1="${my - uy * h - ny * h}" x2="${mx + ux * h + nx * h}" y2="${my + uy * h + ny * h}" stroke="${stroke}" stroke-width="${sw}"/>`,
+    ].join('\n');
+  }
+
   if (arrow.type === 'reversible' || arrow.type === 'resonance') {
     // Double-headed arrow
     const tipX = g.end.x;

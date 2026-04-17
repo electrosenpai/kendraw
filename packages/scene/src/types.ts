@@ -69,6 +69,8 @@ export type Arrow = {
     | 'reversible'
     | 'resonance'
     | 'retro'
+    | 'dipole'
+    | 'no-go'
     | 'curly-radical'
     | 'curly-pair';
   geometry: BezierGeometry;
