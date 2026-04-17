@@ -22,6 +22,12 @@ export {
 export { parseSmiles, type SmilesParseResult } from './smiles-parser.js';
 
 export {
+  parseTextClipboard,
+  type ClipboardKind,
+  type ClipboardParseResult,
+} from './clipboard-sniffer.js';
+
+export {
   parseCdxml,
   type CdxmlParseResult,
   type CdxmlDocumentSettings,

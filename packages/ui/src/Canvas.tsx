@@ -34,6 +34,7 @@ import {
   type Annotation,
 } from '@kendraw/scene';
 import { CanvasRenderer } from '@kendraw/renderer-canvas';
+import { parseTextClipboard } from '@kendraw/io';
 import { ToolPalette, DEFAULT_TOOL_STATE, type ToolState } from './ToolPalette';
 import { PropertyPanel } from './PropertyPanel';
 import { StatusBar } from './StatusBar';
@@ -488,7 +489,21 @@ export function Canvas({
           const { atoms, bonds } = prepareForPaste(clipboardRef.current, 20, 20);
           for (const a of atoms) store.dispatch({ type: 'add-atom', atom: a });
           for (const b of bonds) store.dispatch({ type: 'add-bond', bond: b });
+          return;
         }
+        // External clipboard fallback: try SMILES/MOL/KDX from OS clipboard.
+        void (async () => {
+          try {
+            if (typeof navigator === 'undefined' || !navigator.clipboard?.readText) return;
+            const text = await navigator.clipboard.readText();
+            const sniffed = parseTextClipboard(text);
+            if (sniffed.kind === 'unknown' || sniffed.atoms.length === 0) return;
+            for (const a of sniffed.atoms) store.dispatch({ type: 'add-atom', atom: a });
+            for (const b of sniffed.bonds) store.dispatch({ type: 'add-bond', bond: b });
+          } catch {
+            // Clipboard permission denied or unavailable — silent fallback.
+          }
+        })();
         return;
       }
 
