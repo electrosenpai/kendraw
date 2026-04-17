@@ -206,6 +206,45 @@ describe('CanvasRenderer', () => {
     });
   });
 
+  describe('lasso path (wave-1 P1-7)', () => {
+    it('draws no polygon when path is null', () => {
+      renderer.attach(container);
+      const doc = createEmptyDocument();
+      renderer.setLassoPath(null);
+      mock.ctx.closePath.mockClear();
+      renderer.render(doc);
+      // No lasso means selection closePath isn't called for lasso
+      // (selection rect is also absent here)
+      expect(mock.ctx.closePath).not.toHaveBeenCalled();
+    });
+
+    it('draws a closed polygon outline when path has >=3 points', () => {
+      renderer.attach(container);
+      const doc = createEmptyDocument();
+      renderer.setLassoPath([
+        { x: 10, y: 10 },
+        { x: 100, y: 10 },
+        { x: 55, y: 80 },
+      ]);
+      mock.ctx.stroke.mockClear();
+      mock.ctx.fill.mockClear();
+      mock.ctx.closePath.mockClear();
+      renderer.render(doc);
+      expect(mock.ctx.closePath).toHaveBeenCalled();
+      expect(mock.ctx.stroke).toHaveBeenCalled();
+      expect(mock.ctx.fill).toHaveBeenCalled();
+    });
+
+    it('treats empty array as null (no polygon)', () => {
+      renderer.attach(container);
+      const doc = createEmptyDocument();
+      renderer.setLassoPath([]);
+      mock.ctx.closePath.mockClear();
+      renderer.render(doc);
+      expect(mock.ctx.closePath).not.toHaveBeenCalled();
+    });
+  });
+
   describe('theme (wave-1 P1-8)', () => {
     it('defaults to dark theme', () => {
       expect(renderer.getTheme()).toBe('dark');

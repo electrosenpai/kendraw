@@ -12,6 +12,7 @@ import type { RingTemplate, FusedRingTemplate } from '@kendraw/scene';
 
 export type ToolId =
   | 'select'
+  | 'lasso'
   | 'add-atom'
   | 'add-bond'
   | 'ring'
@@ -71,6 +72,13 @@ const ICN = {
   select: (
     <I>
       <path d="M4 2l10 7-4.5 1.2L12 16l-2.5-1-2 5L4 2z" />
+    </I>
+  ),
+  lasso: (
+    <I>
+      <path d="M4 6c0-2 3-3 6-3s6 1 6 3-3 3-6 3-6-1-6-3z" />
+      <path d="M6 9v4l-1 3" />
+      <circle cx="5" cy="17" r="1.2" />
     </I>
   ),
   pan: (
@@ -195,6 +203,13 @@ const GROUPS: { label: string; tools: ToolDef[] }[] = [
         label: 'Select',
         shortcut: 'V',
         description: 'Select and move atoms',
+      },
+      {
+        id: 'lasso',
+        icon: ICN.lasso,
+        label: 'Lasso',
+        shortcut: 'L',
+        description: 'Free-form lasso selection',
       },
       { id: 'pan', icon: ICN.pan, label: 'Pan', shortcut: 'H', description: 'Pan the canvas' },
     ],

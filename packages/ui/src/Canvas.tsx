@@ -74,6 +74,25 @@ function pointToSegmentDist(
   return Math.sqrt((px - cx) ** 2 + (py - cy) ** 2);
 }
 
+/** Ray-casting point-in-polygon test. Polygon is an ordered list of vertices. */
+function pointInPolygon(
+  px: number,
+  py: number,
+  polygon: ReadonlyArray<{ x: number; y: number }>,
+): boolean {
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const pi = polygon[i];
+    const pj = polygon[j];
+    if (!pi || !pj) continue;
+    const intersects =
+      pi.y > py !== pj.y > py &&
+      px < ((pj.x - pi.x) * (py - pi.y)) / (pj.y - pi.y || 1e-12) + pi.x;
+    if (intersects) inside = !inside;
+  }
+  return inside;
+}
+
 interface CanvasProps {
   store: SceneStore;
   onMoleculeSearch?: (() => void) | undefined;
@@ -110,6 +129,7 @@ export function Canvas({
   const isDraggingRef = useRef(false);
   const clipboardRef = useRef<ClipboardData | null>(null);
   const bondStartAtomRef = useRef<AtomId | null>(null);
+  const lassoPathRef = useRef<Array<{ x: number; y: number }> | null>(null);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [textEditing, setTextEditing] = useState<{
@@ -746,6 +766,8 @@ export function Canvas({
         const toolMap: Record<string, Partial<ToolState>> = {
           v: { tool: 'select' },
           V: { tool: 'select' },
+          l: { tool: 'lasso' },
+          L: { tool: 'lasso' },
           a: { tool: 'add-atom' },
           A: { tool: 'add-atom' },
           b: { tool: 'add-bond' },
@@ -935,6 +957,15 @@ export function Canvas({
         return;
       }
 
+      // Lasso tool: start accumulating polygon points
+      if (toolState.tool === 'lasso') {
+        lassoPathRef.current = [{ x, y }];
+        rendererRef.current?.setLassoPath(lassoPathRef.current);
+        dragStartRef.current = { x, y };
+        isDraggingRef.current = false;
+        return;
+      }
+
       // Track mouse-down position for all tools (drag guard)
       dragStartRef.current = { x, y };
       isDraggingRef.current = false;
@@ -983,6 +1014,16 @@ export function Canvas({
             x2: x,
             y2: y,
           });
+        }
+      }
+      // Lasso: sample points every few pixels
+      if (toolState.tool === 'lasso' && lassoPathRef.current) {
+        const path = lassoPathRef.current;
+        const last = path[path.length - 1];
+        if (!last || Math.hypot(x - last.x, y - last.y) >= 3) {
+          path.push({ x, y });
+          rendererRef.current?.setLassoPath(path);
+          isDraggingRef.current = true;
         }
       }
     },
@@ -1269,6 +1310,30 @@ export function Canvas({
           endAnchor: { kind: 'free' as const },
         };
         store.dispatch({ type: 'add-arrow', arrow });
+        dragStartRef.current = null;
+        isDraggingRef.current = false;
+        return;
+      }
+
+      // --- LASSO TOOL ---
+      if (toolState.tool === 'lasso') {
+        const path = lassoPathRef.current;
+        if (path && path.length >= 3) {
+          const page = store.getState().pages[store.getState().activePageIndex];
+          const atomIds: AtomId[] = [];
+          if (page) {
+            for (const atom of Object.values(page.atoms)) {
+              if (pointInPolygon(atom.x, atom.y, path)) atomIds.push(atom.id);
+            }
+          }
+          if (e.shiftKey) {
+            setSelection((s) => addToSelection(s, { atomIds }));
+          } else {
+            setSelection(addToSelection(createSelection(), { atomIds }));
+          }
+        }
+        lassoPathRef.current = null;
+        rendererRef.current?.setLassoPath(null);
         dragStartRef.current = null;
         isDraggingRef.current = false;
         return;

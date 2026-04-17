@@ -39,6 +39,7 @@ export interface Renderer {
   setSelectedAtoms(ids: Set<AtomId>): void;
   setHighlightedAtoms(ids: Set<AtomId>): void;
   setSelectionRect(rect: { x1: number; y1: number; x2: number; y2: number } | null): void;
+  setLassoPath(points: Array<{ x: number; y: number }> | null): void;
   setViewport(zoom: number, panX: number, panY: number): void;
   setValenceIssues(ids: Set<AtomId>): void;
   setGraphics(graphics: GraphicOverlay[]): void;
@@ -84,6 +85,7 @@ export class CanvasRenderer implements Renderer {
   private highlightedAtoms = new Set<AtomId>();
   private valenceIssues = new Set<AtomId>();
   private selectionRect: { x1: number; y1: number; x2: number; y2: number } | null = null;
+  private lassoPath: Array<{ x: number; y: number }> | null = null;
   private lastDoc: Document | null = null;
   private zoom = 1;
   private graphicOverlays: GraphicOverlay[] = [];
@@ -142,6 +144,10 @@ export class CanvasRenderer implements Renderer {
   }
   setSelectionRect(rect: { x1: number; y1: number; x2: number; y2: number } | null): void {
     this.selectionRect = rect;
+    if (this.lastDoc) this.render(this.lastDoc);
+  }
+  setLassoPath(points: Array<{ x: number; y: number }> | null): void {
+    this.lassoPath = points && points.length > 0 ? points : null;
     if (this.lastDoc) this.render(this.lastDoc);
   }
   setViewport(zoom: number, panX: number, panY: number): void {
@@ -275,6 +281,27 @@ export class CanvasRenderer implements Renderer {
       ctx.fillStyle = 'rgba(77, 171, 247, 0.1)';
       ctx.fillRect(x1, y1, x2 - x1, y2 - y1);
       ctx.setLineDash([]);
+    }
+
+    // 6. Lasso path
+    if (this.lassoPath && this.lassoPath.length >= 2) {
+      const first = this.lassoPath[0];
+      if (first) {
+        ctx.beginPath();
+        ctx.moveTo(first.x, first.y);
+        for (let i = 1; i < this.lassoPath.length; i++) {
+          const p = this.lassoPath[i];
+          if (p) ctx.lineTo(p.x, p.y);
+        }
+        ctx.closePath();
+        ctx.strokeStyle = 'rgba(77, 171, 247, 0.9)';
+        ctx.lineWidth = 1 / this.zoom;
+        ctx.setLineDash([4 / this.zoom, 4 / this.zoom]);
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(77, 171, 247, 0.1)';
+        ctx.fill();
+        ctx.setLineDash([]);
+      }
     }
   }
 
