@@ -6,6 +6,7 @@ import { ShortcutCheatsheet } from './ShortcutCheatsheet';
 import { AboutPage } from './AboutPage';
 import { MoleculeSearch } from './MoleculeSearch';
 import { ImportDialog } from './ImportDialog';
+import { RecoveryBanner } from './RecoveryBanner';
 import { workspaceStore, type WorkspaceState } from './workspace-store';
 import { useResponsiveLayout } from './hooks/useResponsiveLayout';
 import { isEditingTextNow } from './hooks/useIsEditingText';
@@ -85,6 +86,9 @@ export function App() {
       cancelled = true;
     };
   }, []);
+
+  const showRecoveryBanner = initialized && workspaceStore.shouldShowRecoveryBanner();
+  const recoveryCount = workspaceStore.getRestoredCount();
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -256,6 +260,20 @@ export function App() {
             />
           </Suspense>
         </div>
+      )}
+
+      {showRecoveryBanner && (
+        <RecoveryBanner
+          count={recoveryCount}
+          onKeep={() => workspaceStore.dismissRecoveryBanner()}
+          onDiscard={() => {
+            void workspaceStore.discardRecoveredTabs().then(() => {
+              if (workspaceStore.getState().tabs.length === 0) {
+                workspaceStore.createTab();
+              }
+            });
+          }}
+        />
       )}
 
       {showShortcuts && <ShortcutCheatsheet onClose={() => setShowShortcuts(false)} />}

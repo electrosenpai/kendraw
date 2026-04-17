@@ -27,6 +27,8 @@ class WorkspaceStore {
   private listeners = new Set<WorkspaceListener>();
   private autoSaveSchedulers = new Map<string, AutoSaveScheduler>();
   private _highlightedAtomIds: Set<AtomId> = new Set();
+  private _restoredCount = 0;
+  private _restoredDismissed = false;
 
   getState(): WorkspaceState {
     return this.state;
@@ -121,16 +123,61 @@ class WorkspaceStore {
     if (this.restored) return;
     this.restored = true;
 
-    const stored = await db.listDocuments();
-    if (stored.length === 0) return;
-    for (const record of stored) {
-      this.createTab(record.data);
+    try {
+      const stored = await db.listDocuments();
+      if (stored.length === 0) return;
+      this._restoredCount = stored.length;
+      for (const record of stored) {
+        this.createTab(record.data);
+      }
+      // Activate the first tab
+      if (this.state.tabs[0]) {
+        this.state = { ...this.state, activeTabId: this.state.tabs[0].id };
+        this.notify();
+      }
+    } catch {
+      // IndexedDB unavailable (private mode, quota, storage denied).
+      // Silently continue with an empty workspace.
+      this._restoredCount = 0;
     }
-    // Activate the first tab
-    if (this.state.tabs[0]) {
-      this.state = { ...this.state, activeTabId: this.state.tabs[0].id };
-      this.notify();
+  }
+
+  /** Number of tabs restored from IndexedDB on the last restoreFromDB call. */
+  getRestoredCount(): number {
+    return this._restoredCount;
+  }
+
+  /** Whether the recovery banner should currently be shown to the user. */
+  shouldShowRecoveryBanner(): boolean {
+    return this._restoredCount > 0 && !this._restoredDismissed;
+  }
+
+  /** User acknowledged the banner — keep all restored tabs. */
+  dismissRecoveryBanner(): void {
+    this._restoredDismissed = true;
+    this.notify();
+  }
+
+  /** User chose to discard — delete every stored document and clear tabs. */
+  async discardRecoveredTabs(): Promise<void> {
+    const ids = this.state.tabs.map((t) => t.id);
+    for (const id of ids) {
+      try {
+        await db.deleteDocument(id);
+      } catch {
+        // Ignore — banner will still dismiss so UI does not re-appear.
+      }
+      const scheduler = this.autoSaveSchedulers.get(id);
+      if (scheduler) {
+        scheduler.dispose();
+        this.autoSaveSchedulers.delete(id);
+      }
+      this.stores.delete(id);
     }
+    this._restoredCount = 0;
+    this._restoredDismissed = true;
+    this.state = { tabs: [], activeTabId: null };
+    this.notify();
   }
 
   private updateTabTitle(id: string, title: string): void {
