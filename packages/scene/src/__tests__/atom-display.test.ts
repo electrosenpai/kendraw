@@ -276,6 +276,66 @@ describe('buildAtomLabel', () => {
   });
 });
 
+describe('buildAtomLabel isotopes', () => {
+  it('13C emits "13" as superscript before C', () => {
+    const c = createAtom(0, 0, 6);
+    c.isotope = 13;
+    const page = buildPage((s) => s.dispatch({ type: 'add-atom', atom: c }));
+    const label = buildAtomLabel(page, c.id);
+    const sup = label.filter((s) => s.style === 'superscript');
+    expect(sup.some((s) => s.text === '13')).toBe(true);
+    const idxSup = label.findIndex((s) => s.style === 'superscript' && s.text === '13');
+    const idxC = label.findIndex((s) => s.text === 'C' && s.style === 'normal');
+    expect(idxSup).toBeLessThan(idxC);
+  });
+
+  it('15N emits "15" as superscript before N', () => {
+    const n = createAtom(0, 0, 7);
+    n.isotope = 15;
+    const page = buildPage((s) => s.dispatch({ type: 'add-atom', atom: n }));
+    const label = buildAtomLabel(page, n.id);
+    expect(label.some((s) => s.style === 'superscript' && s.text === '15')).toBe(true);
+    expect(label.some((s) => s.text === 'N' && s.style === 'normal')).toBe(true);
+  });
+
+  it('H with isotope=2 renders as "D" (shorthand, no superscript)', () => {
+    const h = createAtom(0, 0, 1);
+    h.isotope = 2;
+    const page = buildPage((s) => s.dispatch({ type: 'add-atom', atom: h }));
+    const label = buildAtomLabel(page, h.id);
+    const text = label.map((s) => s.text).join('');
+    expect(text).toBe('D');
+    expect(label.every((s) => s.style !== 'superscript')).toBe(true);
+  });
+
+  it('H with isotope=3 renders as "T" (shorthand, no superscript)', () => {
+    const h = createAtom(0, 0, 1);
+    h.isotope = 3;
+    const page = buildPage((s) => s.dispatch({ type: 'add-atom', atom: h }));
+    const label = buildAtomLabel(page, h.id);
+    const text = label.map((s) => s.text).join('');
+    expect(text).toBe('T');
+    expect(label.every((s) => s.style !== 'superscript')).toBe(true);
+  });
+
+  it('carbon with isotope is still shown even if it would be a hidden vertex', () => {
+    const c = createAtom(0, 0, 6);
+    c.isotope = 13;
+    const a1 = createAtom(40, 0, 6);
+    const a2 = createAtom(0, 40, 6);
+    const page = buildPage(
+      (s) => s.dispatch({ type: 'add-atom', atom: c }),
+      (s) => s.dispatch({ type: 'add-atom', atom: a1 }),
+      (s) => s.dispatch({ type: 'add-atom', atom: a2 }),
+      (s) => s.dispatch({ type: 'add-bond', bond: createBond(c.id, a1.id) }),
+      (s) => s.dispatch({ type: 'add-bond', bond: createBond(c.id, a2.id) }),
+    );
+    const label = buildAtomLabel(page, c.id);
+    expect(label.length).toBeGreaterThan(0);
+    expect(label.some((s) => s.text === 'C' && s.style === 'normal')).toBe(true);
+  });
+});
+
 describe('reverseFormulaLabel', () => {
   it('OH → HO', () => {
     expect(reverseFormulaLabel('OH')).toBe('HO');

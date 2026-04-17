@@ -246,18 +246,26 @@ export function buildAtomLabel(page: Page, atomId: AtomId): LabelSegment[] {
     return segments;
   }
 
-  const symbol = atom.label ?? getSymbol(atom.element);
+  // D/T shorthand for hydrogen isotopes (ChemDraw default for H-2, H-3).
+  // Only applies when there is no user-supplied label override.
+  const isHShorthand =
+    atom.element === 1 && !atom.label && (atom.isotope === 2 || atom.isotope === 3);
+  const symbol = isHShorthand
+    ? atom.isotope === 2
+      ? 'D'
+      : 'T'
+    : (atom.label ?? getSymbol(atom.element));
   // If atom has a custom multi-char label (CO2H, OMe, etc.), use formula mode
   if (atom.label && atom.label.length > 2) {
     return formulaMode(atom.label);
   }
 
-  const implicitH = getImplicitHydrogens(page, atomId);
+  const implicitH = isHShorthand ? 0 : getImplicitHydrogens(page, atomId);
   const hSide = getHydrogenSide(page, atomId);
   const segments: LabelSegment[] = [];
 
-  // Isotope (superscript left)
-  if (atom.isotope) {
+  // Isotope (superscript left) — skipped for D/T shorthand
+  if (atom.isotope && !isHShorthand) {
     segments.push({ text: String(atom.isotope), style: 'superscript' });
   }
 
