@@ -120,3 +120,45 @@ def test_aldehyde_shift() -> None:
     peaks = predict_additive(mol)
     high_field_peaks = [p for p in peaks if p.shift_ppm > 9.0]
     assert len(high_field_peaks) >= 1
+
+
+def test_ethanol_hydroxyl_flagged_d2o_exchangeable() -> None:
+    """Ethanol's -OH proton must be tagged d2o_exchangeable; -CH2/-CH3 must not."""
+    from rdkit import Chem
+
+    from kendraw_chem.nmr.additive import predict_additive
+
+    mol = Chem.MolFromSmiles("CCO")
+    peaks = predict_additive(mol)
+    oh = [p for p in peaks if p.environment == "hydroxyl_oh"]
+    assert oh, "expected a hydroxyl peak for ethanol"
+    assert all(p.d2o_exchangeable for p in oh)
+    non_exchangeable = [p for p in peaks if p.environment != "hydroxyl_oh"]
+    assert all(not p.d2o_exchangeable for p in non_exchangeable)
+
+
+def test_acetic_acid_cooh_flagged_d2o_exchangeable() -> None:
+    """Carboxylic acid OH must be d2o_exchangeable."""
+    from rdkit import Chem
+
+    from kendraw_chem.nmr.additive import predict_additive
+
+    mol = Chem.MolFromSmiles("CC(=O)O")
+    peaks = predict_additive(mol)
+    cooh = [p for p in peaks if p.environment == "carboxylic_acid"]
+    assert cooh, "expected a COOH peak for acetic acid"
+    assert all(p.d2o_exchangeable for p in cooh)
+
+
+def test_peaks_carry_positive_sigma_ppm() -> None:
+    """Every additive-predicted 1H peak must report a positive sigma_ppm."""
+    from rdkit import Chem
+
+    from kendraw_chem.nmr.additive import predict_additive
+
+    mol = Chem.MolFromSmiles("CCO")
+    peaks = predict_additive(mol)
+    assert peaks
+    for peak in peaks:
+        assert peak.sigma_ppm is not None
+        assert peak.sigma_ppm > 0

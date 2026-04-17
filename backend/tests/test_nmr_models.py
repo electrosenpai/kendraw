@@ -102,3 +102,34 @@ def test_nmr_prediction_serialization() -> None:
     assert data["peaks"][0]["shift_ppm"] == 7.3
     assert data["peaks"][0]["multiplicity"] == "s"
     assert data["metadata"]["data_version"] is None
+
+
+def test_nmr_peak_sigma_and_d2o_defaults() -> None:
+    """sigma_ppm defaults to None, d2o_exchangeable defaults to False."""
+    peak = _peak()
+    assert peak.sigma_ppm is None
+    assert peak.d2o_exchangeable is False
+
+
+def test_nmr_peak_sigma_ppm_roundtrip() -> None:
+    """NmrPeak stores sigma_ppm uncertainty estimate."""
+    peak = _peak(sigma_ppm=0.15)
+    assert peak.sigma_ppm == 0.15
+    dumped = peak.model_dump()
+    assert dumped["sigma_ppm"] == 0.15
+
+
+def test_nmr_peak_d2o_exchangeable_flag() -> None:
+    """NmrPeak flags exchangeable protons for D2O shake."""
+    peak = _peak(environment="hydroxyl_oh", d2o_exchangeable=True)
+    assert peak.d2o_exchangeable is True
+    dumped = peak.model_dump()
+    assert dumped["d2o_exchangeable"] is True
+
+
+def test_nmr_metadata_schema_version_default() -> None:
+    """NmrMetadata carries schema_version for forward compatibility."""
+    from kendraw_chem.nmr.models import NmrMetadata
+
+    meta = NmrMetadata(engine_version="0.2.0", data_version=None, method="additive")
+    assert meta.schema_version == "1.1"

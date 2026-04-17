@@ -10,6 +10,7 @@ class NmrPeak(BaseModel):
     atom_indices: list[int]
     parent_indices: list[int]
     shift_ppm: float
+    sigma_ppm: float | None = None
     integral: int
     multiplicity: str
     coupling_hz: list[float]
@@ -18,6 +19,7 @@ class NmrPeak(BaseModel):
     method: str
     proton_group_id: int = 0
     dept_class: str | None = None
+    d2o_exchangeable: bool = False
 
 
 class NmrMetadata(BaseModel):
@@ -26,6 +28,7 @@ class NmrMetadata(BaseModel):
     engine_version: str
     data_version: str | None
     method: str
+    schema_version: str = "1.1"
 
 
 class NmrPrediction(BaseModel):

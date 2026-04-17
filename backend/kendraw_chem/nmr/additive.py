@@ -34,6 +34,21 @@ _SUBSTITUENT_MAP: dict[int, str] = {
     53: "I",
 }
 
+# Environments whose protons exchange with D2O (disappear from 1H spectrum
+# when D2O shake is performed). Covers -OH, -NH, -SH, and -COOH.
+_D2O_EXCHANGEABLE_ENVIRONMENTS: frozenset[str] = frozenset(
+    {"hydroxyl_oh", "amide_nh", "amine_nh", "thiol_sh", "carboxylic_acid"}
+)
+
+# Per-confidence-tier uncertainty (1-sigma) in ppm for 1H shift predictions.
+# Derived from typical additive-increment RMSD: high-confidence environments
+# with dense reference data → ~0.05 ppm; sparse/inferred → ~0.40 ppm.
+_SIGMA_PPM_BY_CONFIDENCE: dict[int, float] = {
+    3: 0.05,
+    2: 0.15,
+    1: 0.40,
+}
+
 # Special base environments where the base shift already encodes the
 # neighbor's effect. When one of these is returned, the triggering
 # neighbor is excluded from substituent collection to avoid double-counting.
@@ -835,18 +850,21 @@ def predict_additive(
             sorted_indices,
         )
 
+        conf = confidence_map[(shift, env)]
         peaks.append(
             NmrPeak(
                 atom_index=sorted_indices[0],
                 atom_indices=sorted_indices,
                 parent_indices=sorted(parents_map[(shift, env)]),
                 shift_ppm=shift,
+                sigma_ppm=_SIGMA_PPM_BY_CONFIDENCE.get(conf),
                 integral=len(sorted_indices),
                 multiplicity=mult,
                 coupling_hz=coupling,
                 environment=env,
-                confidence=confidence_map[(shift, env)],
+                confidence=conf,
                 method=method_map[(shift, env)],
+                d2o_exchangeable=env in _D2O_EXCHANGEABLE_ENVIRONMENTS,
             )
         )
 

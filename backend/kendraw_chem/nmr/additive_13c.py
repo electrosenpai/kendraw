@@ -15,6 +15,15 @@ from kendraw_chem.nmr.models import NmrPeak
 if TYPE_CHECKING:
     from rdkit.Chem import Mol
 
+# Per-confidence-tier uncertainty (1-sigma) in ppm for 13C shift predictions.
+# 13C additive predictions have larger spread than 1H; values reflect
+# typical RMSDs reported for increment-based 13C models.
+_SIGMA_PPM_BY_CONFIDENCE_13C: dict[int, float] = {
+    3: 1.5,
+    2: 4.0,
+    1: 10.0,
+}
+
 # ---------------------------------------------------------------------------
 # 13C base shifts by carbon environment
 # Derived from open-access NMR databases (NMRShiftDB2, SDBS).
@@ -243,17 +252,19 @@ def predict_additive_13c(
     peaks: list[NmrPeak] = []
     for (shift, env), indices in groups.items():
         sorted_indices = sorted(indices)
+        conf = conf_map[(shift, env)]
         peaks.append(
             NmrPeak(
                 atom_index=sorted_indices[0],
                 atom_indices=sorted_indices,
                 parent_indices=sorted_indices,
                 shift_ppm=shift,
+                sigma_ppm=_SIGMA_PPM_BY_CONFIDENCE_13C.get(conf),
                 integral=len(sorted_indices),
                 multiplicity="s",  # All singlets in decoupled 13C
                 coupling_hz=[],
                 environment=env,
-                confidence=conf_map[(shift, env)],
+                confidence=conf,
                 method=method_map[(shift, env)],
                 proton_group_id=0,  # Will be assigned after sort
                 dept_class=dept_map[(shift, env)],

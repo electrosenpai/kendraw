@@ -26,6 +26,7 @@ export interface NmrPeak {
   atom_indices: number[];
   parent_indices: number[];
   shift_ppm: number;
+  sigma_ppm?: number | null;
   integral: number;
   multiplicity: string;
   coupling_hz: number[];
@@ -34,12 +35,14 @@ export interface NmrPeak {
   method: string;
   proton_group_id: number;
   dept_class: string | null;
+  d2o_exchangeable?: boolean;
 }
 
 export interface NmrMetadata {
   engine_version: string;
   data_version: string | null;
   method: string;
+  schema_version?: string;
 }
 
 export interface NmrPrediction {
