@@ -192,6 +192,10 @@ Kendraw collects **no personal data**, sends **no telemetry**, and makes **no ou
 
 Read [CLAUDE.md](CLAUDE.md) first — it defines the mandatory CI checks that run before every push, the pre-commit hook behaviour, and the E2E test requirements. Then see [CONTRIBUTING.md](CONTRIBUTING.md) for workflow conventions.
 
+### Feature flags
+
+- `VITE_ENABLE_NEW_CANVAS=true` — opt in to the wave-4 canvas redraw (shell, tool abstraction, marquee selection, 15° snap). Off by default; no user-visible change when unset. Design inspired by [Ketcher](https://github.com/epam/ketcher) (EPAM Systems, Apache 2.0), reimplemented clean-room — see [THIRD-PARTY-NOTICES.md](docs/THIRD-PARTY-NOTICES.md).
+
 ---
 
 ## Documentation

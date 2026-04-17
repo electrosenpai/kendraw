@@ -171,3 +171,37 @@ primitives do (and do not) cover" page belongs in `docs/` so
 that prospective regulated-environment users can read it before
 adopting. Out of scope for the implementation report itself.
 **Target.** Wave-5 docs sweep.
+
+## Wave-4 redraw — deferred stories
+
+### W4-R-04 — HoverIcon atom + bond
+**Source.** P0 redraw backlog.
+**Why deferred.** Wave-4 shipped the shell (W4-R-01), tool
+abstraction (W4-R-02), render parity (W4-R-03), snap utility
+(W4-R-05), and marquee selection (W4-R-06). HoverIcon requires
+a new renderer overlay layer (hovered atom / hovered bond ring)
+that does not yet exist in `@kendraw/renderer-canvas` — adding
+it without a dedicated design pass on dark/light affordance
+colours risks visual regression on the legacy canvas that
+shares the renderer.
+**Target.** Wave-5 opening — pair with `renderer.setHoveredAtom()`
++ `renderer.setHoveredBond()` API additions.
+
+### W4-R-07 — Drag-move selection with atomic undo
+**Source.** P0 redraw backlog.
+**Why deferred.** The drag-move command requires wiring a
+reversible `move-atoms` command into `@kendraw/scene` that
+coalesces intermediate positions so the history stack grows by
+a single entry per drag. The coalescing policy touches the
+undo/redo contract used by every existing tool in the legacy
+canvas and needs a separate design review before we change the
+command surface.
+**Target.** Wave-5 — ships alongside the shared command
+coalescer refactor.
+
+### W4-R-08 — Quick-edit `/` panel
+**Source.** P0 redraw backlog.
+**Why deferred.** Depends on W4-R-04 (hit-test + hover state
+required to know which atom `/` is quick-editing). Deferring R-04
+automatically defers R-08.
+**Target.** Wave-5, immediately after W4-R-04 lands.
