@@ -12,3 +12,16 @@ export {
   type AuditEntry,
   type VerifyResult,
 } from './audit-log.js';
+export {
+  SIGNATURE_MEANINGS,
+  UNLOCKED,
+  lockRecord,
+  unlockRecord,
+  requireUnlocked,
+  verifyLockSignature,
+  type LockState,
+  type LockOptions,
+  type UnlockOptions,
+  type LockTransitionResult,
+  type SignatureMeaning,
+} from './record-lock.js';
