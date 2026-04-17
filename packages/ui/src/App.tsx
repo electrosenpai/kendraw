@@ -1,6 +1,8 @@
-import { useState, useEffect, useCallback, useSyncExternalStore, lazy, Suspense } from 'react';
+import { useState, useEffect, useCallback, useSyncExternalStore, lazy, Suspense, type ReactElement } from 'react';
 import type { AtomId } from '@kendraw/scene';
 import { Canvas } from './Canvas';
+import { FEATURE_FLAGS } from './config/feature-flags';
+const LazyCanvasNew = lazy(() => import('./canvas-new'));
 import { TabBar } from './TabBar';
 import { ShortcutCheatsheet } from './ShortcutCheatsheet';
 import { AboutPage } from './AboutPage';
@@ -198,19 +200,28 @@ export function App() {
       </div>
 
       {activeStore ? (
-        <Canvas
-          key={workspace.activeTabId}
-          store={activeStore}
-          onMoleculeSearch={() => setShowMolSearch(true)}
-          onImportFile={() => setShowImport(true)}
-          showPropertyPanel={panelVisible && effectivePanelW > 0}
-          nmrOpen={nmrOpen}
-          onNmrToggle={() => setNmrOpen((v) => !v)}
-          highlightedAtomIds={highlightedAtomIds}
-          onHighlightAtoms={setHighlightedAtomIds}
-          onSelectionChange={setSelectedAtomIds}
-          theme={theme}
-        />
+        ((): ReactElement => {
+          const canvasProps = {
+            key: workspace.activeTabId,
+            store: activeStore,
+            onMoleculeSearch: () => setShowMolSearch(true),
+            onImportFile: () => setShowImport(true),
+            showPropertyPanel: panelVisible && effectivePanelW > 0,
+            nmrOpen,
+            onNmrToggle: () => setNmrOpen((v) => !v),
+            highlightedAtomIds,
+            onHighlightAtoms: setHighlightedAtomIds,
+            onSelectionChange: setSelectedAtomIds,
+            theme,
+          };
+          return FEATURE_FLAGS.newCanvas ? (
+            <Suspense fallback={<div style={{ gridArea: 'canvas' }}>Loading canvas…</div>}>
+              <LazyCanvasNew {...canvasProps} />
+            </Suspense>
+          ) : (
+            <Canvas {...canvasProps} />
+          );
+        })()
       ) : (
         <>
           <div style={{ gridArea: 'toolbar' }} />
