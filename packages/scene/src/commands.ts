@@ -70,6 +70,18 @@ export type RepackCompoundNumbersCommand = {
 
 export type AddShapeCommand = { type: 'add-shape'; shape: Shape };
 export type RemoveShapeCommand = { type: 'remove-shape'; id: ShapeId };
+
+/** Wave-5 W4-R-11: atomic deletion of a selection.
+ *
+ *  Removes the listed atoms (cascading every bond incident on them) plus any
+ *  bonds in `bondIds` not already covered by the cascade. The whole operation
+ *  appears as a single entry in the undo stack so a single Ctrl+Z restores
+ *  the selection. */
+export type RemoveBatchCommand = {
+  type: 'remove-batch';
+  atomIds: AtomId[];
+  bondIds: BondId[];
+};
 export type MoveShapeCommand = { type: 'move-shape'; id: ShapeId; dx: number; dy: number };
 export type ResizeShapeCommand = {
   type: 'resize-shape';
@@ -114,7 +126,8 @@ export type Command =
   | AddShapeCommand
   | RemoveShapeCommand
   | MoveShapeCommand
-  | ResizeShapeCommand;
+  | ResizeShapeCommand
+  | RemoveBatchCommand;
 
 export type SceneDiff =
   | { type: 'atom-added'; id: AtomId }
@@ -142,4 +155,5 @@ export type SceneDiff =
   | { type: 'shape-removed'; id: ShapeId }
   | { type: 'shape-moved'; id: ShapeId }
   | { type: 'shape-resized'; id: ShapeId }
+  | { type: 'batch-removed' }
   | { type: 'state-restored' };

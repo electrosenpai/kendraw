@@ -361,6 +361,34 @@ function applyCommand(state: Document, command: Command): { next: Document; diff
       });
       return { next, diff: { type: 'shape-resized', id: command.id } };
     }
+    case 'remove-batch': {
+      const next = produce(state, (draft) => {
+        const page = draft.pages[pageIndex];
+        if (!page) return;
+        const atomSet = new Set(command.atomIds);
+        const bondSet = new Set(command.bondIds);
+        // Cascade: any bond touching a removed atom must also go.
+        const nextBonds: typeof page.bonds = {} as typeof page.bonds;
+        for (const bid in page.bonds) {
+          const bond = page.bonds[bid as keyof typeof page.bonds];
+          if (!bond) continue;
+          if (atomSet.has(bond.fromAtomId) || atomSet.has(bond.toAtomId)) continue;
+          if (bondSet.has(bond.id)) continue;
+          nextBonds[bond.id] = bond;
+        }
+        page.bonds = nextBonds;
+        const nextAtoms: typeof page.atoms = {} as typeof page.atoms;
+        for (const aid in page.atoms) {
+          const atom = page.atoms[aid as keyof typeof page.atoms];
+          if (!atom) continue;
+          if (atomSet.has(atom.id)) continue;
+          nextAtoms[atom.id] = atom;
+        }
+        page.atoms = nextAtoms;
+        reconcileCompoundNumbers(page);
+      });
+      return { next, diff: { type: 'batch-removed' } };
+    }
   }
 }
 
