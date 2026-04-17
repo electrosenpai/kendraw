@@ -64,6 +64,8 @@ Bond style keys (1-3, d, w, y) work within the selection context.
 | Ctrl+Shift+C          | (none in ChemDraw)  | Toggle compound numbering      | Kendraw-specific |
 | Ctrl+P                | Print               | Opens browser print dialog     | Implemented      |
 | Alt+Shift+L/R/T/B/E/V | Align selection     | Align atoms L/R/T/B/Cx/Cy      | Kendraw-specific |
+| Ctrl+=                | Zoom in             | Keyboard zoom (wheel-equivalent) | Kendraw-specific |
+| Ctrl+-                | Zoom out            | Keyboard zoom (wheel-equivalent) | Kendraw-specific |
 
 ## Tool Shortcuts (no selection)
 

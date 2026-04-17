@@ -400,6 +400,19 @@ export function Canvas({
         return;
       }
 
+      // Wave-2 A7: keyboard zoom Ctrl+= / Ctrl+- — same bounds as wheel zoom.
+      // Use `=` (the unshifted key of `+`) so both Ctrl++ and Ctrl+= fire.
+      if (isMod && (e.key === '=' || e.key === '+')) {
+        e.preventDefault();
+        setZoom((z) => Math.min(5, Math.max(0.1, z * 1.1)));
+        return;
+      }
+      if (isMod && e.key === '-') {
+        e.preventDefault();
+        setZoom((z) => Math.min(5, Math.max(0.1, z * 0.9)));
+        return;
+      }
+
       // Compound numbering toggle (Ctrl+Shift+C)
       if (isMod && e.shiftKey && (e.key === 'c' || e.key === 'C')) {
         e.preventDefault();

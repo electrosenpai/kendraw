@@ -81,6 +81,8 @@ const SHORTCUTS = [
       { key: 'Space+Drag', desc: 'Pan' },
       { key: 'Middle drag', desc: 'Pan' },
       { key: 'Ctrl+0', desc: 'Fit to screen' },
+      { key: 'Ctrl+=', desc: 'Zoom in' },
+      { key: 'Ctrl+-', desc: 'Zoom out' },
     ],
   },
   {
