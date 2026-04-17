@@ -434,3 +434,65 @@ describe('isUnresolvedMultiplet', () => {
     expect(isUnresolvedMultiplet(peak)).toBe(false);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Wave-4 P1-02 — multiplet line list + integration tooltip data shape.
+// The tooltip in NmrPanel.tsx renders one row per sub-line with a relative-
+// intensity percent; lock that math here so a future renderer change can't
+// silently misreport peak weights to the chemist reading the tooltip.
+// ---------------------------------------------------------------------------
+describe('multiplet line list (Wave-4 P1-02 tooltip data)', () => {
+  function relativePercents(lines: { intensity: number }[]): number[] {
+    const total = sumIntensity(lines);
+    return lines.map((l) => Math.round((l.intensity / total) * 100));
+  }
+
+  it('triplet 1:2:1 → 25/50/25 percent rows', () => {
+    const peak = mkPeak({
+      multiplicity: 't',
+      coupling_hz: [7],
+      atom_indices: [0, 1, 2], // 3H
+    });
+    const lines = expandMultiplet(peak, 400);
+    expect(lines).toHaveLength(3);
+    expect(relativePercents(lines)).toEqual([25, 50, 25]);
+  });
+
+  it('quartet 1:3:3:1 → 13/38/38/13 (rounded)', () => {
+    const peak = mkPeak({
+      multiplicity: 'q',
+      coupling_hz: [7],
+      atom_indices: [0, 1],
+    });
+    const lines = expandMultiplet(peak, 400);
+    expect(lines).toHaveLength(4);
+    const pct = relativePercents(lines);
+    const [p0, p1, p2, p3] = pct as [number, number, number, number];
+    expect(p0).toBeLessThan(p1);
+    expect(p1).toBe(p2);
+    expect(p3).toBeLessThan(p2);
+    expect(pct.reduce((a, b) => a + b, 0)).toBeGreaterThanOrEqual(99);
+  });
+
+  it('singlet returns one line — tooltip suppresses the list', () => {
+    const peak = mkPeak({ multiplicity: 's', coupling_hz: [] });
+    const lines = expandMultiplet(peak, 400);
+    expect(lines).toHaveLength(1);
+    // The tooltip JSX uses lines.length <= 1 to skip rendering the table.
+    expect(lines.length <= 1).toBe(true);
+  });
+
+  it('dd compound multiplet shows 4 rows preserving total intensity', () => {
+    const peak = mkPeak({
+      multiplicity: 'dd',
+      coupling_hz: [12, 6],
+      atom_indices: [0],
+    });
+    const lines = expandMultiplet(peak, 400);
+    expect(lines).toHaveLength(4);
+    // Sum of relative percents stays within rounding tolerance of 100.
+    const pct = relativePercents(lines);
+    const total = pct.reduce((a, b) => a + b, 0);
+    expect(Math.abs(total - 100)).toBeLessThanOrEqual(2);
+  });
+});

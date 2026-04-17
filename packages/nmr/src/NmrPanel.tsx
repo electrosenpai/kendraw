@@ -11,7 +11,7 @@ import {
   type SpectrumViewport,
   type NmrMode,
 } from './SpectrumRenderer.js';
-import { resolveMultiplicity } from './multiplet.js';
+import { resolveMultiplicity, expandMultiplet } from './multiplet.js';
 import { isEditingTextNow } from './isEditingText.js';
 
 type Nucleus = '1H' | '13C';
@@ -475,6 +475,9 @@ export default function NmrPanel({
       // (or any spectrum-affordance descendant) holds focus. We require
       // either focus inside the panel OR no focus to avoid hijacking D in
       // the canvas tool palette while the user is mid-draw.
+      const focusedInPanel =
+        panelRef.current?.contains(document.activeElement) ||
+        document.activeElement === document.body;
       if (
         e.key === 'd' &&
         !e.ctrlKey &&
@@ -482,11 +485,23 @@ export default function NmrPanel({
         !e.altKey &&
         !e.shiftKey &&
         nucleus === '13C' &&
-        (panelRef.current?.contains(document.activeElement) ||
-          document.activeElement === document.body)
+        focusedInPanel
       ) {
         e.preventDefault();
         cycleNmrMode();
+      }
+      // Wave-4 P1-02: Shift+I toggles cumulative integration trace (¹H only).
+      if (
+        (e.key === 'I' || e.key === 'i') &&
+        e.shiftKey &&
+        !e.ctrlKey &&
+        !e.metaKey &&
+        !e.altKey &&
+        nucleus === '1H' &&
+        focusedInPanel
+      ) {
+        e.preventDefault();
+        setShowIntegration((v) => !v);
       }
     }
     window.addEventListener('keydown', handleKeyDown);
@@ -1206,6 +1221,49 @@ export default function NmrPanel({
                 <div style={{ fontSize: 10, color: '#999', marginBottom: 6 }}>
                   {formatMultiplicity(peak.multiplicity, peak.coupling_hz)}
                 </div>
+
+                {/* Wave-4 P1-02: explicit multiplet line list — each sub-line's
+                    centre and relative intensity, computed at the active
+                    spectrometer frequency. Suppressed for singlets where the
+                    list trivially equals the peak itself. */}
+                {(() => {
+                  const lines = expandMultiplet(peak, frequencyMhz);
+                  if (lines.length <= 1) return null;
+                  const totalIntensity = lines.reduce((s, l) => s + l.intensity, 0);
+                  return (
+                    <div
+                      style={{
+                        marginBottom: 6,
+                        padding: '4px 6px',
+                        background: 'rgba(255,255,255,0.04)',
+                        borderRadius: 4,
+                        fontSize: 9,
+                        color: '#bbb',
+                        maxHeight: 90,
+                        overflowY: 'auto',
+                      }}
+                      data-testid="nmr-multiplet-line-list"
+                    >
+                      <div style={{ color: '#888', marginBottom: 2 }}>
+                        Lines ({lines.length}, {frequencyMhz} MHz)
+                      </div>
+                      {lines.map((l, i) => {
+                        const rel = totalIntensity > 0 ? l.intensity / totalIntensity : 0;
+                        return (
+                          <div
+                            key={i}
+                            style={{ display: 'flex', justifyContent: 'space-between' }}
+                          >
+                            <span>{l.shiftPpm.toFixed(3)} ppm</span>
+                            <span style={{ color: '#888' }}>
+                              {(rel * 100).toFixed(0)}%
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
 
                 {/* Tier 3: Trust layer — confidence bar + label + method */}
                 <div style={{ marginBottom: 4 }}>
