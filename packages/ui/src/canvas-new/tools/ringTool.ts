@@ -8,6 +8,13 @@
 // the cursor lands on an existing atom the ring is fused at that vertex
 // (spiro / terminal substituent). Empty-space click keeps the original
 // isolated-ring placement behavior.
+//
+// Wave-8 HF-D2 — fusion paths now refine the local result via Indigo
+// (backend POST /structure/fuse-template). The local fusion still fires
+// first for instant feedback; if the backend round-trip succeeds we
+// replace the whole page with the Indigo-laid-out version (no
+// overlapping atoms, kekulé-correct topology). Backend errors leave the
+// local result untouched.
 
 import {
   RING_TEMPLATES,
@@ -15,8 +22,9 @@ import {
   generateRingFusedOnAtom,
   generateRingFusedOnBond,
 } from '@kendraw/scene';
-import type { Atom, AtomId, Bond, Page } from '@kendraw/scene';
+import type { Atom, AtomId, Bond, BondId, Page } from '@kendraw/scene';
 import type { Tool, ToolContext, ToolEventPayload } from '../types';
+import { RING_TEMPLATE_SMILES, fuseTemplate } from '../templateFusion';
 
 const DRAG_THRESHOLD_PX = 3;
 const DEFAULT_RING_RADIUS = 40;
@@ -72,6 +80,7 @@ export function createRingTool(opts: RingToolOptions): Tool {
               DEFAULT_RING_EDGE,
             );
             dispatchRing(ctx, ring);
+            void refineFusionWithBackend(ctx, page, opts.templateId, 'atom', atomHit);
             return;
           }
         }
@@ -91,6 +100,7 @@ export function createRingTool(opts: RingToolOptions): Tool {
               side,
             );
             dispatchRing(ctx, ring);
+            void refineFusionWithBackend(ctx, page, opts.templateId, 'bond', bondHit);
             return;
           }
         }
@@ -117,6 +127,40 @@ function dispatchRing(
 ): void {
   for (const a of ring.atoms) ctx.dispatch?.({ type: 'add-atom', atom: a });
   for (const b of ring.bonds) ctx.dispatch?.({ type: 'add-bond', bond: b });
+}
+
+/** Wave-8 HF-D2 — fire-and-forget refinement of the freshly-fused page
+ *  through Indigo. Captures the page snapshot taken BEFORE the local
+ *  fusion dispatch so the backend operates on the same topology the user
+ *  intended (target atom/bond id is still resolvable). On success the
+ *  whole page is replaced with Indigo's clean layout; on any failure
+ *  the local result remains visible. */
+function refineFusionWithBackend(
+  ctx: ToolContext,
+  pageBeforeFusion: Page,
+  templateId: string,
+  mode: 'atom' | 'bond',
+  targetId: AtomId | BondId,
+): Promise<unknown> {
+  const smiles = RING_TEMPLATE_SMILES[templateId];
+  if (!smiles) return Promise.resolve();
+  const dispatch = ctx.dispatch;
+  if (!dispatch) return Promise.resolve();
+  const atoms = Object.values(pageBeforeFusion.atoms).filter(
+    (a): a is Atom => a !== undefined,
+  );
+  const bonds = Object.values(pageBeforeFusion.bonds).filter(
+    (b): b is Bond => b !== undefined,
+  );
+  if (atoms.length === 0) return Promise.resolve();
+  return fuseTemplate({
+    atoms,
+    bonds,
+    targetId,
+    mode,
+    templateSmiles: smiles,
+    dispatch,
+  }).catch(() => undefined);
 }
 
 /** Cross product sign: which side of the directed bond aA→aB does the
