@@ -975,7 +975,7 @@ export default function NmrPanel({
           </button>
           {importError && (
             <span
-              style={{ fontSize: 10, color: '#ef4444', maxWidth: 220 }}
+              style={{ fontSize: 10, color: 'var(--kd-color-danger, #ef4444)', maxWidth: 220 }}
               title={importError}
               data-testid="nmr-jcamp-error"
             >
@@ -1265,29 +1265,29 @@ export default function NmrPanel({
                   top: Math.max(ty, 4),
                   width: 200,
                   padding: '8px 10px',
-                  background: 'rgba(20, 20, 20, 0.88)',
+                  background: 'var(--kd-color-modal-bg, rgba(20, 20, 20, 0.88))',
                   backdropFilter: 'blur(16px)',
                   WebkitBackdropFilter: 'blur(16px)',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  border: '1px solid var(--kd-color-modal-border, rgba(255, 255, 255, 0.08))',
                   borderLeft: `3px solid ${conf.color}`,
                   borderRadius: 8,
-                  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
+                  boxShadow: 'var(--kd-shadow-modal, 0 8px 32px rgba(0, 0, 0, 0.5))',
                   pointerEvents: pinnedPeakIdx !== null ? 'auto' : 'none',
                   zIndex: 10,
                   fontFamily: 'var(--kd-font-mono, monospace)',
                 }}
               >
                 {/* Tier 1: Headline — H# + shift + assignment */}
-                <div style={{ fontSize: 13, fontWeight: 600, color: '#f0f0f0', marginBottom: 4 }}>
-                  <span style={{ color: '#4dabf7', marginRight: 4 }}>H{peak.proton_group_id}</span>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--kd-color-text-primary, #f0f0f0)', marginBottom: 4 }}>
+                  <span style={{ color: 'var(--kd-color-accent, #4dabf7)', marginRight: 4 }}>H{peak.proton_group_id}</span>
                   {peak.shift_ppm.toFixed(2)} ppm
-                  <span style={{ fontWeight: 400, color: '#a0a0a0', marginLeft: 6, fontSize: 11 }}>
+                  <span style={{ fontWeight: 400, color: 'var(--kd-color-text-secondary, #a0a0a0)', marginLeft: 6, fontSize: 11 }}>
                     {peak.integral}H {formatEnvironment(peak.environment)}
                   </span>
                 </div>
 
                 {/* Tier 2: Signal — multiplicity + J */}
-                <div style={{ fontSize: 10, color: '#999', marginBottom: 6 }}>
+                <div style={{ fontSize: 10, color: 'var(--kd-color-text-secondary, #999)', marginBottom: 6 }}>
                   {formatMultiplicity(peak.multiplicity, peak.coupling_hz)}
                 </div>
 
@@ -1304,16 +1304,16 @@ export default function NmrPanel({
                       style={{
                         marginBottom: 6,
                         padding: '4px 6px',
-                        background: 'rgba(255,255,255,0.04)',
+                        background: 'var(--kd-color-bg-secondary, rgba(255,255,255,0.04))',
                         borderRadius: 4,
                         fontSize: 9,
-                        color: '#bbb',
+                        color: 'var(--kd-color-text-secondary, #bbb)',
                         maxHeight: 90,
                         overflowY: 'auto',
                       }}
                       data-testid="nmr-multiplet-line-list"
                     >
-                      <div style={{ color: '#888', marginBottom: 2 }}>
+                      <div style={{ color: 'var(--kd-color-text-muted, #888)', marginBottom: 2 }}>
                         Lines ({lines.length}, {frequencyMhz} MHz)
                       </div>
                       {lines.map((l, i) => {
@@ -1324,7 +1324,7 @@ export default function NmrPanel({
                             style={{ display: 'flex', justifyContent: 'space-between' }}
                           >
                             <span>{l.shiftPpm.toFixed(3)} ppm</span>
-                            <span style={{ color: '#888' }}>
+                            <span style={{ color: 'var(--kd-color-text-muted, #888)' }}>
                               {(rel * 100).toFixed(0)}%
                             </span>
                           </div>
@@ -1349,7 +1349,7 @@ export default function NmrPanel({
                         width: 48,
                         height: 5,
                         borderRadius: 3,
-                        background: 'rgba(255, 255, 255, 0.08)',
+                        background: 'var(--kd-color-border-subtle, rgba(255, 255, 255, 0.08))',
                         overflow: 'hidden',
                       }}
                     >
@@ -1367,7 +1367,7 @@ export default function NmrPanel({
                 </div>
 
                 {/* Method line */}
-                <div style={{ fontSize: 9, color: '#666' }}>{peak.method}</div>
+                <div style={{ fontSize: 9, color: 'var(--kd-color-text-muted, #666)' }}>{peak.method}</div>
               </div>
             );
           })()}

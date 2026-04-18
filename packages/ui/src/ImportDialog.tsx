@@ -197,7 +197,7 @@ export function ImportDialog({ store, onClose }: ImportDialogProps) {
 const overlayStyle: React.CSSProperties = {
   position: 'fixed',
   inset: 0,
-  background: 'rgba(0,0,0,0.5)',
+  background: 'var(--kd-color-overlay-scrim)',
   display: 'flex',
   alignItems: 'flex-start',
   justifyContent: 'center',
@@ -207,12 +207,12 @@ const overlayStyle: React.CSSProperties = {
 
 const panelStyle: React.CSSProperties = {
   width: 440,
-  background: 'rgba(20,20,20,0.95)',
+  background: 'var(--kd-color-modal-bg)',
   backdropFilter: 'blur(20px)',
-  border: '1px solid rgba(255,255,255,0.1)',
+  border: '1px solid var(--kd-color-modal-border)',
   borderRadius: 12,
   padding: 16,
-  boxShadow: '0 16px 48px rgba(0,0,0,0.6)',
+  boxShadow: 'var(--kd-shadow-modal)',
 };
 
 const titleStyle: React.CSSProperties = {
@@ -227,7 +227,7 @@ const btnStyle: React.CSSProperties = {
   fontSize: 11,
   fontWeight: 600,
   background: 'var(--kd-color-accent)',
-  color: '#fff',
+  color: 'var(--kd-color-text-inverse)',
   border: 'none',
   borderRadius: 6,
   cursor: 'pointer',

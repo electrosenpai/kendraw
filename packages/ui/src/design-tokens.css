@@ -62,6 +62,12 @@
   --kd-glass-border: rgba(255, 255, 255, 0.06);
   --kd-glass-blur: blur(12px);
 
+  /* Modal / overlay chrome */
+  --kd-color-overlay-scrim: rgba(0, 0, 0, 0.5);
+  --kd-color-modal-bg: rgba(20, 20, 20, 0.95);
+  --kd-color-modal-border: rgba(255, 255, 255, 0.1);
+  --kd-shadow-modal: 0 16px 48px rgba(0, 0, 0, 0.6);
+
   /* Transitions */
   --kd-transition-fast: 100ms ease;
   --kd-transition-normal: 200ms ease;
@@ -102,4 +108,9 @@
 
   --kd-glass-bg: rgba(255, 255, 255, 0.75);
   --kd-glass-border: rgba(0, 0, 0, 0.06);
+
+  --kd-color-overlay-scrim: rgba(0, 0, 0, 0.25);
+  --kd-color-modal-bg: rgba(255, 255, 255, 0.98);
+  --kd-color-modal-border: rgba(0, 0, 0, 0.08);
+  --kd-shadow-modal: 0 16px 48px rgba(0, 0, 0, 0.15);
 }
