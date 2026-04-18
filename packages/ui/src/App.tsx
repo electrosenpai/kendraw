@@ -4,7 +4,8 @@ import { validateValence } from '@kendraw/scene';
 import { Canvas } from './Canvas';
 import { FEATURE_FLAGS } from './config/feature-flags';
 const LazyCanvasNew = lazy(() => import('./canvas-new'));
-import { NewToolbox } from './canvas-new/NewToolbox';
+import { NewToolbox, CANVAS_REGISTRY_MAP } from './canvas-new/NewToolbox';
+import type { NewToolboxActionId, NewToolboxToolId } from './canvas-new/NewToolbox';
 import type { CanvasNewProps, CanvasNewToolId } from './canvas-new/CanvasNew';
 import { PropertyPanel } from './PropertyPanel';
 import { StatusBar } from './StatusBar';
@@ -62,7 +63,7 @@ export function App() {
   // swapped but the rest of the shell (header, properties, NMR, status
   // bar) stays shared. This piece of state drives the new <NewToolbox />
   // and <CanvasNew />.
-  const [newCanvasActiveTool, setNewCanvasActiveTool] = useState<CanvasNewToolId>('select');
+  const [newCanvasActiveTool, setNewCanvasActiveTool] = useState<NewToolboxToolId>('select');
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     const saved = localStorage.getItem('kd-theme');
     return saved === 'light' ? 'light' : 'dark';
@@ -233,6 +234,11 @@ export function App() {
               activeStore={activeStore}
               showProperties={panelVisible && effectivePanelW > 0}
               selectionCount={selectedAtomIds.length}
+              nmrOpen={nmrOpen}
+              onNmrToggle={() => setNmrOpen((v) => !v)}
+              onTogglePropertyPanel={() => setPanelVisible((v) => !v)}
+              onPasteSmiles={() => setShowImport(true)}
+              onSearchMolecule={() => setShowMolSearch(true)}
             />
           ) : (
             <Canvas {...canvasProps} />
@@ -325,11 +331,16 @@ export function App() {
 
 interface NewCanvasModeProps {
   canvasProps: CanvasNewProps & { key?: string | null };
-  activeTool: CanvasNewToolId;
-  onActiveToolChange: (id: CanvasNewToolId) => void;
+  activeTool: NewToolboxToolId;
+  onActiveToolChange: (id: NewToolboxToolId) => void;
   activeStore: NonNullable<ReturnType<typeof workspaceStore.getActiveStore>>;
   showProperties: boolean;
   selectionCount: number;
+  nmrOpen: boolean;
+  onNmrToggle: () => void;
+  onTogglePropertyPanel: () => void;
+  onPasteSmiles: () => void;
+  onSearchMolecule: () => void;
 }
 
 function NewCanvasMode({
@@ -339,10 +350,12 @@ function NewCanvasMode({
   activeStore,
   showProperties,
   selectionCount,
+  nmrOpen,
+  onNmrToggle,
+  onTogglePropertyPanel,
+  onPasteSmiles,
+  onSearchMolecule,
 }: NewCanvasModeProps): ReactElement {
-  // Subscribe to the active scene store so PropertyPanel + StatusBar
-  // re-render whenever the document changes — same data the legacy
-  // Canvas.tsx already feeds these components.
   const doc = useSyncExternalStore<Document>(
     useCallback((cb) => activeStore.subscribe(cb), [activeStore]),
     useCallback(() => activeStore.getState(), [activeStore]),
@@ -354,21 +367,57 @@ function NewCanvasMode({
     () => (page ? validateValence(page).length : 0),
     [page],
   );
+
+  const canvasTool: CanvasNewToolId = CANVAS_REGISTRY_MAP[activeTool] ?? 'select';
   const toolState: ToolState = useMemo(
     () => ({
       ...DEFAULT_TOOL_STATE,
-      tool: activeTool === 'bond' ? 'add-bond' : 'select',
+      tool: canvasTool === 'bond' ? 'add-bond' : 'select',
     }),
-    [activeTool],
+    [canvasTool],
+  );
+
+  const handleAction = useCallback(
+    (id: NewToolboxActionId): void => {
+      switch (id) {
+        case 'undo':
+          activeStore.undo();
+          break;
+        case 'redo':
+          activeStore.redo();
+          break;
+        case 'nmr-toggle':
+          onNmrToggle();
+          break;
+        case 'property-toggle':
+          onTogglePropertyPanel();
+          break;
+        case 'paste-smiles':
+          onPasteSmiles();
+          break;
+        case 'search-molecule':
+          onSearchMolecule();
+          break;
+      }
+    },
+    [activeStore, onNmrToggle, onTogglePropertyPanel, onPasteSmiles, onSearchMolecule],
   );
 
   return (
     <>
       <div style={{ gridArea: 'toolbar', overflow: 'hidden' }}>
-        <NewToolbox activeToolId={activeTool} onActiveToolChange={onActiveToolChange} />
+        <NewToolbox
+          activeToolId={activeTool}
+          onToolChange={onActiveToolChange}
+          onAction={handleAction}
+          nmrOpen={nmrOpen}
+          propertyPanelVisible={showProperties}
+          canUndo={activeStore.canUndo()}
+          canRedo={activeStore.canRedo()}
+        />
       </div>
       <Suspense fallback={<div style={{ gridArea: 'canvas' }}>Loading canvas…</div>}>
-        <LazyCanvasNew {...canvasProps} activeToolId={activeTool} />
+        <LazyCanvasNew {...canvasProps} activeToolId={canvasTool} />
       </Suspense>
       <div style={{ gridArea: 'properties', overflow: 'auto' }}>
         <PropertyPanel doc={doc} visible={showProperties} />
