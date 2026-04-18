@@ -82,10 +82,10 @@ Tool abstraction (`de7a4a2`), CanvasRenderer + store subscription (`f19b501`), s
 | Suite              | V6 baseline | V7 current | Delta |
 | ------------------ | ----------: | ---------: | ----: |
 | Frontend Vitest    | 618         | **677**    | +59   |
-| Backend pytest     | 242         | **242**    | 0     |
+| Backend pytest     | 242         | **249**    | +7    |
 | E2E Playwright spec files | 24   | **28** + 1 in `packages/ui/e2e` | +4 / +1 |
 
-Backend test count is **frozen** despite four wave-4 backend deliveries (DEPT, multiplet, JCAMP-DX, audit). Murat flags this as a P0 gap (§Auditor track, Murat).
+Backend test count moved by **+7 — entirely from wave-7 HF-3 `test_structure.py` covering the `/api/structure/clean` endpoint**. The NMR engine logic itself (`kendraw_chem/nmr_*`) added zero tests despite four wave-4 NMR deliveries (DEPT, multiplet, JCAMP-DX, audit). Murat flags this as a P0 gap (§Auditor track, Murat). Several panelists below cite "242 frozen" — substantively correct for the NMR engine layer they care about; the +7 belongs to a different subsystem.
 
 ### I.6 Feature flag state
 
@@ -890,7 +890,7 @@ The research-weighted score moves more than the arithmetic because the four rese
 
 **Volkov −0.2 — UX regression detected (flag-off penalty).** Her V6 9.6 was the panel ceiling. Drop to 9.4 is small but it's the only direction-of-travel signal we have on the student / power-user front, and it points at the right symptom: a headline canvas refactor that ships behind a default-false flag is a UX disappointment for users who came expecting it. The fix is not more features — it's flipping the flag (which requires resolving Marcos's missing wedge / curly-arrow tools first).
 
-**Chen +0.2 — stagnation modestly broken, not resolved.** Wave-1 sigma_ppm + d2o_exchangeable, wave-4 JCAMP-DX import, HF-3 RDKit-based `/api/structure/clean` are the deliveries that touch comp-chem. None of them are her V6 top-1 (NMRShiftDB2 evaluation harness on a public test set + Python API client). +0.2 = "I see you trying" but not the structural shift she wants. Backend pytest count frozen at 242 is the smoking gun.
+**Chen +0.2 — stagnation modestly broken, not resolved.** Wave-1 sigma_ppm + d2o_exchangeable, wave-4 JCAMP-DX import, HF-3 RDKit-based `/api/structure/clean` are the deliveries that touch comp-chem. None of them are her V6 top-1 (NMRShiftDB2 evaluation harness on a public test set + Python API client). +0.2 = "I see you trying" but not the structural shift she wants. Backend pytest moved 242 → 249, but the +7 are wave-7 HF-3 structure-clean tests; the NMR engine itself has added zero tests since V5 — the smoking gun stands.
 
 **Yamamoto +0.4 — pedagogy GO is the safest single use case.** DEPT-135 phase, multiplet rendering, JCAMP overlay, dark-mode polish, searchable shortcut cheatsheet — every one of his V6 demands moved or shipped. His +0.4 takes him to **9.5**, the highest delta-adjusted note in the panel. Pedagogy is the cleanest "ship it" lane.
 
@@ -1260,7 +1260,7 @@ The panel does not have a single binary GO/NO-GO. The verdict splits along use-c
 
 The aggregate verdict for a **publicly announced beta** is **CONDITIONAL GO**, gated on four pre-launch items that were unanimous between John (PM), Sally (UX), Murat (TEA), and the consensus-blocker table:
 
-1. **README honesty pass** — relabel pharma-compliance section as "Experimental, validation in progress" ; drop "successor to ChemDraw" wording ; refresh test counters which currently claim 618 + 242 + 24 vs actual 677 + 242 + 28+1. (Effort: 1 day. Owner: tech-writer.)
+1. **README honesty pass** — relabel pharma-compliance section as "Experimental, validation in progress" ; drop "successor to ChemDraw" wording ; refresh test counters which currently claim 618 + 242 + 24 vs actual 677 + 249 + 28+1. (Effort: 1 day. Owner: tech-writer.)
 2. **Production observability** — Sentry SDK on frontend + Sentry-FastAPI on backend, UptimeRobot on `/api/health`, rate-limit middleware (slowapi) capping `/predict` at 60 req/min/IP. (Effort: 3 days. Owner: backend + ops.)
 3. **AuditLogPanel viewer** — read-only React panel that reads the in-memory chain, displays entries with hash + reason + timestamp + actor placeholder. Persistence to SQLite-WAL or JSONL on shutdown / interval. Dispatcher wiring so that mutating commands write to chain. (Effort: 1 week. Owner: full-stack.)
 4. **Feedback channel** — public link to GitHub Discussions or a `/feedback` endpoint that POSTs to a dedicated repo issue tracker, in the footer of the public build. (Effort: 0.5 day.)
@@ -1347,7 +1347,7 @@ If any of the four slips, the recommendation defaults to **continued SOFT BETA**
 **AC**:
 - "Successor to ChemDraw" wording dropped, replaced with positioning consistent with Park's V7 take
 - Pharma-compliance section relabelled "Experimental — validation in progress"
-- Test counters refreshed: 677 FE / 242 BE / 28+1 e2e
+- Test counters refreshed: 677 FE / 249 BE / 28+1 e2e
 - Beta caveats listed (no audit viewer yet, no SSO, etc.) in a single visible section
 
 **Effort**: 1 day

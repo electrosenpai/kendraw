@@ -95,7 +95,7 @@ These are the four items that the panel's V7 verdict is gated on (see `docs/nmr-
 
 - "Successor to ChemDraw" wording dropped, replaced with positioning consistent with Park's V7 take
 - Pharma-compliance section relabelled "Experimental — validation in progress"
-- Test counters refreshed: 677 FE / 242 BE / 28+1 e2e
+- Test counters refreshed: 677 FE / 249 BE / 28+1 e2e
 - Beta caveats listed (no audit viewer yet, no SSO, etc.) in a single visible section
 
 **Effort**: 1 day
