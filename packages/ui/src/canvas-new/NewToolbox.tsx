@@ -17,3 +17,5 @@ export type {
   ToolKind,
 } from './toolbox/types';
 export { TOOL_DEFS, CANVAS_REGISTRY_MAP } from './toolbox/toolDefs';
+export { useToolHotkeys, buildToolHotkeyMap } from './toolbox/useToolHotkeys';
+export type { ToolHotkeyMap, UseToolHotkeysOptions } from './toolbox/useToolHotkeys';

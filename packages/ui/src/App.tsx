@@ -4,7 +4,7 @@ import { validateValence } from '@kendraw/scene';
 import { Canvas } from './Canvas';
 import { FEATURE_FLAGS } from './config/feature-flags';
 const LazyCanvasNew = lazy(() => import('./canvas-new'));
-import { NewToolbox, CANVAS_REGISTRY_MAP } from './canvas-new/NewToolbox';
+import { NewToolbox, CANVAS_REGISTRY_MAP, useToolHotkeys } from './canvas-new/NewToolbox';
 import type { NewToolboxActionId, NewToolboxToolId } from './canvas-new/NewToolbox';
 import type { CanvasNewProps, CanvasNewToolId } from './canvas-new/CanvasNew';
 import { PropertyPanel } from './PropertyPanel';
@@ -402,6 +402,8 @@ function NewCanvasMode({
     },
     [activeStore, onNmrToggle, onTogglePropertyPanel, onPasteSmiles, onSearchMolecule],
   );
+
+  useToolHotkeys(onActiveToolChange);
 
   return (
     <>
