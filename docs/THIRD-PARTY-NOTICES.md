@@ -47,6 +47,33 @@ Ketcher artefacts — no binaries, no SVG icons, no strings, no type
 definitions. The attribution above exists as a courtesy and to make the
 design lineage auditable for downstream users.
 
+## Indigo — EPAM Systems
+
+- **Project.** Indigo — cheminformatics toolkit (C++ core, Python bindings)
+- **Upstream.** https://github.com/epam/Indigo
+- **License.** Apache 2.0
+- **Copyright.** © 2009–Present EPAM Systems
+- **Distribution.** PyPI package `epam-indigo`, declared in `backend/pyproject.toml` and installed at runtime alongside RDKit.
+
+### Relationship
+
+Indigo runs server-side as a complement to RDKit. Kendraw delegates
+high-quality 2D layout and template-fusion (atom- and bond-shared ring
+fusion) to Indigo's native `merge` + `mapAtom` + `layout` primitives;
+RDKit remains the engine for property calculation, NMR shift
+prediction, and SMILES/InChI conversion.
+
+The Indigo binary is loaded via `ctypes` from the upstream wheel — no
+Indigo source has been vendored or modified. The wrapper at
+`backend/kendraw_chem/indigo_service.py` is independently authored
+Kendraw code.
+
+### Apache 2.0 compatibility
+
+Apache 2.0 is compatible with Kendraw's MIT licence; Kendraw redistributes
+no Indigo artefacts of its own. Indigo's NOTICE and LICENSE files travel
+inside the upstream wheel.
+
 ## Other upstream credits
 
 See the `package.json` dependency tree for the full list of libraries
