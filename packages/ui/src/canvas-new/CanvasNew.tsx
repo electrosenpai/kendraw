@@ -58,6 +58,10 @@ export interface CanvasNewProps {
   /** Active tool on mount. Defaults to 'select'. Wave-5 stories make 'bond'
    *  and 'quick-edit' available; the toolbar UI lands in wave-6. */
   defaultToolId?: CanvasNewToolId;
+  /** Controlled active tool — when provided, overrides `defaultToolId` and
+   *  syncs the registry on every change. Used by the wave-5 hotfix so an
+   *  external <NewToolbox /> can drive tool selection. */
+  activeToolId?: CanvasNewToolId | undefined;
 }
 
 const ZOOM_MIN = 0.25;
@@ -71,6 +75,7 @@ export function CanvasNew(props: CanvasNewProps): JSX.Element {
     highlightedAtomIds,
     onSelectionChange,
     defaultToolId = 'select',
+    activeToolId,
   } = props;
   const canvasHostRef = useRef<HTMLDivElement | null>(null);
   const [canvasEl, setCanvasEl] = useState<HTMLDivElement | null>(null);
@@ -98,6 +103,15 @@ export function CanvasNew(props: CanvasNewProps): JSX.Element {
     r.activate(defaultToolId);
     return r;
   }, [defaultToolId]);
+
+  // Wave-5 hotfix: when `activeToolId` is provided (controlled mode), keep
+  // the registry in sync with the parent. Uncontrolled mode keeps the
+  // existing wave-4 default behavior.
+  useEffect(() => {
+    if (activeToolId !== undefined) {
+      registry.activate(activeToolId);
+    }
+  }, [activeToolId, registry]);
 
   const renderEffective = useCallback((): void => {
     const renderer = rendererRef.current;

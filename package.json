@@ -29,10 +29,11 @@
     "depcruise": "depcruise packages/*/src --config .dependency-cruiser.cjs",
     "size-limit": "size-limit",
     "license-check": "license-checker --onlyAllow \"MIT;BSD-2-Clause;BSD-3-Clause;Apache-2.0;ISC;0BSD;Unlicense;CC0-1.0;CC-BY-4.0;BlueOak-1.0.0;Python-2.0\" --excludePrivatePackages",
-    "test:e2e": "playwright test",
+    "test:e2e": "playwright test --project=chromium",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:debug": "playwright test --debug",
+    "test:e2e:new-canvas": "VITE_ENABLE_NEW_CANVAS=true playwright test --project=chromium-new-canvas",
     "prepare": "husky"
   },
   "size-limit": [

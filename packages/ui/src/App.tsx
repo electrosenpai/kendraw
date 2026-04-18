@@ -1,8 +1,14 @@
-import { useState, useEffect, useCallback, useSyncExternalStore, lazy, Suspense, type ReactElement } from 'react';
-import type { AtomId } from '@kendraw/scene';
+import { useState, useEffect, useCallback, useMemo, useSyncExternalStore, lazy, Suspense, type ReactElement } from 'react';
+import type { AtomId, Document } from '@kendraw/scene';
+import { validateValence } from '@kendraw/scene';
 import { Canvas } from './Canvas';
 import { FEATURE_FLAGS } from './config/feature-flags';
 const LazyCanvasNew = lazy(() => import('./canvas-new'));
+import { NewToolbox } from './canvas-new/NewToolbox';
+import type { CanvasNewProps, CanvasNewToolId } from './canvas-new/CanvasNew';
+import { PropertyPanel } from './PropertyPanel';
+import { StatusBar } from './StatusBar';
+import { DEFAULT_TOOL_STATE, type ToolState } from './ToolPalette';
 import { TabBar } from './TabBar';
 import { ShortcutCheatsheet } from './ShortcutCheatsheet';
 import { AboutPage } from './AboutPage';
@@ -52,6 +58,11 @@ export function App() {
   });
   const [highlightedAtomIds, setHighlightedAtomIds] = useState<Set<AtomId>>(new Set());
   const [selectedAtomIds, setSelectedAtomIds] = useState<AtomId[]>([]);
+  // Wave-5 hotfix: when newCanvas flag is on, the toolbox + canvas are
+  // swapped but the rest of the shell (header, properties, NMR, status
+  // bar) stays shared. This piece of state drives the new <NewToolbox />
+  // and <CanvasNew />.
+  const [newCanvasActiveTool, setNewCanvasActiveTool] = useState<CanvasNewToolId>('select');
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     const saved = localStorage.getItem('kd-theme');
     return saved === 'light' ? 'light' : 'dark';
@@ -186,7 +197,7 @@ export function App() {
         overflow: 'hidden',
       }}
     >
-      <div style={{ gridArea: 'tabbar', minWidth: 0 }}>
+      <div style={{ gridArea: 'tabbar', minWidth: 0 }} data-testid="app-header">
         <TabBar
           tabs={workspace.tabs}
           activeTabId={workspace.activeTabId}
@@ -215,9 +226,14 @@ export function App() {
             theme,
           };
           return FEATURE_FLAGS.newCanvas ? (
-            <Suspense fallback={<div style={{ gridArea: 'canvas' }}>Loading canvas…</div>}>
-              <LazyCanvasNew {...canvasProps} />
-            </Suspense>
+            <NewCanvasMode
+              canvasProps={canvasProps}
+              activeTool={newCanvasActiveTool}
+              onActiveToolChange={setNewCanvasActiveTool}
+              activeStore={activeStore}
+              showProperties={panelVisible && effectivePanelW > 0}
+              selectionCount={selectedAtomIds.length}
+            />
           ) : (
             <Canvas {...canvasProps} />
           );
@@ -296,5 +312,78 @@ export function App() {
         <ImportDialog store={activeStore} onClose={() => setShowImport(false)} />
       )}
     </div>
+  );
+}
+
+// ── Wave-5 hotfix shell composition ────────────────────────────────────
+// The newCanvas feature flag MUST scope to two zones only: the toolbox
+// (left) and the drawing canvas (centre). Header, properties panel, NMR
+// panel and status bar are shared across both modes — they live in App.tsx
+// outside the swap. NewCanvasMode wires the new toolbox + canvas + the
+// shared right/bottom panels into the same CSS grid areas so flag=true
+// renders a complete app shell.
+
+interface NewCanvasModeProps {
+  canvasProps: CanvasNewProps & { key?: string | null };
+  activeTool: CanvasNewToolId;
+  onActiveToolChange: (id: CanvasNewToolId) => void;
+  activeStore: NonNullable<ReturnType<typeof workspaceStore.getActiveStore>>;
+  showProperties: boolean;
+  selectionCount: number;
+}
+
+function NewCanvasMode({
+  canvasProps,
+  activeTool,
+  onActiveToolChange,
+  activeStore,
+  showProperties,
+  selectionCount,
+}: NewCanvasModeProps): ReactElement {
+  // Subscribe to the active scene store so PropertyPanel + StatusBar
+  // re-render whenever the document changes — same data the legacy
+  // Canvas.tsx already feeds these components.
+  const doc = useSyncExternalStore<Document>(
+    useCallback((cb) => activeStore.subscribe(cb), [activeStore]),
+    useCallback(() => activeStore.getState(), [activeStore]),
+  );
+  const page = doc.pages[doc.activePageIndex];
+  const atomCount = page ? Object.keys(page.atoms).length : 0;
+  const bondCount = page ? Object.keys(page.bonds).length : 0;
+  const valenceWarnings = useMemo(
+    () => (page ? validateValence(page).length : 0),
+    [page],
+  );
+  const toolState: ToolState = useMemo(
+    () => ({
+      ...DEFAULT_TOOL_STATE,
+      tool: activeTool === 'bond' ? 'add-bond' : 'select',
+    }),
+    [activeTool],
+  );
+
+  return (
+    <>
+      <div style={{ gridArea: 'toolbar', overflow: 'hidden' }}>
+        <NewToolbox activeToolId={activeTool} onActiveToolChange={onActiveToolChange} />
+      </div>
+      <Suspense fallback={<div style={{ gridArea: 'canvas' }}>Loading canvas…</div>}>
+        <LazyCanvasNew {...canvasProps} activeToolId={activeTool} />
+      </Suspense>
+      <div style={{ gridArea: 'properties', overflow: 'auto' }}>
+        <PropertyPanel doc={doc} visible={showProperties} />
+      </div>
+      <div style={{ gridArea: 'status' }}>
+        <StatusBar
+          toolState={toolState}
+          zoom={1}
+          atomCount={atomCount}
+          bondCount={bondCount}
+          selectionCount={selectionCount}
+          valenceWarnings={valenceWarnings}
+          cursorPos={null}
+        />
+      </div>
+    </>
   );
 }

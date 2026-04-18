@@ -1575,7 +1575,10 @@ export function Canvas({
   return (
     <>
       {/* Toolbar */}
-      <div style={{ gridArea: 'toolbar', overflow: 'hidden' }}>
+      <div
+        style={{ gridArea: 'toolbar', overflow: 'hidden' }}
+        data-testid="old-toolbox"
+      >
         <ToolPalette
           toolState={toolState}
           onToolStateChange={updateToolState}
@@ -1612,6 +1615,7 @@ export function Canvas({
           minWidth: 0,
           minHeight: 0,
         }}
+        data-testid="old-canvas"
       >
         <div
           ref={containerRef}

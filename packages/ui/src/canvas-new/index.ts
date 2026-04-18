@@ -3,4 +3,6 @@
 // Reimplemented from scratch for Kendraw.
 
 export { CanvasNew, default } from './CanvasNew';
-export type { CanvasNewProps } from './CanvasNew';
+export type { CanvasNewProps, CanvasNewToolId } from './CanvasNew';
+export { NewToolbox } from './NewToolbox';
+export type { NewToolboxProps } from './NewToolbox';

@@ -21,6 +21,14 @@ export default defineConfig({
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
     },
+    // Wave-5 hotfix — runs the same suite against the new-canvas mode so
+    // shell-parity tests catch any future flag-scope regression. The flag
+    // is not toggled here; the dev-server is started with
+    // VITE_ENABLE_NEW_CANVAS=true via the `test:e2e:new-canvas` script.
+    {
+      name: 'chromium-new-canvas',
+      use: { ...devices['Desktop Chrome'] },
+    },
   ],
 
   webServer: [
