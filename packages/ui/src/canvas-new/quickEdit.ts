@@ -25,6 +25,15 @@ const ELEMENT_KEY_TO_Z: Readonly<Record<string, number>> = Object.freeze({
 
 const METHYL_KEY = 'M';
 
+/** Shift+letter abbreviations (case-sensitive). Each maps a hovered atom
+ *  to a labeled superatom whose backing element is carbon — ChemDraw's
+ *  "Ph", "Ac", … shorthand. Lowercase variants of the same letters fall
+ *  through to ELEMENT_KEY_TO_Z, so 'p' still sets phosphorus. */
+const SHIFT_LABEL_MAP: Readonly<Record<string, string>> = Object.freeze({
+  P: 'Ph', // phenyl
+  A: 'Ac', // acetyl
+});
+
 const BOND_ORDER_KEYS: Readonly<Record<string, 1 | 2 | 3>> = Object.freeze({
   '1': 1,
   '2': 2,
@@ -51,11 +60,35 @@ export function resolveQuickEditCommand(
   page: Page,
 ): Command | null {
   const upper = key.toUpperCase();
+  // Heuristic for "shift was held": single alphabetic glyph that already
+  // matches its uppercase form. CapsLock-without-Shift produces the same
+  // signal — accepted as equivalent intent. Numeric / symbolic keys
+  // (which have no distinct lowercase form) are excluded.
+  const shiftHeld =
+    key.length === 1 && key === upper && key !== key.toLowerCase();
 
   // Element change on hovered atom (C / N / O / S / F / P / B / L / I / H).
   if (target.atomId) {
     const atom = page.atoms[target.atomId];
     if (!atom) return null;
+
+    // Shift+P → "Ph" (phenyl), Shift+A → "Ac" (acetyl). Case-sensitive
+    // labelled abbreviations modeled as carbon + display label, matching
+    // ChemDraw's shortcut conventions. These take precedence over the
+    // case-insensitive element table so lowercase 'p' / 'a' still hit
+    // phosphorus / no-op respectively.
+    if (shiftHeld) {
+      const label = SHIFT_LABEL_MAP[upper];
+      if (label !== undefined) {
+        if (atom.element === 6 && atom.label === label) return null;
+        return {
+          type: 'update-atom',
+          id: target.atomId,
+          changes: { element: 6, label },
+        };
+      }
+    }
+
     const z = ELEMENT_KEY_TO_Z[upper];
     if (z !== undefined && atom.element !== z) {
       // Drop any explicit label when the element changes — the renderer
@@ -119,4 +152,5 @@ export const __testing__ = {
   ELEMENT_KEY_TO_Z,
   BOND_ORDER_KEYS,
   STYLE_FOR_ORDER,
+  SHIFT_LABEL_MAP,
 };

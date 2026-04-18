@@ -85,6 +85,42 @@ describe('resolveQuickEditCommand (W4-R-08)', () => {
     expect(cmd).toBeNull();
   });
 
+  it('hover atom + lowercase p → phosphorus (Z=15), distinct from Shift+P', () => {
+    const { page, atomId } = pageWithSingleAtom();
+    const cmd = resolveQuickEditCommand('p', { atomId }, page);
+    if (cmd?.type !== 'update-atom') throw new Error('expected update-atom');
+    expect(cmd.changes.element).toBe(15);
+    expect(cmd.changes.label).toBeUndefined();
+  });
+
+  it('hover atom + uppercase P (Shift+P) → phenyl label "Ph" on carbon', () => {
+    const { page, atomId } = pageWithSingleAtom();
+    const cmd = resolveQuickEditCommand('P', { atomId }, page);
+    if (cmd?.type !== 'update-atom') throw new Error('expected update-atom');
+    expect(cmd.changes.element).toBe(6);
+    expect(cmd.changes.label).toBe('Ph');
+  });
+
+  it('hover atom + uppercase A (Shift+A) → acetyl label "Ac" on carbon', () => {
+    const { page, atomId } = pageWithSingleAtom();
+    const cmd = resolveQuickEditCommand('A', { atomId }, page);
+    if (cmd?.type !== 'update-atom') throw new Error('expected update-atom');
+    expect(cmd.changes.element).toBe(6);
+    expect(cmd.changes.label).toBe('Ac');
+  });
+
+  it('hover atom + Shift+P twice is a no-op once Ph is already set', () => {
+    const { page, atomId } = pageWithSingleAtom();
+    const first = resolveQuickEditCommand('P', { atomId }, page);
+    if (first?.type !== 'update-atom') throw new Error('expected update-atom');
+    const original = page.atoms[atomId];
+    if (!original) throw new Error('expected atom in page fixture');
+    const updated = { ...original, ...first.changes };
+    const page2: Page = { ...page, atoms: { [atomId]: updated } };
+    const second = resolveQuickEditCommand('P', { atomId }, page2);
+    expect(second).toBeNull();
+  });
+
   it('unknown key returns null', () => {
     const { page, atomId } = pageWithSingleAtom();
     expect(resolveQuickEditCommand('Q', { atomId }, page)).toBeNull();
