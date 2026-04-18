@@ -388,38 +388,40 @@ export const CanvasNew = forwardRef<CanvasNewHandle, CanvasNewProps>(function Ca
     setOverlayTick((t) => t + 1);
   }, [hoverPreview, dragOffset]);
 
+  // Wave-7 HF-6: the wave-4 shell mounted its own toolbar/properties/status
+  // placeholders alongside the canvas root. Under the wave-5 hotfix,
+  // App.tsx/NewCanvasMode now fills those grid cells with the real shell
+  // (NewToolbox, PropertyPanel, StatusBar). Leaving the placeholders here
+  // made them sit on top of the real widgets in the same CSS grid areas,
+  // silently intercepting pointer events and breaking toolbox clicks.
+  // Only the canvas cell belongs to CanvasNew now.
   return (
-    <>
-      <div style={{ gridArea: 'toolbar' }} data-testid="canvas-new-toolbar" />
-      <div
-        ref={(el) => {
-          canvasHostRef.current = el;
-          setCanvasEl(el);
-        }}
-        style={{
-          gridArea: 'canvas',
-          position: 'relative',
-          width: '100%',
-          height: '100%',
-          minHeight: 0,
-          touchAction: 'none',
-        }}
-        data-testid="canvas-new-root"
-        data-active-tool={registry.getActiveId() ?? ''}
-        data-overlay-tick={overlayTick}
-        role="region"
-        aria-label="New canvas (wave-4 redraw)"
-      >
-        <HoverIconOverlay
-          preview={projectPreviewToScreen(hoverPreview, viewportRef.current)}
-          width={overlaySizeRef.current.w}
-          height={overlaySizeRef.current.h}
-          theme={theme}
-        />
-      </div>
-      <div style={{ gridArea: 'properties' }} data-testid="canvas-new-properties" />
-      <div style={{ gridArea: 'status' }} data-testid="canvas-new-status" />
-    </>
+    <div
+      ref={(el) => {
+        canvasHostRef.current = el;
+        setCanvasEl(el);
+      }}
+      style={{
+        gridArea: 'canvas',
+        position: 'relative',
+        width: '100%',
+        height: '100%',
+        minHeight: 0,
+        touchAction: 'none',
+      }}
+      data-testid="canvas-new-root"
+      data-active-tool={activeToolId ?? registry.getActiveId() ?? ''}
+      data-overlay-tick={overlayTick}
+      role="region"
+      aria-label="New canvas (wave-4 redraw)"
+    >
+      <HoverIconOverlay
+        preview={projectPreviewToScreen(hoverPreview, viewportRef.current)}
+        width={overlaySizeRef.current.w}
+        height={overlaySizeRef.current.h}
+        theme={theme}
+      />
+    </div>
   );
 });
 

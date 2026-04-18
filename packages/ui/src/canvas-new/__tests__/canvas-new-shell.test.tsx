@@ -78,15 +78,19 @@ afterEach(() => {
 });
 
 describe('CanvasNew shell (W4-R-01/R-03)', () => {
-  it('renders the four grid-area mount points', () => {
+  it('renders only the canvas grid cell (wave-7 HF-6)', () => {
+    // Wave-5 hotfix moved the toolbar / properties / status shell into
+    // App.tsx; CanvasNew owns only the canvas cell now. The former
+    // placeholder divs were overlaying the real widgets and intercepting
+    // pointer events.
     const store = createSceneStore();
     act(() => {
       root.render(<CanvasNew store={store} />);
     });
-    expect(container.querySelector('[data-testid="canvas-new-toolbar"]')).not.toBeNull();
     expect(container.querySelector('[data-testid="canvas-new-root"]')).not.toBeNull();
-    expect(container.querySelector('[data-testid="canvas-new-properties"]')).not.toBeNull();
-    expect(container.querySelector('[data-testid="canvas-new-status"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="canvas-new-toolbar"]')).toBeNull();
+    expect(container.querySelector('[data-testid="canvas-new-properties"]')).toBeNull();
+    expect(container.querySelector('[data-testid="canvas-new-status"]')).toBeNull();
   });
 
   it('labels the canvas region as a new-wave-4 shell for a11y', () => {
