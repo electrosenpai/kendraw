@@ -28,6 +28,7 @@ export function ToolButton({ def, active, disabled, onClick }: ToolButtonProps):
       data-tool-kind={def.kind}
       data-tool-group={def.group}
       data-coming-soon={comingSoon ? 'true' : undefined}
+      data-active={active && !displayDisabled ? 'true' : 'false'}
       aria-pressed={def.kind === 'toggle' ? active : undefined}
       aria-disabled={displayDisabled}
       aria-label={def.tooltip}
