@@ -16,15 +16,13 @@ export interface ToolHotkeyMap {
 }
 
 /** Build a case-insensitive map of single-key shortcut -> tool id. Skips
- *  coming-soon entries, multi-modifier shortcuts (Ctrl+*, Shift+*), and
- *  tool-kind mismatches. First registration wins so earlier TOOL_DEFS
- *  entries take precedence on collisions (e.g. bond-wedge 'W' is skipped
- *  via comingSoon, so 'W' ends up bound to the reaction arrow). */
+ *  multi-modifier shortcuts (Ctrl+*, Shift+*) and non-tool kinds. First
+ *  registration wins so earlier TOOL_DEFS entries take precedence on
+ *  collisions. */
 export function buildToolHotkeyMap(): ToolHotkeyMap {
   const map: Record<string, NewToolboxToolId> = {};
   for (const def of TOOL_DEFS) {
     if (def.kind !== 'tool') continue;
-    if (def.comingSoon) continue;
     const raw = def.shortcut;
     if (!raw) continue;
     if (raw.length !== 1) continue;

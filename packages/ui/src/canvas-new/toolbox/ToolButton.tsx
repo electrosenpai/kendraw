@@ -1,4 +1,4 @@
-// Wave-6 new toolbox — generic tool button primitive.
+// Wave-6 new toolbox — generic square icon button for the 2-column rail.
 
 import type { ReactElement } from 'react';
 import { getIcon } from './icons';
@@ -13,13 +13,7 @@ interface ToolButtonProps {
 
 export function ToolButton({ def, active, disabled, onClick }: ToolButtonProps): ReactElement {
   const Icon = getIcon(def.iconId);
-  const comingSoon = def.comingSoon === true;
-  const displayDisabled = disabled || comingSoon;
-  const fullTooltip = comingSoon
-    ? `${def.tooltip} — Coming in wave-7`
-    : def.shortcut
-      ? `${def.tooltip} (${def.shortcut})`
-      : def.tooltip;
+  const fullTooltip = def.shortcut ? `${def.tooltip} (${def.shortcut})` : def.tooltip;
 
   return (
     <button
@@ -27,59 +21,36 @@ export function ToolButton({ def, active, disabled, onClick }: ToolButtonProps):
       data-testid={`new-tool-${def.id}`}
       data-tool-kind={def.kind}
       data-tool-group={def.group}
-      data-coming-soon={comingSoon ? 'true' : undefined}
-      data-active={active && !displayDisabled ? 'true' : 'false'}
+      data-active={active && !disabled ? 'true' : 'false'}
       aria-pressed={def.kind === 'toggle' ? active : undefined}
-      aria-disabled={displayDisabled}
+      aria-disabled={disabled}
       aria-label={def.tooltip}
       title={fullTooltip}
-      disabled={displayDisabled && def.kind !== 'tool'}
+      disabled={disabled}
       onClick={() => {
-        if (displayDisabled) return;
+        if (disabled) return;
         onClick();
       }}
       style={{
-        position: 'relative',
         display: 'flex',
-        flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 2,
-        padding: '6px 4px',
         width: '100%',
-        minHeight: 40,
-        background: active && !displayDisabled ? 'var(--kd-color-accent)' : 'transparent',
-        color: active && !displayDisabled ? '#000' : 'var(--kd-color-text-primary)',
+        aspectRatio: '1 / 1',
+        minHeight: 30,
+        padding: 2,
+        background: active && !disabled ? 'var(--kd-color-accent)' : 'transparent',
+        color: active && !disabled ? '#000' : 'var(--kd-color-text-primary)',
         border: '1px solid',
-        borderColor: active && !displayDisabled ? 'var(--kd-color-accent)' : 'var(--kd-color-border)',
+        borderColor: active && !disabled ? 'var(--kd-color-accent)' : 'var(--kd-color-border)',
         borderRadius: 'var(--kd-radius-sm)',
-        cursor: displayDisabled ? 'not-allowed' : 'pointer',
-        opacity: displayDisabled ? 0.4 : 1,
-        fontSize: 9,
-        fontFamily: 'var(--kd-font-family)',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        opacity: disabled ? 0.5 : 1,
         userSelect: 'none',
         transition: 'background 80ms ease, border-color 80ms ease',
       }}
     >
       <Icon size={18} />
-      <span aria-hidden="true">{def.label}</span>
-      {comingSoon && (
-        <span
-          aria-hidden="true"
-          style={{
-            position: 'absolute',
-            top: 2,
-            right: 2,
-            fontSize: 7,
-            padding: '0 2px',
-            borderRadius: 2,
-            background: 'var(--kd-color-border)',
-            color: 'var(--kd-color-text-muted)',
-          }}
-        >
-          soon
-        </span>
-      )}
     </button>
   );
 }

@@ -1,14 +1,28 @@
-// Wave-6 new toolbox — orchestrator.
+// Wave-6 / wave-7 new toolbox — orchestrator.
 //
-// Data-driven rendering from TOOL_DEFS. Groups are spatial (dividers
-// between consecutive different groups). The analysis dock pins to the
-// bottom via flex spacer. Matches Sally's wave-6 layout spec:
-// docs/new-toolbox-spec-wave-6.md.
+// Data-driven 2-column grid. Tools are bucketed by `group`; each group
+// renders as its own CSS grid with repeat(2, 1fr) so buttons land
+// side-by-side, separator between groups, analysis dock pinned to the
+// bottom via flex spacer. Matches the wave-7 hotfix layout spec.
 
 import type { ReactElement } from 'react';
 import { ToolButton } from './ToolButton';
 import { TOOL_DEFS } from './toolDefs';
-import type { NewToolboxActionId, NewToolboxToolId } from './types';
+import type {
+  NewToolboxActionId,
+  NewToolboxGroup,
+  NewToolboxToolId,
+  ToolDef,
+} from './types';
+
+const MAIN_GROUP_ORDER: NewToolboxGroup[] = [
+  'pointer',
+  'bond',
+  'atom',
+  'ring',
+  'annotation',
+  'edit',
+];
 
 export interface NewToolboxProps {
   /** Currently highlighted tool button (UI granularity — can be a bond
@@ -28,17 +42,12 @@ export interface NewToolboxProps {
   canRedo: boolean;
 }
 
-export function NewToolbox({
-  activeToolId,
-  onToolChange,
-  onAction,
-  nmrOpen,
-  propertyPanelVisible,
-  canUndo,
-  canRedo,
-}: NewToolboxProps): ReactElement {
-  const analysisDock = TOOL_DEFS.filter((d) => d.group === 'analysis');
-  const mainRail = TOOL_DEFS.filter((d) => d.group !== 'analysis');
+export function NewToolbox(props: NewToolboxProps): ReactElement {
+  const byGroup = bucketByGroup(TOOL_DEFS);
+  const analysisDock = byGroup.analysis ?? [];
+  const mainGroups = MAIN_GROUP_ORDER
+    .map((g) => [g, byGroup[g] ?? []] as const)
+    .filter(([, defs]) => defs.length > 0);
 
   return (
     <div
@@ -57,77 +66,78 @@ export function NewToolbox({
         borderRight: '1px solid var(--kd-color-border)',
         overflowY: 'auto',
         overflowX: 'hidden',
+        boxSizing: 'border-box',
       }}
     >
-      {renderGroup(mainRail, activeToolId, onToolChange, onAction, {
-        nmrOpen,
-        propertyPanelVisible,
-        canUndo,
-        canRedo,
-      })}
+      {mainGroups.map(([group, defs], idx) => (
+        <div key={group} style={{ display: 'contents' }}>
+          {idx > 0 && <Separator />}
+          {renderGroup(group, defs, props)}
+        </div>
+      ))}
 
       <div style={{ flex: 1 }} aria-hidden="true" />
 
-      <Separator />
-
-      {renderGroup(analysisDock, activeToolId, onToolChange, onAction, {
-        nmrOpen,
-        propertyPanelVisible,
-        canUndo,
-        canRedo,
-      })}
+      {analysisDock.length > 0 && (
+        <>
+          <Separator />
+          {renderGroup('analysis', analysisDock, props)}
+        </>
+      )}
     </div>
   );
 }
 
 function renderGroup(
-  defs: readonly (typeof TOOL_DEFS)[number][],
-  activeToolId: NewToolboxToolId,
-  onToolChange: (id: NewToolboxToolId) => void,
-  onAction: (id: NewToolboxActionId) => void,
-  flags: {
-    nmrOpen: boolean;
-    propertyPanelVisible: boolean;
-    canUndo: boolean;
-    canRedo: boolean;
-  },
-): ReactElement[] {
-  const out: ReactElement[] = [];
-  let prevGroup: string | null = null;
+  group: NewToolboxGroup,
+  defs: ToolDef[],
+  props: NewToolboxProps,
+): ReactElement {
+  return (
+    <div
+      data-testid={`new-tool-group-${group}`}
+      data-group={group}
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(2, 1fr)',
+        gap: 3,
+      }}
+    >
+      {defs.map((def) => {
+        let active = false;
+        let disabled = false;
+        if (def.kind === 'tool') {
+          active = def.id === props.activeToolId;
+        } else if (def.kind === 'toggle') {
+          if (def.id === 'nmr-toggle') active = props.nmrOpen;
+          if (def.id === 'property-toggle') active = props.propertyPanelVisible;
+        } else if (def.kind === 'action') {
+          if (def.id === 'undo') disabled = !props.canUndo;
+          if (def.id === 'redo') disabled = !props.canRedo;
+        }
+        return (
+          <ToolButton
+            key={def.id}
+            def={def}
+            active={active}
+            disabled={disabled}
+            onClick={() => {
+              if (def.kind === 'tool') props.onToolChange(def.id as NewToolboxToolId);
+              else props.onAction(def.id as NewToolboxActionId);
+            }}
+          />
+        );
+      })}
+    </div>
+  );
+}
 
-  for (const def of defs) {
-    if (prevGroup !== null && prevGroup !== def.group) {
-      out.push(<Separator key={`sep-${def.group}`} />);
-    }
-    prevGroup = def.group;
-
-    let active = false;
-    let disabled = false;
-
-    if (def.kind === 'tool') {
-      active = def.id === activeToolId;
-    } else if (def.kind === 'toggle') {
-      if (def.id === 'nmr-toggle') active = flags.nmrOpen;
-      if (def.id === 'property-toggle') active = flags.propertyPanelVisible;
-    } else if (def.kind === 'action') {
-      if (def.id === 'undo') disabled = !flags.canUndo;
-      if (def.id === 'redo') disabled = !flags.canRedo;
-    }
-
-    out.push(
-      <ToolButton
-        key={def.id}
-        def={def}
-        active={active}
-        disabled={disabled}
-        onClick={() => {
-          if (def.kind === 'tool') onToolChange(def.id as NewToolboxToolId);
-          else onAction(def.id as NewToolboxActionId);
-        }}
-      />,
-    );
+function bucketByGroup(defs: readonly ToolDef[]): Partial<Record<NewToolboxGroup, ToolDef[]>> {
+  const out: Partial<Record<NewToolboxGroup, ToolDef[]>> = {};
+  for (const d of defs) {
+    const list = out[d.group] ?? (out[d.group] = []);
+    list.push(d);
   }
-
   return out;
 }
 
@@ -135,6 +145,7 @@ function Separator(): ReactElement {
   return (
     <div
       aria-hidden="true"
+      data-testid="new-tool-separator"
       style={{
         height: 1,
         margin: '4px 2px',

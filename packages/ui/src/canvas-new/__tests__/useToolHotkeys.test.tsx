@@ -27,9 +27,7 @@ describe('buildToolHotkeyMap', () => {
     expect(map['E']).toBe('erase');
   });
 
-  it('skips coming-soon tools so their shortcuts are free for live tools', () => {
-    // 'W' belongs to bond-wedge (coming-soon) AND arrow (live);
-    // only arrow should land in the map.
+  it('binds W to the reaction arrow tool (wedge is deferred to a later wave)', () => {
     expect(map['W']).toBe('arrow');
   });
 

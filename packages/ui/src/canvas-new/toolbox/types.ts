@@ -1,9 +1,9 @@
-// Wave-6 new toolbox — types.
+// Wave-6 / wave-7 new toolbox — types.
 //
-// The toolbox exposes a richer set of tool ids than the canvas-new
-// registry currently supports. Unsupported ids degrade to a disabled
-// "Coming soon" state, so every planned tool has a visible button from
-// day one. Mapping to the registry happens at the NewCanvasMode seam.
+// Every visible tool must have a working handler — no placeholders.
+// Deferred tools (lasso, wedge/dash/aromatic, periodic picker, curly
+// arrow) are tracked in docs/deferred-work-toolbox-fix.md for later
+// waves once their backing components land.
 
 export type NewToolboxGroup =
   | 'pointer'
@@ -17,28 +17,22 @@ export type NewToolboxGroup =
 export type NewToolboxToolId =
   // pointer
   | 'select'
-  | 'lasso'
   // bond
   | 'bond-single'
   | 'bond-double'
   | 'bond-triple'
-  | 'bond-wedge'
-  | 'bond-dash'
-  | 'bond-aromatic'
   // atom
   | 'atom-c'
   | 'atom-h'
   | 'atom-n'
   | 'atom-o'
   | 'atom-s'
-  | 'atom-picker'
   // ring
   | 'ring-benzene'
   | 'ring-cyclohexane'
   // annotation
   | 'text'
   | 'arrow'
-  | 'curly-arrow'
   // edit
   | 'erase';
 
@@ -62,6 +56,4 @@ export interface ToolDef {
   tooltip: string;
   shortcut?: string;
   iconId: string;
-  /** When true, button is rendered but non-functional — shows "Coming soon" tooltip. */
-  comingSoon?: boolean;
 }

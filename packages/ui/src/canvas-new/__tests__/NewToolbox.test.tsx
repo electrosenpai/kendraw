@@ -49,9 +49,8 @@ describe('NewToolbox (wave-6)', () => {
 
   it('renders at least 17 P0 tool buttons', () => {
     renderToolbox();
-    const nonComingSoon = TOOL_DEFS.filter((d) => !d.comingSoon);
-    expect(nonComingSoon.length).toBeGreaterThanOrEqual(17);
-    for (const def of nonComingSoon) {
+    expect(TOOL_DEFS.length).toBeGreaterThanOrEqual(17);
+    for (const def of TOOL_DEFS) {
       const btn = container.querySelector(`[data-testid="new-tool-${def.id}"]`);
       expect(btn, `expected button for ${def.id}`).not.toBeNull();
     }
@@ -142,25 +141,28 @@ describe('NewToolbox (wave-6)', () => {
     expect(redoBtn.disabled).toBe(true);
   });
 
-  it('marks coming-soon tools with data-coming-soon and does not dispatch on click', () => {
-    const props = renderToolbox();
-    const comingSoon = TOOL_DEFS.find((d) => d.comingSoon);
-    expect(comingSoon, 'expected at least one coming-soon tool in fixture').toBeTruthy();
-    if (!comingSoon) return;
-    const btn = container.querySelector(`[data-testid="new-tool-${comingSoon.id}"]`) as HTMLButtonElement;
-    expect(btn.getAttribute('data-coming-soon')).toBe('true');
-    act(() => {
-      btn.click();
-    });
-    expect(props.onToolChange).not.toHaveBeenCalled();
-    expect(props.onAction).not.toHaveBeenCalled();
+  it('every registered tool renders a button (no placeholders)', () => {
+    renderToolbox();
+    for (const def of TOOL_DEFS) {
+      const btn = container.querySelector(`[data-testid="new-tool-${def.id}"]`);
+      expect(btn, `missing button for ${def.id}`).not.toBeNull();
+      expect((btn as HTMLButtonElement).getAttribute('data-active')).not.toBeNull();
+    }
   });
 
   it('renders separator dividers between distinct groups', () => {
     renderToolbox();
-    const separators = container.querySelectorAll('[aria-hidden="true"]');
-    // At least one separator between groups (pointer→bond→atom→ring→annotation→edit and dock)
-    expect(separators.length).toBeGreaterThan(3);
+    const separators = container.querySelectorAll('[data-testid="new-tool-separator"]');
+    // 6 main groups (pointer, bond, atom, ring, annotation, edit) → 5 inter-group
+    // separators + 1 before the analysis dock = 6. Assert ≥ 5 to stay flexible.
+    expect(separators.length).toBeGreaterThanOrEqual(5);
+  });
+
+  it('arranges each group as a 2-column grid', () => {
+    renderToolbox();
+    const bondGrid = container.querySelector('[data-testid="new-tool-group-bond"]') as HTMLElement;
+    expect(bondGrid).not.toBeNull();
+    expect(bondGrid.style.gridTemplateColumns).toMatch(/repeat\(2,/);
   });
 
   it('tool buttons carry data-tool-kind and data-tool-group metadata', () => {
@@ -176,11 +178,4 @@ describe('NewToolbox (wave-6)', () => {
     expect(bond?.getAttribute('title')).toMatch(/\(1\)/);
   });
 
-  it('tooltip marks coming-soon tools appropriately', () => {
-    renderToolbox();
-    const comingSoon = TOOL_DEFS.find((d) => d.comingSoon);
-    if (!comingSoon) return;
-    const btn = container.querySelector(`[data-testid="new-tool-${comingSoon.id}"]`);
-    expect(btn?.getAttribute('title')).toMatch(/coming/i);
-  });
 });

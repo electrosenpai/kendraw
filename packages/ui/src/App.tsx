@@ -153,7 +153,15 @@ export function App() {
 
   // Auto-collapse panel on small screens
   const effectivePanelW = layout === 'minimal' ? 0 : panelVisible ? panelW : 0;
-  const effectiveToolbarW = layout === 'minimal' ? 44 : toolbarW;
+  // Wave-7 hotfix: the new-canvas toolbox needs room for a 2-column grid
+  // (~80px). Legacy mode keeps the narrower 56px default so flag=false is
+  // visually unchanged.
+  const NEW_CANVAS_MIN_TOOLBAR = 80;
+  const effectiveToolbarW = layout === 'minimal'
+    ? 44
+    : FEATURE_FLAGS.newCanvas
+      ? Math.max(NEW_CANVAS_MIN_TOOLBAR, toolbarW)
+      : toolbarW;
 
   if (!initialized) {
     return (
