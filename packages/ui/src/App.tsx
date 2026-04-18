@@ -376,7 +376,8 @@ function NewCanvasMode({
     [page],
   );
 
-  const canvasTool: CanvasNewToolId = CANVAS_REGISTRY_MAP[activeTool] ?? 'select';
+  const canvasTool: CanvasNewToolId =
+    (CANVAS_REGISTRY_MAP[activeTool] as CanvasNewToolId | undefined) ?? 'select';
   const toolState: ToolState = useMemo(
     () => ({
       ...DEFAULT_TOOL_STATE,

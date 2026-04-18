@@ -39,13 +39,30 @@ import type { DragOffset, SelectionRect, ToolContext } from './types';
 import { useToolDispatcher } from './useToolDispatcher';
 import { createMarqueeSelectTool } from './tools/marqueeSelectTool';
 import { createBondTool } from './tools/bondTool';
+import { createAtomTool } from './tools/atomTool';
+import { createRingTool } from './tools/ringTool';
+import { createEraseTool } from './tools/eraseTool';
+import { createTextTool } from './tools/textTool';
+import { createArrowTool } from './tools/arrowTool';
 import { hitTestBond, type HoverPreview } from './bondPreview';
 import { HoverIconOverlay } from './HoverIconOverlay';
 import { resolveQuickEditCommand } from './quickEdit';
 import { computeFitViewport } from './fitToView';
 import { isEditingTextNow } from '../hooks/useIsEditingText';
 
-export type CanvasNewToolId = 'select' | 'bond';
+export type CanvasNewToolId =
+  | 'select'
+  | 'bond'
+  | 'atom-c'
+  | 'atom-h'
+  | 'atom-n'
+  | 'atom-o'
+  | 'atom-s'
+  | 'ring-benzene'
+  | 'ring-cyclohexane'
+  | 'text'
+  | 'arrow'
+  | 'erase';
 
 /** Imperative handle exposed to the App shell so the wave-7 toolbox's
  *  fit-to-view action can recenter the scene without the canvas having to
@@ -113,6 +130,16 @@ export const CanvasNew = forwardRef<CanvasNewHandle, CanvasNewProps>(function Ca
     const r = new ToolRegistry();
     r.register(createMarqueeSelectTool());
     r.register(createBondTool());
+    r.register(createAtomTool({ id: 'atom-c', element: 6 }));
+    r.register(createAtomTool({ id: 'atom-h', element: 1 }));
+    r.register(createAtomTool({ id: 'atom-n', element: 7 }));
+    r.register(createAtomTool({ id: 'atom-o', element: 8 }));
+    r.register(createAtomTool({ id: 'atom-s', element: 16 }));
+    r.register(createRingTool({ id: 'ring-benzene', templateId: 'benzene' }));
+    r.register(createRingTool({ id: 'ring-cyclohexane', templateId: 'cyclohexane' }));
+    r.register(createTextTool());
+    r.register(createArrowTool());
+    r.register(createEraseTool());
     r.activate(defaultToolId);
     return r;
   }, [defaultToolId]);

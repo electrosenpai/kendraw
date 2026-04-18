@@ -49,9 +49,19 @@ export const TOOL_DEFS: readonly ToolDef[] = [
 /** Tool ids the canvas-new ToolRegistry currently supports. Non-mapped
  *  tool ids degrade to 'select' at the registry seam but still drive
  *  the toolbox UI state (active highlight) and hotkey dispatch. */
-export const CANVAS_REGISTRY_MAP: Record<string, 'select' | 'bond'> = {
+export const CANVAS_REGISTRY_MAP: Record<string, string> = {
   'select': 'select',
   'bond-single': 'bond',
   'bond-double': 'bond',
   'bond-triple': 'bond',
+  'atom-c': 'atom-c',
+  'atom-h': 'atom-h',
+  'atom-n': 'atom-n',
+  'atom-o': 'atom-o',
+  'atom-s': 'atom-s',
+  'ring-benzene': 'ring-benzene',
+  'ring-cyclohexane': 'ring-cyclohexane',
+  'text': 'text',
+  'arrow': 'arrow',
+  'erase': 'erase',
 };
