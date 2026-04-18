@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { RING_TEMPLATES, FUSED_RING_TEMPLATES, generateRing, generateFusedRing } from '../rings.js';
+import {
+  RING_TEMPLATES,
+  FUSED_RING_TEMPLATES,
+  generateRing,
+  generateFusedRing,
+  generateRingFusedOnBond,
+  generateRingFusedOnAtom,
+} from '../rings.js';
+import type { AtomId } from '../types.js';
 
 describe('Ring templates', () => {
   it('has 14 ring templates', () => {
@@ -33,11 +41,18 @@ describe('Ring templates', () => {
     expect(doubles).toHaveLength(2);
   });
 
-  it('benzene has 6 atoms and aromatic bonds', () => {
+  it('benzene has 6 atoms and Kekulé alternating bonds (1,2,1,2,1,2)', () => {
     const benzene = RING_TEMPLATES.find((r) => r.id === 'benzene');
     expect(benzene).toBeDefined();
     expect(benzene?.atomCount).toBe(6);
-    expect(benzene?.bondOrders.every((o) => o === 1.5)).toBe(true);
+    // Kekulé form: 3 single + 3 double, no aromatic shorthand.
+    expect(benzene?.bondOrders).toEqual([1, 2, 1, 2, 1, 2]);
+    const sum = (benzene?.bondOrders ?? []).reduce((a, b) => a + b, 0);
+    expect(sum).toBe(9);
+    const singles = (benzene?.bondOrders ?? []).filter((o) => o === 1).length;
+    const doubles = (benzene?.bondOrders ?? []).filter((o) => o === 2).length;
+    expect(singles).toBe(3);
+    expect(doubles).toBe(3);
   });
 
   it('furan has oxygen as first element', () => {
@@ -82,15 +97,16 @@ describe('generateRing', () => {
     expect(last?.toAtomId).toBe(ring.atoms[0]?.id);
   });
 
-  it('benzene bonds have aromatic style', () => {
+  it('benzene bonds alternate single/double (Kekulé)', () => {
     const template = RING_TEMPLATES.find((r) => r.id === 'benzene');
     if (!template) return;
 
     const ring = generateRing(template, 0, 0);
-    for (const bond of ring.bonds) {
-      expect(bond.style).toBe('aromatic');
-      expect(bond.order).toBe(1.5);
-    }
+    expect(ring.bonds).toHaveLength(6);
+    const orders = ring.bonds.map((b) => b.order);
+    expect(orders).toEqual([1, 2, 1, 2, 1, 2]);
+    const styles = ring.bonds.map((b) => b.style);
+    expect(styles).toEqual(['single', 'double', 'single', 'double', 'single', 'double']);
   });
 });
 
@@ -189,5 +205,103 @@ describe('generateFusedRing', () => {
     const cy = ring.atoms.reduce((s, a) => s + a.y, 0) / ring.atoms.length;
     expect(cx).toBeCloseTo(500, 0);
     expect(cy).toBeCloseTo(400, 0);
+  });
+});
+
+describe('generateRingFusedOnBond (HF-D)', () => {
+  const benzene = RING_TEMPLATES.find((r) => r.id === 'benzene');
+  if (!benzene) throw new Error('benzene template missing');
+  const aA = { id: 'a' as AtomId, x: 0, y: 0 };
+  const aB = { id: 'b' as AtomId, x: 50, y: 0 };
+
+  it('benzene fused on a bond returns 4 new atoms + 5 new bonds', () => {
+    const ring = generateRingFusedOnBond(benzene, aA, aB, 1);
+    expect(ring.atoms).toHaveLength(4);
+    expect(ring.bonds).toHaveLength(5);
+  });
+
+  it('does not duplicate the shared edge atoms aA / aB', () => {
+    const ring = generateRingFusedOnBond(benzene, aA, aB, 1);
+    for (const atom of ring.atoms) {
+      expect(atom.id).not.toBe(aA.id);
+      expect(atom.id).not.toBe(aB.id);
+    }
+  });
+
+  it('all new ring atoms sit on the n-gon circumscribed circle', () => {
+    const ring = generateRingFusedOnBond(benzene, aA, aB, 1);
+    const edgeLen = 50;
+    const ringRadius = edgeLen / (2 * Math.sin(Math.PI / 6));
+    const apothem = edgeLen / (2 * Math.tan(Math.PI / 6));
+    const cx = (aA.x + aB.x) / 2;
+    const cy = (aA.y + aB.y) / 2 + apothem; // side = +1
+    for (const atom of ring.atoms) {
+      const d = Math.hypot(atom.x - cx, atom.y - cy);
+      expect(d).toBeCloseTo(ringRadius, 1);
+    }
+  });
+
+  it('side = -1 mirrors the ring across the bond axis', () => {
+    const up = generateRingFusedOnBond(benzene, aA, aB, 1);
+    const down = generateRingFusedOnBond(benzene, aA, aB, -1);
+    expect(up.atoms).toHaveLength(down.atoms.length);
+    const upY = up.atoms.map((a) => a.y).sort((a, b) => a - b);
+    const downY = down.atoms.map((a) => a.y).sort((a, b) => a - b);
+    for (let i = 0; i < upY.length; i++) {
+      const mirrored = downY[downY.length - 1 - i];
+      if (mirrored === undefined) continue;
+      expect(upY[i]).toBeCloseTo(-mirrored, 1);
+    }
+  });
+
+  it('returns empty for degenerate edge length (atomA == atomB)', () => {
+    const ring = generateRingFusedOnBond(benzene, aA, aA, 1);
+    expect(ring.atoms).toHaveLength(0);
+    expect(ring.bonds).toHaveLength(0);
+  });
+
+  it('every new bond references either aA, aB, or one of the new atoms', () => {
+    const ring = generateRingFusedOnBond(benzene, aA, aB, 1);
+    const validIds = new Set<string>([aA.id, aB.id, ...ring.atoms.map((a) => a.id)]);
+    for (const b of ring.bonds) {
+      expect(validIds.has(b.fromAtomId)).toBe(true);
+      expect(validIds.has(b.toAtomId)).toBe(true);
+    }
+  });
+});
+
+describe('generateRingFusedOnAtom (HF-D)', () => {
+  const benzene = RING_TEMPLATES.find((r) => r.id === 'benzene');
+  if (!benzene) throw new Error('benzene template missing');
+  const shared = { id: 'shared' as AtomId, x: 100, y: 100 };
+
+  it('benzene fused on an atom returns 5 new atoms + 6 bonds', () => {
+    const ring = generateRingFusedOnAtom(benzene, shared, 0, 50);
+    expect(ring.atoms).toHaveLength(5);
+    expect(ring.bonds).toHaveLength(6);
+  });
+
+  it('does not duplicate the shared atom', () => {
+    const ring = generateRingFusedOnAtom(benzene, shared, 0, 50);
+    for (const a of ring.atoms) {
+      expect(a.id).not.toBe(shared.id);
+    }
+  });
+
+  it('every bond references the shared atom or one of the new atoms', () => {
+    const ring = generateRingFusedOnAtom(benzene, shared, 0, 50);
+    const validIds = new Set<string>([shared.id, ...ring.atoms.map((a) => a.id)]);
+    for (const b of ring.bonds) {
+      expect(validIds.has(b.fromAtomId)).toBe(true);
+      expect(validIds.has(b.toAtomId)).toBe(true);
+    }
+  });
+
+  it('exactly two new bonds are incident to the shared atom (entry + exit)', () => {
+    const ring = generateRingFusedOnAtom(benzene, shared, 0, 50);
+    const incident = ring.bonds.filter(
+      (b) => b.fromAtomId === shared.id || b.toAtomId === shared.id,
+    );
+    expect(incident).toHaveLength(2);
   });
 });

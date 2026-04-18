@@ -1,4 +1,4 @@
-import type { AtomId } from './types.js';
+import type { AtomId, Point } from './types.js';
 import { createAtom, createBond } from './helpers.js';
 
 export interface RingTemplate {
@@ -49,7 +49,11 @@ export const RING_TEMPLATES: RingTemplate[] = [
     shortcut: 'B',
     atomCount: 6,
     elements: [6, 6, 6, 6, 6, 6],
-    bondOrders: [1.5, 1.5, 1.5, 1.5, 1.5, 1.5],
+    // Kekulé alternation (1,2,1,2,1,2). Sum of orders = 9, matching the
+    // 3 π-bond convention used in publication-ready 2D structures.
+    // Aromaticity-as-circle remains available via FUSED_RING_TEMPLATES
+    // for fused systems where Kekulé becomes ambiguous.
+    bondOrders: [1, 2, 1, 2, 1, 2],
   },
   {
     id: 'furan',
@@ -548,6 +552,136 @@ export function generateFusedRing(
     }
     return createBond(fromAtom.id as AtomId, toAtom.id as AtomId, b.order, b.style);
   });
+
+  return { atoms, bonds };
+}
+
+/** Fuse a ring template onto an existing bond (edge-sharing). The new
+ *  ring's atom 0 is bound to `atomA` and atom 1 to `atomB` — those two
+ *  atoms and the bond between them stay in the scene; this helper returns
+ *  only the *new* atoms (indices 2..n-1) and the *new* bonds (every ring
+ *  bond except the shared one between atoms 0 and 1).
+ *
+ *  `side` selects which side of the bond the new ring grows on (+1 / -1).
+ *  The caller picks the side from the cursor position relative to the
+ *  bond — matching ChemDraw's behavior where clicking above a bond drops
+ *  the ring above it. */
+export function generateRingFusedOnBond(
+  template: RingTemplate,
+  atomA: { id: AtomId; x: number; y: number },
+  atomB: { id: AtomId; x: number; y: number },
+  side: 1 | -1 = 1,
+): GeneratedRing {
+  const n = template.atomCount;
+  if (n < 3) return { atoms: [], bonds: [] };
+  const dx = atomB.x - atomA.x;
+  const dy = atomB.y - atomA.y;
+  const edgeLen = Math.hypot(dx, dy);
+  if (edgeLen < 1e-3) return { atoms: [], bonds: [] };
+
+  // Regular n-gon geometry: every edge has length `edgeLen`.
+  const ringRadius = edgeLen / (2 * Math.sin(Math.PI / n));
+  const apothem = edgeLen / (2 * Math.tan(Math.PI / n));
+
+  // Local frame: atom0 at (0,0), atom1 at (edgeLen, 0). Ring center
+  // sits perpendicular to the bond at signed distance `side * apothem`.
+  const cx = edgeLen / 2;
+  const cy = side * apothem;
+  const angle0 = Math.atan2(0 - cy, 0 - cx);
+  const step = -side * ((2 * Math.PI) / n);
+
+  const localPositions: Point[] = [];
+  for (let i = 0; i < n; i++) {
+    const a = angle0 + i * step;
+    localPositions.push({
+      x: cx + ringRadius * Math.cos(a),
+      y: cy + ringRadius * Math.sin(a),
+    });
+  }
+
+  // Local → world: rotate by bond orientation, translate to atomA.
+  const cos = dx / edgeLen;
+  const sin = dy / edgeLen;
+  const worldPositions: Point[] = localPositions.map((p) => ({
+    x: atomA.x + p.x * cos - p.y * sin,
+    y: atomA.y + p.x * sin + p.y * cos,
+  }));
+
+  const atomIds: AtomId[] = new Array(n);
+  atomIds[0] = atomA.id;
+  atomIds[1] = atomB.id;
+  const atoms: ReturnType<typeof createAtom>[] = [];
+  for (let i = 2; i < n; i++) {
+    const w = worldPositions[i];
+    if (!w) continue;
+    const z = template.elements[i] ?? 6;
+    const a = createAtom(w.x, w.y, z);
+    atomIds[i] = a.id;
+    atoms.push(a);
+  }
+
+  // Bond indices: bond i connects atom i to atom (i+1) mod n. Bond 0
+  // is the shared edge — skip it.
+  const bonds: ReturnType<typeof createBond>[] = [];
+  for (let i = 1; i < n; i++) {
+    const next = (i + 1) % n;
+    const fromId = atomIds[i];
+    const toId = atomIds[next];
+    if (!fromId || !toId) continue;
+    const order = (template.bondOrders[i] ?? 1) as 1 | 2 | 1.5;
+    const style = order === 1.5 ? 'aromatic' : order === 2 ? 'double' : ('single' as const);
+    bonds.push(createBond(fromId, toId, order, style));
+  }
+
+  return { atoms, bonds };
+}
+
+/** Fuse a ring template onto an existing atom (vertex-sharing, like a
+ *  spiro junction or a terminal substituent). The new ring's atom 0 is
+ *  identified with `sharedAtom`; the remaining n-1 atoms and all n bonds
+ *  are returned for dispatching.
+ *
+ *  `growDirection` is the angle (radians, world frame) along which the
+ *  ring center sits relative to the shared atom. The caller typically
+ *  chooses the direction that points away from the existing bonds at
+ *  `sharedAtom`. */
+export function generateRingFusedOnAtom(
+  template: RingTemplate,
+  sharedAtom: { id: AtomId; x: number; y: number },
+  growDirection: number = 0,
+  edgeLength: number = 50,
+): GeneratedRing {
+  const n = template.atomCount;
+  if (n < 3) return { atoms: [], bonds: [] };
+  const ringRadius = edgeLength / (2 * Math.sin(Math.PI / n));
+  const cx = sharedAtom.x + ringRadius * Math.cos(growDirection);
+  const cy = sharedAtom.y + ringRadius * Math.sin(growDirection);
+  const angle0 = growDirection + Math.PI;
+  const step = (2 * Math.PI) / n;
+
+  const atomIds: AtomId[] = new Array(n);
+  atomIds[0] = sharedAtom.id;
+  const atoms: ReturnType<typeof createAtom>[] = [];
+  for (let i = 1; i < n; i++) {
+    const a = angle0 + i * step;
+    const x = cx + ringRadius * Math.cos(a);
+    const y = cy + ringRadius * Math.sin(a);
+    const z = template.elements[i] ?? 6;
+    const newAtom = createAtom(x, y, z);
+    atomIds[i] = newAtom.id;
+    atoms.push(newAtom);
+  }
+
+  const bonds: ReturnType<typeof createBond>[] = [];
+  for (let i = 0; i < n; i++) {
+    const next = (i + 1) % n;
+    const fromId = atomIds[i];
+    const toId = atomIds[next];
+    if (!fromId || !toId) continue;
+    const order = (template.bondOrders[i] ?? 1) as 1 | 2 | 1.5;
+    const style = order === 1.5 ? 'aromatic' : order === 2 ? 'double' : ('single' as const);
+    bonds.push(createBond(fromId, toId, order, style));
+  }
 
   return { atoms, bonds };
 }

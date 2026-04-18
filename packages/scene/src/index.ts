@@ -93,6 +93,8 @@ export {
   RING_TEMPLATES,
   FUSED_RING_TEMPLATES,
   generateRing,
+  generateRingFusedOnBond,
+  generateRingFusedOnAtom,
   generateFusedRing,
   type RingTemplate,
   type FusedRingTemplate,
