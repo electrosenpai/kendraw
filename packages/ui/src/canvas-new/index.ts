@@ -6,6 +6,13 @@ export { CanvasNew, default } from './CanvasNew';
 export type { CanvasNewProps, CanvasNewToolId, CanvasNewHandle } from './CanvasNew';
 export { computeFitViewport } from './fitToView';
 export type { FitViewport, FitOptions } from './fitToView';
+export { cleanStructure } from './structureClean';
+export type {
+  CleanMode,
+  CleanEndpointResponse,
+  CleanStructureContext,
+  CleanStructureResult,
+} from './structureClean';
 export {
   NewToolbox,
   TOOL_DEFS,

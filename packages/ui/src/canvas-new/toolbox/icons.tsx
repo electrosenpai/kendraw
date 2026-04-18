@@ -217,6 +217,22 @@ export function IconFitToView({ size = 18 }: IconProps): ReactElement {
   ]);
 }
 
+export function IconClean({ size = 18 }: IconProps): ReactElement {
+  return svg(size, [
+    <path key="broom" d="M4 16 L10 10" />,
+    <path key="head" d="M9 9 L13 13 L16 10 L12 6 Z" />,
+    <path key="spark1" d="M5 5 L7 7" />,
+    <path key="spark2" d="M6 4 L6 7" />,
+  ]);
+}
+
+export function IconRefine({ size = 18 }: IconProps): ReactElement {
+  return svg(size, [
+    <path key="ring" d="M10 3 L15 6 L15 12 L10 15 L5 12 L5 6 Z" />,
+    <path key="arrow" d="M14 14 L17 17 M17 14 L17 17 L14 17" />,
+  ]);
+}
+
 const ICONS: Record<string, (p: IconProps) => ReactElement> = {
   'select': IconSelect,
   'bond-single': IconBondSingle,
@@ -239,6 +255,8 @@ const ICONS: Record<string, (p: IconProps) => ReactElement> = {
   'paste-smiles': IconPasteSmiles,
   'search-molecule': IconSearch,
   'fit-to-view': IconFitToView,
+  'structure-clean': IconClean,
+  'structure-refine': IconRefine,
 };
 
 export function getIcon(iconId: string): (p: IconProps) => ReactElement {

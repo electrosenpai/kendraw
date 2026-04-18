@@ -7,6 +7,7 @@ const LazyCanvasNew = lazy(() => import('./canvas-new'));
 import { NewToolbox, CANVAS_REGISTRY_MAP, useToolHotkeys } from './canvas-new/NewToolbox';
 import type { NewToolboxActionId, NewToolboxToolId } from './canvas-new/NewToolbox';
 import type { CanvasNewHandle, CanvasNewProps, CanvasNewToolId } from './canvas-new/CanvasNew';
+import { cleanStructure, type CleanMode } from './canvas-new/structureClean';
 import { PropertyPanel } from './PropertyPanel';
 import { StatusBar } from './StatusBar';
 import { DEFAULT_TOOL_STATE, type ToolState } from './ToolPalette';
@@ -122,7 +123,7 @@ export function App() {
         setNmrOpen((v) => !v);
         return;
       }
-      if (isMod && e.key === 'l') {
+      if (isMod && e.key === 'l' && !e.shiftKey) {
         e.preventDefault();
         setShowMolSearch((s) => !s);
       }
@@ -388,6 +389,23 @@ function NewCanvasMode({
 
   const canvasNewRef = useRef<CanvasNewHandle | null>(null);
 
+  const runStructureClean = useCallback(
+    (mode: CleanMode): void => {
+      const state = activeStore.getState();
+      const page = state.pages[state.activePageIndex];
+      if (!page) return;
+      void cleanStructure(
+        {
+          atoms: Object.values(page.atoms),
+          bonds: Object.values(page.bonds),
+          dispatch: (cmd) => activeStore.dispatch(cmd),
+        },
+        mode,
+      );
+    },
+    [activeStore],
+  );
+
   const handleAction = useCallback(
     (id: NewToolboxActionId): void => {
       switch (id) {
@@ -399,6 +417,12 @@ function NewCanvasMode({
           break;
         case 'fit-to-view':
           canvasNewRef.current?.fitToView();
+          break;
+        case 'structure-clean':
+          runStructureClean('quick');
+          break;
+        case 'structure-refine':
+          runStructureClean('full');
           break;
         case 'nmr-toggle':
           onNmrToggle();
@@ -414,10 +438,35 @@ function NewCanvasMode({
           break;
       }
     },
-    [activeStore, onNmrToggle, onTogglePropertyPanel, onPasteSmiles, onSearchMolecule],
+    [
+      activeStore,
+      runStructureClean,
+      onNmrToggle,
+      onTogglePropertyPanel,
+      onPasteSmiles,
+      onSearchMolecule,
+    ],
   );
 
   useToolHotkeys(onActiveToolChange, { onAction: handleAction });
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent): void => {
+      if (!e.shiftKey) return;
+      if (!(e.ctrlKey || e.metaKey)) return;
+      if (isEditingTextNow()) return;
+      const k = e.key.toLowerCase();
+      if (k === 'k') {
+        e.preventDefault();
+        runStructureClean('quick');
+      } else if (k === 'l') {
+        e.preventDefault();
+        runStructureClean('full');
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [runStructureClean]);
 
   return (
     <>

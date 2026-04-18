@@ -41,6 +41,8 @@ export type NewToolboxActionId =
   | 'undo'
   | 'redo'
   | 'fit-to-view'
+  | 'structure-clean'
+  | 'structure-refine'
   | 'nmr-toggle'
   | 'property-toggle'
   | 'paste-smiles'

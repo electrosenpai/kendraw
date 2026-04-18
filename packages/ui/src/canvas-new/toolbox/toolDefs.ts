@@ -38,6 +38,8 @@ export const TOOL_DEFS: readonly ToolDef[] = [
 
   // View group
   { id: 'fit-to-view', kind: 'action', group: 'view', label: 'Fit', tooltip: 'Fit molecules to view', shortcut: 'F', iconId: 'fit-to-view' },
+  { id: 'structure-clean', kind: 'action', group: 'view', label: 'Clean', tooltip: 'Clean structure (sanitize, preserve layout)', shortcut: 'Ctrl+Shift+K', iconId: 'structure-clean' },
+  { id: 'structure-refine', kind: 'action', group: 'view', label: 'Refine', tooltip: 'Refine structure (recompute 2D layout)', shortcut: 'Ctrl+Shift+L', iconId: 'structure-refine' },
 
   // Analysis dock (pinned at bottom of rail)
   { id: 'paste-smiles', kind: 'action', group: 'analysis', label: 'SMI', tooltip: 'Paste SMILES / import', shortcut: 'Ctrl+I', iconId: 'paste-smiles' },
