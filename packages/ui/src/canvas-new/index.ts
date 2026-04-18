@@ -4,5 +4,13 @@
 
 export { CanvasNew, default } from './CanvasNew';
 export type { CanvasNewProps, CanvasNewToolId } from './CanvasNew';
-export { NewToolbox } from './NewToolbox';
-export type { NewToolboxProps } from './NewToolbox';
+export { NewToolbox, TOOL_DEFS, CANVAS_REGISTRY_MAP } from './NewToolbox';
+export type {
+  NewToolboxProps,
+  NewToolboxToolId,
+  NewToolboxActionId,
+  NewToolboxButtonId,
+  NewToolboxGroup,
+  ToolDef,
+  ToolKind,
+} from './NewToolbox';
