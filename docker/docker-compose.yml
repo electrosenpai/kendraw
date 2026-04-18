@@ -3,6 +3,12 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile.frontend
+      args:
+        # Vite inlines VITE_* at build time — passed as a build arg, not a
+        # runtime env (nginx serves a static bundle). Defaults to true so
+        # the new canvas is on by default; override at build time with
+        # `VITE_ENABLE_NEW_CANVAS=false docker compose build frontend`.
+        VITE_ENABLE_NEW_CANVAS: '${VITE_ENABLE_NEW_CANVAS:-true}'
     ports:
       # Kept for local dev — Traefik (see docker-compose.traefik.yml) reaches
       # the container over the kendraw-net network, not through this mapping.

@@ -29,6 +29,12 @@ RUN pnpm install --frozen-lockfile
 COPY packages/ packages/
 COPY tsconfig.base.json ./
 
+# Vite inlines `import.meta.env.VITE_*` at build time — must be set BEFORE
+# `pnpm build`, not at container runtime. Defaults to true so the new canvas
+# is on by default in container builds; override with --build-arg to disable.
+ARG VITE_ENABLE_NEW_CANVAS=true
+ENV VITE_ENABLE_NEW_CANVAS=$VITE_ENABLE_NEW_CANVAS
+
 # Build the UI package
 RUN pnpm --filter @kendraw/ui build
 
