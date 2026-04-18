@@ -28,7 +28,23 @@ interface BondDragState {
   isDragging: boolean;
 }
 
-export function createBondTool(): Tool {
+export interface BondToolOptions {
+  /** Tool id registered in the ToolRegistry. Defaults to 'bond' (single). */
+  id?: string;
+  /** Bond order applied when committing a freshly-created bond. Defaults to 1. */
+  bondOrder?: 1 | 2 | 3;
+}
+
+const STYLE_FOR_ORDER: Record<1 | 2 | 3, 'single' | 'double' | 'triple'> = {
+  1: 'single',
+  2: 'double',
+  3: 'triple',
+};
+
+export function createBondTool(opts: BondToolOptions = {}): Tool {
+  const order: 1 | 2 | 3 = opts.bondOrder ?? 1;
+  const style = STYLE_FOR_ORDER[order];
+  const id = opts.id ?? 'bond';
   let lastSourceId: AtomId | BondId | null = null;
   let drag: BondDragState | null = null;
 
@@ -55,7 +71,7 @@ export function createBondTool(): Tool {
     if (existingTargetId && existingTargetId !== fromAtomId) {
       ctx.dispatch?.({
         type: 'add-bond',
-        bond: createBond(fromAtomId, existingTargetId, 1, 'single'),
+        bond: createBond(fromAtomId, existingTargetId, order, style),
       });
       return;
     }
@@ -63,13 +79,13 @@ export function createBondTool(): Tool {
     ctx.dispatch?.({ type: 'add-atom', atom: newAtom });
     ctx.dispatch?.({
       type: 'add-bond',
-      bond: createBond(fromAtomId, newAtom.id, 1, 'single'),
+      bond: createBond(fromAtomId, newAtom.id, order, style),
     });
   }
 
   return {
-    id: 'bond',
-    label: 'Bond (single)',
+    id,
+    label: `Bond (${style})`,
     activate(ctx: ToolContext): void {
       lastSourceId = null;
       drag = null;

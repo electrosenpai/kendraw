@@ -53,9 +53,9 @@ export const TOOL_DEFS: readonly ToolDef[] = [
  *  the toolbox UI state (active highlight) and hotkey dispatch. */
 export const CANVAS_REGISTRY_MAP: Record<string, string> = {
   'select': 'select',
-  'bond-single': 'bond',
-  'bond-double': 'bond',
-  'bond-triple': 'bond',
+  'bond-single': 'bond-single',
+  'bond-double': 'bond-double',
+  'bond-triple': 'bond-triple',
   'atom-c': 'atom-c',
   'atom-h': 'atom-h',
   'atom-n': 'atom-n',

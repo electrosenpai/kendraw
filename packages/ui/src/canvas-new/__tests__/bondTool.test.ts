@@ -157,6 +157,51 @@ describe('createBondTool — click & drag (W4-R-04 / W4-R-10)', () => {
     expect(types).toContain('add-bond');
   });
 
+  it('double-bond variant commits an order-2 bond on drag-to-existing-atom', () => {
+    const handle = makeCtx([
+      { x: 0, y: 0 },
+      { x: 80, y: 0 },
+    ]);
+    const tool = createBondTool({ id: 'bond-double', bondOrder: 2 });
+    tool.activate?.(handle.ctx);
+    tool.pointerdown?.(handle.ctx, payload(0, 0));
+    tool.pointermove?.(handle.ctx, payload(80, 0));
+    tool.pointerup?.(handle.ctx, payload(80, 0));
+    const addBond = handle.dispatched.find((c) => c.type === 'add-bond');
+    expect(addBond?.type).toBe('add-bond');
+    if (addBond?.type === 'add-bond') {
+      expect(addBond.bond.order).toBe(2);
+      expect(addBond.bond.style).toBe('double');
+    }
+  });
+
+  it('triple-bond variant commits an order-3 bond on click-to-grow', () => {
+    const handle = makeCtx([{ x: 0, y: 0 }]);
+    const tool = createBondTool({ id: 'bond-triple', bondOrder: 3 });
+    tool.activate?.(handle.ctx);
+    tool.pointerdown?.(handle.ctx, payload(0, 0));
+    tool.pointerup?.(handle.ctx, payload(0, 0));
+    const addBond = handle.dispatched.find((c) => c.type === 'add-bond');
+    expect(addBond?.type).toBe('add-bond');
+    if (addBond?.type === 'add-bond') {
+      expect(addBond.bond.order).toBe(3);
+      expect(addBond.bond.style).toBe('triple');
+    }
+  });
+
+  it('default (no opts) still commits a single bond — backward compat', () => {
+    const handle = makeCtx([{ x: 0, y: 0 }]);
+    const tool = createBondTool();
+    tool.activate?.(handle.ctx);
+    tool.pointerdown?.(handle.ctx, payload(0, 0));
+    tool.pointerup?.(handle.ctx, payload(0, 0));
+    const addBond = handle.dispatched.find((c) => c.type === 'add-bond');
+    if (addBond?.type === 'add-bond') {
+      expect(addBond.bond.order).toBe(1);
+      expect(addBond.bond.style).toBe('single');
+    }
+  });
+
   it('click on an existing bond cycles its order', () => {
     const handle = makeCtx([
       { x: 0, y: 0 },

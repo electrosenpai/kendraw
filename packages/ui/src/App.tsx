@@ -382,7 +382,7 @@ function NewCanvasMode({
   const toolState: ToolState = useMemo(
     () => ({
       ...DEFAULT_TOOL_STATE,
-      tool: canvasTool === 'bond' ? 'add-bond' : 'select',
+      tool: canvasTool.startsWith('bond-') ? 'add-bond' : 'select',
     }),
     [canvasTool],
   );

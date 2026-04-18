@@ -87,7 +87,11 @@ test.describe('Canvas-new toolbox clicks @canvas-new', () => {
 
   test('toolbox clicks drive the canvas active-tool attribute', async ({ page }) => {
     await page.getByTestId('new-tool-bond-single').click();
-    await expect(page.getByTestId('canvas-new-root')).toHaveAttribute('data-active-tool', 'bond');
+    await expect(page.getByTestId('canvas-new-root')).toHaveAttribute('data-active-tool', 'bond-single');
+    await page.getByTestId('new-tool-bond-double').click();
+    await expect(page.getByTestId('canvas-new-root')).toHaveAttribute('data-active-tool', 'bond-double');
+    await page.getByTestId('new-tool-bond-triple').click();
+    await expect(page.getByTestId('canvas-new-root')).toHaveAttribute('data-active-tool', 'bond-triple');
     await page.getByTestId('new-tool-atom-n').click();
     await expect(page.getByTestId('canvas-new-root')).toHaveAttribute('data-active-tool', 'atom-n');
     await page.getByTestId('new-tool-select').click();

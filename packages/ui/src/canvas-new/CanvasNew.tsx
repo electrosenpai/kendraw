@@ -52,7 +52,9 @@ import { isEditingTextNow } from '../hooks/useIsEditingText';
 
 export type CanvasNewToolId =
   | 'select'
-  | 'bond'
+  | 'bond-single'
+  | 'bond-double'
+  | 'bond-triple'
   | 'atom-c'
   | 'atom-h'
   | 'atom-n'
@@ -129,7 +131,9 @@ export const CanvasNew = forwardRef<CanvasNewHandle, CanvasNewProps>(function Ca
   const registry = useMemo(() => {
     const r = new ToolRegistry();
     r.register(createMarqueeSelectTool());
-    r.register(createBondTool());
+    r.register(createBondTool({ id: 'bond-single', bondOrder: 1 }));
+    r.register(createBondTool({ id: 'bond-double', bondOrder: 2 }));
+    r.register(createBondTool({ id: 'bond-triple', bondOrder: 3 }));
     r.register(createAtomTool({ id: 'atom-c', element: 6 }));
     r.register(createAtomTool({ id: 'atom-h', element: 1 }));
     r.register(createAtomTool({ id: 'atom-n', element: 7 }));
