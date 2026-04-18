@@ -12,6 +12,7 @@ export type NewToolboxGroup =
   | 'ring'
   | 'annotation'
   | 'edit'
+  | 'view'
   | 'analysis';
 
 export type NewToolboxToolId =
@@ -39,6 +40,7 @@ export type NewToolboxToolId =
 export type NewToolboxActionId =
   | 'undo'
   | 'redo'
+  | 'fit-to-view'
   | 'nmr-toggle'
   | 'property-toggle'
   | 'paste-smiles'

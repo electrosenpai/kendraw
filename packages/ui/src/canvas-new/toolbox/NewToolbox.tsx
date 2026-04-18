@@ -22,6 +22,7 @@ const MAIN_GROUP_ORDER: NewToolboxGroup[] = [
   'ring',
   'annotation',
   'edit',
+  'view',
 ];
 
 export interface NewToolboxProps {

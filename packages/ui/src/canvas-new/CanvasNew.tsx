@@ -15,8 +15,10 @@
 // Wave-5 W4-R-12 — wheel-to-zoom anchored at the cursor.
 
 import {
+  forwardRef,
   useCallback,
   useEffect,
+  useImperativeHandle,
   useMemo,
   useRef,
   useState,
@@ -40,9 +42,17 @@ import { createBondTool } from './tools/bondTool';
 import { hitTestBond, type HoverPreview } from './bondPreview';
 import { HoverIconOverlay } from './HoverIconOverlay';
 import { resolveQuickEditCommand } from './quickEdit';
+import { computeFitViewport } from './fitToView';
 import { isEditingTextNow } from '../hooks/useIsEditingText';
 
 export type CanvasNewToolId = 'select' | 'bond';
+
+/** Imperative handle exposed to the App shell so the wave-7 toolbox's
+ *  fit-to-view action can recenter the scene without the canvas having to
+ *  subscribe to a shared store. */
+export interface CanvasNewHandle {
+  fitToView: () => void;
+}
 
 export interface CanvasNewProps {
   store: SceneStore;
@@ -68,7 +78,10 @@ const ZOOM_MIN = 0.25;
 const ZOOM_MAX = 8;
 const ZOOM_STEP = 1.1;
 
-export function CanvasNew(props: CanvasNewProps): JSX.Element {
+export const CanvasNew = forwardRef<CanvasNewHandle, CanvasNewProps>(function CanvasNew(
+  props,
+  ref,
+): JSX.Element {
   const {
     store,
     theme = 'dark',
@@ -175,6 +188,24 @@ export function CanvasNew(props: CanvasNewProps): JSX.Element {
   }), [store, renderEffective]);
 
   useToolDispatcher({ target: canvasEl, registry, context });
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      fitToView: (): void => {
+        const host = canvasHostRef.current;
+        if (!host) return;
+        const rect = host.getBoundingClientRect === undefined
+          ? { width: 0, height: 0 }
+          : host.getBoundingClientRect();
+        const doc = store.getState();
+        const page = doc.pages[doc.activePageIndex] ?? null;
+        const view = computeFitViewport(page, rect.width, rect.height);
+        context.setViewport?.(view);
+      },
+    }),
+    [context, store],
+  );
 
   useEffect(() => {
     const host = canvasHostRef.current;
@@ -363,7 +394,7 @@ export function CanvasNew(props: CanvasNewProps): JSX.Element {
       <div style={{ gridArea: 'status' }} data-testid="canvas-new-status" />
     </>
   );
-}
+});
 
 export default CanvasNew;
 

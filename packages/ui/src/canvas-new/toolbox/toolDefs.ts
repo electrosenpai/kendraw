@@ -36,6 +36,9 @@ export const TOOL_DEFS: readonly ToolDef[] = [
   { id: 'undo', kind: 'action', group: 'edit', label: 'Undo', tooltip: 'Undo', shortcut: 'Ctrl+Z', iconId: 'undo' },
   { id: 'redo', kind: 'action', group: 'edit', label: 'Redo', tooltip: 'Redo', shortcut: 'Ctrl+Y', iconId: 'redo' },
 
+  // View group
+  { id: 'fit-to-view', kind: 'action', group: 'view', label: 'Fit', tooltip: 'Fit molecules to view', shortcut: 'F', iconId: 'fit-to-view' },
+
   // Analysis dock (pinned at bottom of rail)
   { id: 'paste-smiles', kind: 'action', group: 'analysis', label: 'SMI', tooltip: 'Paste SMILES / import', shortcut: 'Ctrl+I', iconId: 'paste-smiles' },
   { id: 'search-molecule', kind: 'action', group: 'analysis', label: 'Mol', tooltip: 'Search molecules', shortcut: 'Ctrl+L', iconId: 'search-molecule' },

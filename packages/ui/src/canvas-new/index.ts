@@ -3,7 +3,9 @@
 // Reimplemented from scratch for Kendraw.
 
 export { CanvasNew, default } from './CanvasNew';
-export type { CanvasNewProps, CanvasNewToolId } from './CanvasNew';
+export type { CanvasNewProps, CanvasNewToolId, CanvasNewHandle } from './CanvasNew';
+export { computeFitViewport } from './fitToView';
+export type { FitViewport, FitOptions } from './fitToView';
 export {
   NewToolbox,
   TOOL_DEFS,

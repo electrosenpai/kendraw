@@ -207,6 +207,16 @@ export function IconSearch({ size = 18 }: IconProps): ReactElement {
   ]);
 }
 
+export function IconFitToView({ size = 18 }: IconProps): ReactElement {
+  return svg(size, [
+    <path key="tl" d="M3 7 L3 3 L7 3" />,
+    <path key="tr" d="M13 3 L17 3 L17 7" />,
+    <path key="br" d="M17 13 L17 17 L13 17" />,
+    <path key="bl" d="M7 17 L3 17 L3 13" />,
+    <rect key="c" x="7" y="7" width="6" height="6" />,
+  ]);
+}
+
 const ICONS: Record<string, (p: IconProps) => ReactElement> = {
   'select': IconSelect,
   'bond-single': IconBondSingle,
@@ -228,6 +238,7 @@ const ICONS: Record<string, (p: IconProps) => ReactElement> = {
   'property-toggle': IconPropertyPanel,
   'paste-smiles': IconPasteSmiles,
   'search-molecule': IconSearch,
+  'fit-to-view': IconFitToView,
 };
 
 export function getIcon(iconId: string): (p: IconProps) => ReactElement {

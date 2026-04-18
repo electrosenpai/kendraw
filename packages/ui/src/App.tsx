@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useSyncExternalStore, lazy, Suspense, type ReactElement } from 'react';
+import { useRef, useState, useEffect, useCallback, useMemo, useSyncExternalStore, lazy, Suspense, type ReactElement } from 'react';
 import type { AtomId, Document } from '@kendraw/scene';
 import { validateValence } from '@kendraw/scene';
 import { Canvas } from './Canvas';
@@ -6,7 +6,7 @@ import { FEATURE_FLAGS } from './config/feature-flags';
 const LazyCanvasNew = lazy(() => import('./canvas-new'));
 import { NewToolbox, CANVAS_REGISTRY_MAP, useToolHotkeys } from './canvas-new/NewToolbox';
 import type { NewToolboxActionId, NewToolboxToolId } from './canvas-new/NewToolbox';
-import type { CanvasNewProps, CanvasNewToolId } from './canvas-new/CanvasNew';
+import type { CanvasNewHandle, CanvasNewProps, CanvasNewToolId } from './canvas-new/CanvasNew';
 import { PropertyPanel } from './PropertyPanel';
 import { StatusBar } from './StatusBar';
 import { DEFAULT_TOOL_STATE, type ToolState } from './ToolPalette';
@@ -385,6 +385,8 @@ function NewCanvasMode({
     [canvasTool],
   );
 
+  const canvasNewRef = useRef<CanvasNewHandle | null>(null);
+
   const handleAction = useCallback(
     (id: NewToolboxActionId): void => {
       switch (id) {
@@ -393,6 +395,9 @@ function NewCanvasMode({
           break;
         case 'redo':
           activeStore.redo();
+          break;
+        case 'fit-to-view':
+          canvasNewRef.current?.fitToView();
           break;
         case 'nmr-toggle':
           onNmrToggle();
@@ -411,7 +416,7 @@ function NewCanvasMode({
     [activeStore, onNmrToggle, onTogglePropertyPanel, onPasteSmiles, onSearchMolecule],
   );
 
-  useToolHotkeys(onActiveToolChange);
+  useToolHotkeys(onActiveToolChange, { onAction: handleAction });
 
   return (
     <>
@@ -427,7 +432,7 @@ function NewCanvasMode({
         />
       </div>
       <Suspense fallback={<div style={{ gridArea: 'canvas' }}>Loading canvas…</div>}>
-        <LazyCanvasNew {...canvasProps} activeToolId={canvasTool} />
+        <LazyCanvasNew {...canvasProps} ref={canvasNewRef} activeToolId={canvasTool} />
       </Suspense>
       <div style={{ gridArea: 'properties', overflow: 'auto' }}>
         <PropertyPanel doc={doc} visible={showProperties} />
