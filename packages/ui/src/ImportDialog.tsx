@@ -1,6 +1,8 @@
 import { useRef, useCallback, useState } from 'react';
-import { parseCdxml, parseMolV2000, parseSmiles } from '@kendraw/io';
-import type { SceneStore } from '@kendraw/scene';
+import { parseCdxml, parseMolV2000, parseSmiles, writeMolV2000 } from '@kendraw/io';
+import type { Atom, Bond, SceneStore } from '@kendraw/scene';
+import { FEATURE_FLAGS } from './config/feature-flags';
+import { getKetcherBridgeState } from './canvas-ketcher';
 import { setGraphicOverlays, setCdxmlDocumentSettings } from './graphic-overlays';
 
 interface ImportDialogProps {
@@ -14,10 +16,35 @@ export function ImportDialog({ store, onClose }: ImportDialogProps) {
   const [status, setStatus] = useState('');
 
   const importContent = useCallback(
-    (content: string, filename: string) => {
+    async (content: string, filename: string) => {
       const ext = filename.toLowerCase().split('.').pop() ?? '';
       let atoms = 0;
       let bonds = 0;
+
+      // Ketcher mode: parse locally, then hand the resulting MOL to the
+      // Ketcher editor via setMolecule. CDXML-only artefacts (arrows,
+      // annotations, graphic overlays) are dropped in this mode — they
+      // will be handled in Session B.
+      if (FEATURE_FLAGS.useKetcher) {
+        const ketcher = getKetcherBridgeState().ketcher;
+        if (!ketcher) {
+          setStatus('Ketcher editor not ready yet.');
+          return;
+        }
+        try {
+          const { mol, atoms: a, bonds: b } = parseToMol(content, ext);
+          if (!mol) {
+            setStatus('Could not parse file. Supported: CDXML, MOL, SDF, SMILES');
+            return;
+          }
+          await ketcher.setMolecule(mol);
+          setStatus(`Imported ${a} atoms, ${b} bonds`);
+          setTimeout(onClose, 800);
+        } catch (err) {
+          setStatus(`Error: ${err instanceof Error ? err.message : 'Unknown error'}`);
+        }
+        return;
+      }
 
       try {
         if (ext === 'cdxml' || content.includes('<CDXML') || content.includes('<cdxml')) {
@@ -119,7 +146,7 @@ export function ImportDialog({ store, onClose }: ImportDialogProps) {
       const reader = new FileReader();
       reader.onload = () => {
         if (typeof reader.result === 'string') {
-          importContent(reader.result, file.name);
+          void importContent(reader.result, file.name);
         }
       };
       reader.readAsText(file);
@@ -129,7 +156,7 @@ export function ImportDialog({ store, onClose }: ImportDialogProps) {
 
   const handlePaste = useCallback(() => {
     if (text.trim()) {
-      importContent(text.trim(), 'paste.txt');
+      void importContent(text.trim(), 'paste.txt');
     }
   }, [text, importContent]);
 
@@ -247,3 +274,39 @@ const textareaStyle: React.CSSProperties = {
   marginBottom: 10,
   outline: 'none',
 };
+
+interface ParsedMol {
+  mol: string;
+  atoms: number;
+  bonds: number;
+}
+
+function parseToMol(content: string, ext: string): ParsedMol {
+  // CDXML in Ketcher mode falls back to atoms + bonds only.
+  if (ext === 'cdxml' || content.includes('<CDXML') || content.includes('<cdxml')) {
+    const result = parseCdxml(content);
+    const mol = writeMolV2000(result.atoms as Atom[], result.bonds as Bond[]);
+    return { mol, atoms: result.atoms.length, bonds: result.bonds.length };
+  }
+  if (ext === 'mol' || ext === 'sdf' || content.includes('V2000')) {
+    // Pass the raw MOL through — Ketcher accepts it directly.
+    const block = content.split('$$$$')[0] ?? content;
+    const probe = parseMolV2000(block);
+    return { mol: block, atoms: probe.atoms.length, bonds: probe.bonds.length };
+  }
+  if (ext === 'smi' || ext === 'smiles') {
+    const first = content
+      .split('\n')
+      .map((l) => l.trim().split(/\s/)[0])
+      .find((l): l is string => !!l && l.length > 0);
+    if (!first) return { mol: '', atoms: 0, bonds: 0 };
+    const result = parseSmiles(first);
+    const mol = writeMolV2000(result.atoms, result.bonds);
+    return { mol, atoms: result.atoms.length, bonds: result.bonds.length };
+  }
+  // Fallback: try SMILES.
+  const result = parseSmiles(content.trim());
+  if (result.atoms.length === 0) return { mol: '', atoms: 0, bonds: 0 };
+  const mol = writeMolV2000(result.atoms, result.bonds);
+  return { mol, atoms: result.atoms.length, bonds: result.bonds.length };
+}

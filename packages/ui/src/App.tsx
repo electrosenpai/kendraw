@@ -8,6 +8,7 @@ import { NewToolbox, CANVAS_REGISTRY_MAP, useToolHotkeys } from './canvas-new/Ne
 import type { NewToolboxActionId, NewToolboxToolId } from './canvas-new/NewToolbox';
 import type { CanvasNewHandle, CanvasNewProps, CanvasNewToolId } from './canvas-new/CanvasNew';
 import { cleanStructure, type CleanMode } from './canvas-new/structureClean';
+import { KetcherCanvasMode } from './canvas-ketcher';
 import { PropertyPanel } from './PropertyPanel';
 import { StatusBar } from './StatusBar';
 import { DEFAULT_TOOL_STATE, type ToolState } from './ToolPalette';
@@ -235,6 +236,20 @@ export function App() {
             onSelectionChange: setSelectedAtomIds,
             theme,
           };
+          if (FEATURE_FLAGS.useKetcher) {
+            return (
+              <KetcherCanvasMode
+                nmrOpen={nmrOpen}
+                onNmrToggle={() => setNmrOpen((v) => !v)}
+                nmrHeight={nmrHeight}
+                onNmrHeightChange={setNmrHeight}
+                showProperties={panelVisible && effectivePanelW > 0}
+                highlightedAtomIds={highlightedAtomIds}
+                onHighlightAtoms={setHighlightedAtomIds}
+                selectedAtomIds={selectedAtomIds}
+              />
+            );
+          }
           return FEATURE_FLAGS.newCanvas ? (
             <NewCanvasMode
               canvasProps={canvasProps}
@@ -272,7 +287,7 @@ export function App() {
         </>
       )}
 
-      {nmrOpen && activeStore && (
+      {nmrOpen && activeStore && !FEATURE_FLAGS.useKetcher && (
         <div data-testid="nmr-panel" style={{ gridArea: 'nmr' }}>
           <Suspense
             fallback={

@@ -200,6 +200,9 @@ importers:
       '@kendraw/scene':
         specifier: workspace:*
         version: link:../scene
+      immer:
+        specifier: ^10.2.0
+        version: 10.2.0
       ketcher-core:
         specifier: ^3.12.0
         version: 3.12.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)

@@ -22,6 +22,7 @@
     "@kendraw/renderer-canvas": "workspace:*",
     "@kendraw/renderer-svg": "workspace:*",
     "@kendraw/scene": "workspace:*",
+    "immer": "^10.2.0",
     "ketcher-core": "^3.12.0",
     "ketcher-react": "^3.12.0",
     "ketcher-standalone": "^3.12.0",
