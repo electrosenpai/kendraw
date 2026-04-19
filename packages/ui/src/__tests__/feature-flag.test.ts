@@ -19,10 +19,16 @@ describe('feature-flags', () => {
     expect(isFeatureEnabled('newCanvas')).toBe(FEATURE_FLAGS.newCanvas);
   });
 
+  it('exposes the useKetcher flag defaulting to false', () => {
+    expect(FEATURE_FLAGS).toHaveProperty('useKetcher');
+    expect(FEATURE_FLAGS.useKetcher).toBe(false);
+    expect(isFeatureEnabled('useKetcher')).toBe(false);
+  });
+
   it('FEATURE_FLAGS is readonly at the type level (runtime immutability enforced by TS)', () => {
     // Structural check: attempting to mutate would fail TS; here we just
     // confirm the keys are present and finite.
     const keys = Object.keys(FEATURE_FLAGS).sort();
-    expect(keys).toEqual(['newCanvas']);
+    expect(keys).toEqual(['newCanvas', 'useKetcher']);
   });
 });

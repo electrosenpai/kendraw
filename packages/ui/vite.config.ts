@@ -3,6 +3,10 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
+  define: {
+    // draft-js (transitive dep of ketcher-react) references the Node `global`.
+    global: 'globalThis',
+  },
   build: {
     outDir: 'dist',
     sourcemap: true,
