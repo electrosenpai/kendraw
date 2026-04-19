@@ -35,6 +35,12 @@ COPY tsconfig.base.json ./
 ARG VITE_ENABLE_NEW_CANVAS=true
 ENV VITE_ENABLE_NEW_CANVAS=$VITE_ENABLE_NEW_CANVAS
 
+# Wave-8 pivot: route the drawing surface to the real Ketcher editor.
+# Defaults to true so production serves the Ketcher-powered Kendraw;
+# override with --build-arg VITE_USE_KETCHER=false to fall back to canvas-new.
+ARG VITE_USE_KETCHER=true
+ENV VITE_USE_KETCHER=$VITE_USE_KETCHER
+
 # Build the UI package
 RUN pnpm --filter @kendraw/ui build
 

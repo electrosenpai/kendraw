@@ -9,6 +9,10 @@ services:
         # the new canvas is on by default; override at build time with
         # `VITE_ENABLE_NEW_CANVAS=false docker compose build frontend`.
         VITE_ENABLE_NEW_CANVAS: '${VITE_ENABLE_NEW_CANVAS:-true}'
+        # Wave-8: route the drawing surface to Ketcher by default. Flip to
+        # false to fall back to canvas-new without rebuilding the image
+        # layers above.
+        VITE_USE_KETCHER: '${VITE_USE_KETCHER:-true}'
     ports:
       # Kept for local dev — Traefik (see docker-compose.traefik.yml) reaches
       # the container over the kendraw-net network, not through this mapping.
