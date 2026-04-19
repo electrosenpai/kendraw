@@ -195,6 +195,9 @@ Read [CLAUDE.md](CLAUDE.md) first — it defines the mandatory CI checks that ru
 ### Feature flags
 
 - `VITE_ENABLE_NEW_CANVAS=true` — opt in to the wave-4 canvas redraw (shell, tool abstraction, marquee selection, 15° snap). Off by default; no user-visible change when unset. Design inspired by [Ketcher](https://github.com/epam/ketcher) (EPAM Systems, Apache 2.0), reimplemented clean-room — see [THIRD-PARTY-NOTICES.md](docs/THIRD-PARTY-NOTICES.md).
+- `VITE_USE_KETCHER=true` — route the drawing surface to the real [Ketcher](https://github.com/epam/ketcher) editor (EPAM Systems, Apache 2.0) bundled as an npm dependency. Off by default while the wave-8 pivot is under validation; enables the full Ketcher toolbox while keeping Kendraw's Properties + NMR panels around it. See [`docs/ketcher-integration-plan-wave-8.md`](docs/ketcher-integration-plan-wave-8.md).
+
+**Drawing engine.** Kendraw embeds Ketcher (EPAM Systems, Apache 2.0) as a complementary drawing surface under `VITE_USE_KETCHER=true`. The clean-room canvas-new remains the default. Attribution: [THIRD-PARTY-NOTICES.md](docs/THIRD-PARTY-NOTICES.md).
 
 ---
 

@@ -12,40 +12,51 @@ comment pointing to the original repository.
 - **Upstream.** https://github.com/epam/ketcher
 - **License.** Apache 2.0
 - **Copyright.** © 2010-2025 EPAM Systems
+- **Distribution (wave-8+).** npm packages `ketcher-react`,
+  `ketcher-standalone`, and `ketcher-core` at `^3.12.0`, declared in
+  `packages/ui/package.json`. Bundled into the Kendraw frontend when
+  `VITE_USE_KETCHER=true` is set at build or runtime.
 
 ### Relationship
 
-Ketcher is Kendraw's design reference for the wave-4 canvas and toolbox
-overhaul. The Kendraw implementation is **clean-room**: we read Ketcher's
-public sources to understand the shape of well-known drawing-tool ergonomics
-(tool abstraction, pointer dispatch lifecycle, rubber-band marquee, 15° angle
-snap, quick-edit panel) and then re-implemented equivalent behaviour from
-scratch in TypeScript against Kendraw's own scene/renderer packages.
+Ketcher plays two roles in Kendraw:
 
-No Ketcher source code has been copied, transformed, or machine-translated
-into Kendraw. Algorithms and public APIs are not subject to copyright in
-the jurisdictions where Kendraw is developed; visual layouts and user-facing
-interactions were re-designed independently while drawing on the same body
-of chemistry-editor conventions that Ketcher and ChemDraw also share.
+1. **Design reference (wave-4 onward).** Kendraw's own clean-room canvas
+   (`packages/ui/src/canvas-new/`) reads Ketcher's public sources to
+   understand drawing-tool ergonomics (tool abstraction, pointer dispatch
+   lifecycle, rubber-band marquee, 15° angle snap, quick-edit panel) and
+   re-implements equivalent behaviour from scratch in TypeScript against
+   Kendraw's own scene/renderer packages. No Ketcher source code has been
+   copied, transformed, or machine-translated into canvas-new.
+2. **Embedded drawing engine (wave-8 onward).** When
+   `VITE_USE_KETCHER=true`, Kendraw mounts the real Ketcher React editor
+   in place of canvas-new and routes its own Properties Panel, NMR
+   Panel, import dialogs and export flows to Ketcher's public API
+   (`onInit`, `getMolfile`, `setMolecule`, `subscribe('change' |
+   'selectionChange')`). The embedded Ketcher runs in standalone mode —
+   Indigo chemistry executes in a Web Worker bundled via
+   `ketcher-standalone`, with no backend requirement from the Ketcher
+   side. Kendraw's own backend (RDKit + Indigo + ChemNMR) continues to
+   serve NMR prediction, property computation and template fusion
+   independently.
 
 ### Files that reference Ketcher
 
-Every file in `packages/ui/src/canvas-new/` that mirrors a Ketcher design
-choice opens with the attribution header:
-
-```
-// Design inspired by Ketcher (EPAM Systems, Apache 2.0)
-// Original: https://github.com/epam/ketcher
-// Reimplemented from scratch for Kendraw.
-```
+- Every file in `packages/ui/src/canvas-new/` that mirrors a Ketcher
+  design choice opens with the header
+  `// Design inspired by Ketcher (EPAM Systems, Apache 2.0)`.
+- Every file in `packages/ui/src/canvas-ketcher/` that embeds Ketcher
+  opens with the header
+  `// Attribution: Integrates Ketcher (EPAM Systems, Apache 2.0) as
+  Kendraw's drawing engine. Ketcher upstream: https://github.com/epam/ketcher`.
 
 ### Apache 2.0 compatibility
 
-The Apache 2.0 licence permits design inspiration and algorithm study without
-obligation, and is compatible with Kendraw's MIT licence. Kendraw ships no
-Ketcher artefacts — no binaries, no SVG icons, no strings, no type
-definitions. The attribution above exists as a courtesy and to make the
-design lineage auditable for downstream users.
+The Apache 2.0 licence is compatible with Kendraw's MIT licence for both
+design-only reference and npm-dependency redistribution. Apache 2.0
+requires preserved copyright and LICENSE notices — those live inside
+each Ketcher package's `node_modules/<pkg>/` directory as shipped by
+the upstream npm tarball. Kendraw does not modify Ketcher sources.
 
 ## Indigo — EPAM Systems
 
