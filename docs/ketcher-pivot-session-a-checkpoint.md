@@ -1,12 +1,16 @@
 # Wave-8 Ketcher pivot — Session A checkpoint
 
-**Branch.** `wave-8-ketcher-pivot` (worktree `/home/debian/kendraw-wave8/`).
-`main` is untouched; the clean-room canvas-new remains the production
-drawing surface.
+**Branch.** `wave-8-ketcher-pivot` (worktree `/home/debian/kendraw-wave8/`),
+fast-forwarded into `main` on 2026-04-19 after the production build fix.
+Commit `0acaaee` unblocks the Vite bundle; see `## Production deployment`
+at the bottom of this file for the full incident log.
 
-**Flag.** `VITE_USE_KETCHER` — default `false`. `VITE_ENABLE_NEW_CANVAS`
-continues to gate canvas-new as before. Rollout is strictly opt-in during
-Session A.
+**Flag.** `VITE_USE_KETCHER` — default `true` inside the Docker image
+(docker/Dockerfile.frontend), so `kendraw.fdp.expert` serves the Ketcher
+editor out of the box. Source default in
+`packages/ui/src/config/feature-flags.ts` is still `false`, which keeps
+`pnpm dev` / tests pinned to canvas-new unless the env var is explicitly
+set. `VITE_ENABLE_NEW_CANVAS` continues to gate canvas-new as before.
 
 ## What Session A delivered
 
@@ -175,3 +179,39 @@ not flip the default.
 - `pnpm test`: 200 ui + 246 scene + 100 io + 75 nmr (scene/io/nmr untouched)
 - `backend/` pytest: 267 pass (pre-commit hook verified)
 - Pre-commit hook ran green on all Session A commits; no `--no-verify`.
+
+## Production deployment (2026-04-19)
+
+First production roll-out of the pivot surfaced a Vite bundling bug that
+`pnpm dev` had hidden. Timeline:
+
+1. **Symptom.** `kendraw.fdp.expert` returned a black screen with a single
+   console error: `ReferenceError: require is not defined at
+   index.modern.js:10842:12`.
+2. **Root cause.** `node_modules/ketcher-core/dist/index.modern.js:10842`
+   contains `if (typeof window !== 'undefined') { raphaelModule =
+   require('raphael'); ... }`. The file is emitted as ESM, so
+   `@rollup/plugin-commonjs` left the embedded `require()` alone and it
+   survived minification into the production bundle. Vite's dev server
+   rewrites CJS on the fly, hence the discrepancy.
+3. **Fix.** Two lines of `packages/ui/vite.config.ts`:
+   - `build.commonjsOptions.transformMixedEsModules: true` — rewrite
+     embedded requires inside ESM-flagged files;
+   - `optimizeDeps.include` — force esbuild to pre-bundle
+     `ketcher-{react,core,standalone}` + `raphael` with the same CJS→ESM
+     conversion during dev and during the Vite build's dep-optimization
+     pass.
+4. **Docker.** `docker/Dockerfile.frontend` gained a `VITE_USE_KETCHER=true`
+   ARG, plumbed through `docker/docker-compose.yml`, so the prod bundle
+   routes to Ketcher automatically. `push_and_deploy.sh` now forces
+   `--no-cache` on the frontend stage to avoid silent cache-based
+   regressions.
+5. **Verification.** Headless Playwright hit `https://kendraw.fdp.expert/`
+   and confirmed `.Ketcher-root` plus `[data-testid="ketcher-canvas-root"]`
+   both mount with zero `pageerror` and zero `console.error` entries. The
+   prod bundle no longer contains `require("raphael")`; the two residual
+   `require()` tokens are a guarded lodash util probe and a string literal
+   in ajv's error-reporting path — both inert.
+
+Commit: `0acaaee fix(build): transform CJS requires from ketcher-core for
+prod bundle`, merged into `main` the same day.
