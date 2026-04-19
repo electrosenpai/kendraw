@@ -25,7 +25,7 @@ jobs:
           version: 9
 
       - name: Cache pnpm store
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.local/share/pnpm/store/v3
           key: pnpm-${{ hashFiles('pnpm-lock.yaml') }}
@@ -39,7 +39,7 @@ jobs:
         run: pip install uv
 
       - name: Cache uv virtualenv
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: backend/.venv
           key: uv-${{ hashFiles('backend/pyproject.toml', 'backend/uv.lock') }}
